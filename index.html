@@ -6,26 +6,702 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-title" content="Harcama Takip">
+  
+  <link rel="apple-touch-icon" href="https://img.icons8.com/fluent/192/wallet.png">
+  <link rel="icon" type="image/png" href="https://img.icons8.com/fluent/192/wallet.png">
+
   <title>Harcama Takip</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      width: 100%;
-      height: 100%;
-      background-color: #0f172a;
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #38bdf8;
+      --text: #f8fafc;
+      --text-dim: #94a3b8;
+      --border: #334155;
+      --green: #10b981;
+      --red: #f43f5e;
+      --orange: #f59e0b;
+    }
+    * { 
+      box-sizing: border-box; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      margin: 0; 
+      padding: 0; 
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    ::-webkit-scrollbar { display: none; }
+    * { -ms-overflow-style: none; scrollbar-width: none; }
+
+    html {
+      background-color: var(--bg);
+      margin: 0;
+      padding: 0;
+    }
+    
+    body { 
+      background-color: var(--bg);
+      color: var(--text); 
+      padding-top: max(44px, env(safe-area-inset-top));
+      padding-left: 16px;
+      padding-right: 16px;
+      padding-bottom: calc(20px + env(safe-area-inset-bottom));
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    #appContent {
+      transition: transform 0.2s ease-out;
+      will-change: transform;
+    }
+
+    .status-bar-shield {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: max(44px, env(safe-area-inset-top));
+      background-color: var(--bg);
+      z-index: 150;
+      pointer-events: none;
+    }
+
+    #pullIndicator {
+      position: fixed;
+      top: calc(max(44px, env(safe-area-inset-top)) + 15px);
+      left: 50%;
+      transform: translateX(-50%) scale(0);
+      background: var(--card-bg);
+      border: 2px solid var(--accent);
+      color: var(--accent);
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      font-weight: bold;
+      z-index: 200;
+      opacity: 0;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+      pointer-events: none;
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease;
+    }
+    .rotating { animation: spin 0.7s linear infinite !important; }
+    @keyframes spin { 
+      0% { transform: translateX(-50%) rotate(0deg); }
+      100% { transform: translateX(-50%) rotate(360deg); }
+    }
+
+    .header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 16px; 
+      padding-top: 6px;
+    }
+    select.sheet-select { 
+      background: var(--card-bg); 
+      color: var(--text); 
+      border: 1px solid var(--border); 
+      padding: 8px 12px; 
+      border-radius: 8px; 
+      font-size: 15px; 
+    }
+
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .card { 
+      background: var(--card-bg); 
+      border: 1px solid var(--border); 
+      border-radius: 12px; 
+      padding: 12px 14px; 
+      user-select: none;
+    }
+    .card.clickable { cursor: pointer; }
+    .card.clickable:active { opacity: 0.8; transform: scale(0.98); transition: transform 0.1s; }
+    .card.full { grid-column: span 2; background: linear-gradient(135deg, #1e293b, #0f172a); border-color: rgba(56, 189, 248, 0.3); }
+    .card-title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+    .card-val { font-size: 20px; font-weight: 700; margin-top: 4px; letter-spacing: 0.5px; }
+    
+    .val-rem { font-size: 26px; color: var(--green); }
+    .val-card { color: var(--orange); }
+    .val-manual { color: var(--orange); }
+    .val-inc { color: #34d399; }
+    .masked { letter-spacing: 3px; color: var(--text-dim) !important; font-size: 18px; }
+
+    .tabs { display: flex; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 4px; margin-bottom: 16px; }
+    .tab-btn { flex: 1; padding: 8px 0; text-align: center; border: none; background: transparent; color: var(--text-dim); font-size: 13px; font-weight: 600; border-radius: 7px; cursor: pointer; }
+    .tab-btn.active { background: var(--accent); color: #000; }
+
+    .swipe-container {
+      position: relative;
+      margin-bottom: 8px;
       overflow: hidden;
+      border-radius: 10px;
+      background: var(--red);
     }
-    iframe {
+    .swipe-delete-btn {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 100px;
+      background: var(--red);
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 24px;
+      cursor: pointer;
+      z-index: 1;
+      opacity: 0;
+      transition: opacity 0.1s ease;
+    }
+    .swipe-container.swiping .swipe-delete-btn,
+    .swipe-container.swiped .swipe-delete-btn {
+      opacity: 1;
+    }
+
+    .item-card { 
+      position: relative;
+      background: var(--card-bg); 
+      border: 1px solid var(--border); 
+      border-radius: 10px; 
+      padding: 12px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      z-index: 2;
+      transition: transform 0.2s ease-out;
       width: 100%;
-      height: 100%;
-      height: 100dvh;
-      border: 0;
-      display: block;
-      background-color: #0f172a;
     }
+    .item-left .name { font-weight: 600; font-size: 14px; }
+    .item-left .sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+    .item-right { font-weight: 700; font-size: 15px; }
+
+    .fab { 
+      position: fixed; 
+      bottom: calc(16px + env(safe-area-inset-bottom)); 
+      right: 16px; 
+      background: var(--accent); 
+      color: #000; 
+      width: 56px; 
+      height: 56px; 
+      border-radius: 50%; 
+      font-size: 30px; 
+      border: none; 
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      z-index: 50; 
+    }
+    
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); align-items: flex-end; z-index: 999; }
+    .modal-content { 
+      background: var(--card-bg); 
+      width: 100%; 
+      border-radius: 20px 20px 0 0; 
+      padding: 20px; 
+      padding-bottom: calc(30px + env(safe-area-inset-bottom)); 
+      border-top: 1px solid var(--border); 
+      max-width: 100%; 
+    }
+    .form-group { margin-bottom: 12px; width: 100%; }
+    .form-group label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
+    
+    .form-group input, .form-group select { 
+      width: 100%; 
+      max-width: 100%; 
+      background: var(--bg); 
+      border: 1px solid var(--border); 
+      color: #fff; 
+      padding: 10px 12px; 
+      border-radius: 8px; 
+      font-size: 15px; 
+      -webkit-appearance: none;
+      appearance: none;
+      display: block;
+    }
+
+    .btn-submit { width: 100%; background: var(--accent); color: #000; font-weight: bold; padding: 12px; border-radius: 8px; border: none; margin-top: 10px; font-size: 15px; cursor: pointer; }
+    .btn-cancel { width: 100%; background: transparent; color: var(--text-dim); padding: 10px; border: none; margin-top: 4px; cursor: pointer; }
   </style>
 </head>
 <body>
-  <iframe src="https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec"></iframe>
+
+  <div class="status-bar-shield"></div>
+  <div id="pullIndicator">↓</div>
+
+  <div id="appContent">
+    <div class="header">
+      <h2 style="font-size: 17px; font-weight: 700;">Harcama Takip</h2>
+      <select id="sheetSelect" class="sheet-select" onchange="loadData()"></select>
+    </div>
+
+    <div class="summary-grid">
+      <div class="card full clickable" onclick="toggleMask('rem')">
+        <div class="card-title">Kalan Bakiye</div>
+        <div class="card-val val-rem masked" id="remVal">••••••</div>
+      </div>
+      
+      <div class="card">
+        <div class="card-title">Kart Harcamaları</div>
+        <div class="card-val val-card" id="cardVal">...</div>
+      </div>
+      
+      <div class="card clickable" onclick="toggleMask('manual')">
+        <div class="card-title">Diğer Harcamalar</div>
+        <div class="card-val val-manual masked" id="manualVal">••••••</div>
+      </div>
+      
+      <div class="card full clickable" onclick="toggleMask('inc')">
+        <div class="card-title">Toplam Gelir</div>
+        <div class="card-val val-inc masked" id="incVal">••••••</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-card" onclick="switchTab('card')">Kart</button>
+      <button class="tab-btn" id="tab-manual" onclick="switchTab('manual')">Diğer</button>
+      <button class="tab-btn" id="tab-income" onclick="switchTab('income')">Gelir</button>
+    </div>
+
+    <div id="listContainer"></div>
+  </div>
+
+  <button class="fab" onclick="openModal()">+</button>
+
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <h3 style="margin-bottom: 14px; font-size: 16px;" id="modalTitle">Kayıt Ekle</h3>
+      
+      <div class="form-group">
+        <label>İşlem Türü</label>
+        <select id="mType" onchange="adjustModalFields()">
+          <option value="manual">Diğer Harcamalar (Kira, Fatura vb.)</option>
+          <option value="income">Gelir (Maaş, Ek Gelir vb.)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Tarih</label>
+        <input type="date" id="mDate">
+      </div>
+
+      <div class="form-group">
+        <label>Tutar (€)</label>
+        <input type="text" id="mAmount" placeholder="örn: 50,00 €">
+      </div>
+
+      <div class="form-group" id="lblDescGroup">
+        <label id="lblDesc">Kime / Açıklama</label>
+        <input type="text" id="mDesc" placeholder="örn: Ev Sahibi / Kira">
+      </div>
+
+      <div class="form-group" id="grpCard">
+        <label>Hesap / Ödeme Türü</label>
+        <input type="text" id="mAccount" placeholder="örn: Sparkasse, Nakit">
+      </div>
+
+      <button class="btn-submit" onclick="submitEntry()">Kaydet</button>
+      <button class="btn-cancel" onclick="closeModal()">Kapat</button>
+    </div>
+  </div>
+
+  <script>
+    // ⚠️ APPS SCRIPT EXEC LİNKİNİZİ BURAYA YAPIŞTIRIN:
+    const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
+
+    let currentData = null;
+    let activeTab = 'card';
+    
+    let maskedState = {
+      rem: true,
+      manual: true,
+      inc: true
+    };
+
+    window.onload = function() {
+      document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
+      initPullToRefresh();
+      
+      // 1. Önce hafızadaki son veriyi 0.01 sn'de ekrana bas
+      loadCachedData();
+
+      // 2. Arka planda en güncel veriyi çek
+      fetchInitialData();
+    };
+
+    function loadCachedData() {
+      try {
+        const cached = localStorage.getItem('harcama_cache');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed.sheets) populateSheetOptions(parsed.sheets, parsed.activeSheet);
+          if (parsed.dashboard) {
+            renderDashboard(parsed.dashboard);
+            switchTab('card');
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function fetchInitialData() {
+      try {
+        const res = await fetch(`${API_URL}?action=getInitialData`);
+        const data = await res.json();
+        if (data) {
+          localStorage.setItem('harcama_cache', JSON.stringify(data));
+          populateSheetOptions(data.sheets, data.activeSheet);
+          renderDashboard(data.dashboard);
+          switchTab('card');
+        }
+      } catch (err) {
+        console.error("Veri çekilemedi:", err);
+      } finally {
+        resetPullIndicator();
+      }
+    }
+
+    async function loadData() {
+      const sheet = document.getElementById('sheetSelect').value;
+      try {
+        const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(sheet)}`);
+        const data = await res.json();
+        renderDashboard(data);
+      } catch (err) {
+        console.error("Yüklenemedi:", err);
+      } finally {
+        resetPullIndicator();
+      }
+    }
+
+    function populateSheetOptions(sheets, activeSheet) {
+      const select = document.getElementById('sheetSelect');
+      const currentSelected = select.value;
+      select.innerHTML = '';
+      sheets.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.innerText = name;
+        if (currentSelected ? name === currentSelected : (name === activeSheet || name === "Mevcut Ay")) {
+          opt.selected = true;
+        }
+        select.appendChild(opt);
+      });
+    }
+
+    function formatAmount(val) {
+      if (!val) return "€0,00";
+      let str = val.toString().trim();
+      if (str.includes("€")) return str;
+      
+      let num = parseFloat(str.replace(/\./g, '').replace(',', '.'));
+      if (isNaN(num)) return str;
+      return "€" + num.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function renderDashboard(data) {
+      currentData = data;
+      if (!data) return;
+
+      document.getElementById('cardVal').innerText = data.cardTotal;
+      updateMaskedDisplay();
+      renderCurrentList();
+    }
+
+    function toggleMask(key) {
+      maskedState[key] = !maskedState[key];
+      updateMaskedDisplay();
+    }
+
+    function updateMaskedDisplay() {
+      if (!currentData) return;
+
+      const remEl = document.getElementById('remVal');
+      if (maskedState.rem) {
+        remEl.innerText = "••••••";
+        remEl.classList.add('masked');
+      } else {
+        remEl.innerText = currentData.remaining;
+        remEl.classList.remove('masked');
+      }
+
+      const manEl = document.getElementById('manualVal');
+      if (maskedState.manual) {
+        manEl.innerText = "••••••";
+        manEl.classList.add('masked');
+      } else {
+        manEl.innerText = currentData.manualTotal;
+        manEl.classList.remove('masked');
+      }
+
+      const incEl = document.getElementById('incVal');
+      if (maskedState.inc) {
+        incEl.innerText = "••••••";
+        incEl.classList.add('masked');
+      } else {
+        incEl.innerText = currentData.incomeTotal;
+        incEl.classList.remove('masked');
+      }
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      const targetBtn = document.getElementById('tab-' + tab);
+      if (targetBtn) targetBtn.classList.add('active');
+      renderCurrentList();
+    }
+
+    function renderCurrentList() {
+      const container = document.getElementById('listContainer');
+      if (!container) return;
+      container.innerHTML = '';
+      if (!currentData) return;
+
+      let items = [];
+      let isIncome = false;
+      let canDelete = (activeTab === 'manual' || activeTab === 'income');
+
+      if (activeTab === 'card') {
+        items = currentData.cardItems || [];
+      } else if (activeTab === 'manual') {
+        items = currentData.manualItems || [];
+      } else if (activeTab === 'income') {
+        items = currentData.incomeItems || [];
+        isIncome = true;
+      }
+
+      if (!items || items.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-dim)">Kayıt bulunamadı.</div>';
+        return;
+      }
+
+      items.forEach(item => {
+        const formattedAmt = formatAmount(item.amount);
+
+        if (canDelete) {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'swipe-container';
+
+          wrapper.innerHTML = `
+            <button class="swipe-delete-btn" onclick="deleteItem('${activeTab}', ${item.rowIndex})">Sil</button>
+            <div class="item-card">
+              <div class="item-left">
+                <div class="name">${item.merchant || 'Açıklamasız'}</div>
+                <div class="sub">${item.date} ${item.card ? '• ' + item.card : ''}</div>
+              </div>
+              <div class="item-right" style="color: ${isIncome ? 'var(--green)' : 'var(--red)'}">
+                ${isIncome ? '+' : '-'}${formattedAmt}
+              </div>
+            </div>
+          `;
+
+          attachSwipeEvents(wrapper.querySelector('.item-card'), wrapper);
+          container.appendChild(wrapper);
+        } else {
+          const div = document.createElement('div');
+          div.className = 'item-card';
+          div.style.marginBottom = '8px';
+          div.innerHTML = `
+            <div class="item-left">
+              <div class="name">${item.merchant || 'Açıklamasız'}</div>
+              <div class="sub">${item.date} ${item.card ? '• ' + item.card : ''}</div>
+            </div>
+            <div class="item-right" style="color: var(--red)">
+              -${formattedAmt}
+            </div>
+          `;
+          container.appendChild(div);
+        }
+      });
+    }
+
+    let currentlySwiped = null;
+    let currentlySwipedContainer = null;
+
+    function attachSwipeEvents(card, container) {
+      let startX = 0;
+      let currentX = 0;
+
+      card.addEventListener('touchstart', e => {
+        if (currentlySwiped && currentlySwiped !== card) {
+          currentlySwiped.style.transform = 'translateX(0px)';
+          if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped', 'swiping');
+          currentlySwiped = null;
+          currentlySwipedContainer = null;
+        }
+        startX = e.touches[0].clientX;
+      }, { passive: true });
+
+      card.addEventListener('touchmove', e => {
+        currentX = e.touches[0].clientX;
+        let diff = currentX - startX;
+        if (diff < 0 && diff > -100) {
+          container.classList.add('swiping');
+          card.style.transform = `translateX(${diff}px)`;
+        }
+      }, { passive: true });
+
+      card.addEventListener('touchend', () => {
+        let diff = currentX - startX;
+        if (diff < -50) {
+          card.style.transform = 'translateX(-80px)';
+          container.classList.add('swiped');
+          container.classList.remove('swiping');
+          currentlySwiped = card;
+          currentlySwipedContainer = container;
+        } else {
+          card.style.transform = 'translateX(0px)';
+          container.classList.remove('swiped', 'swiping');
+          if (currentlySwiped === card) {
+            currentlySwiped = null;
+            currentlySwipedContainer = null;
+          }
+        }
+      });
+    }
+
+    async function deleteItem(type, rowIndex) {
+      const sheet = document.getElementById('sheetSelect').value;
+      try {
+        await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'deleteEntry',
+            sheet: sheet,
+            type: type,
+            rowIndex: rowIndex
+          })
+        });
+        loadData();
+      } catch (e) {
+        console.error("Silinemedi:", e);
+      }
+    }
+
+    let touchStartY = 0;
+    let isPulling = false;
+    let pullIndicator = null;
+    let appContent = null;
+
+    function initPullToRefresh() {
+      pullIndicator = document.getElementById('pullIndicator');
+      appContent = document.getElementById('appContent');
+
+      document.addEventListener('touchstart', e => {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+        if (scrollTop <= 5) {
+          touchStartY = e.touches[0].clientY;
+          isPulling = true;
+        } else {
+          isPulling = false;
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchmove', e => {
+        if (!isPulling || touchStartY === 0) return;
+        
+        let currentY = e.touches[0].clientY;
+        let distance = currentY - touchStartY;
+
+        if (distance > 0) {
+          let pullOffset = Math.min(80, distance * 0.45);
+          appContent.style.transform = `translateY(${pullOffset}px)`;
+
+          let scale = Math.min(1, distance / 70);
+          pullIndicator.style.opacity = scale;
+          pullIndicator.style.transform = `translateX(-50%) scale(${scale})`;
+          pullIndicator.innerHTML = '↓';
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchend', e => {
+        if (!isPulling || touchStartY === 0) return;
+        
+        let touchEndY = e.changedTouches[0].clientY;
+        let distance = touchEndY - touchStartY;
+
+        if (distance > 70) {
+          appContent.style.transform = 'translateY(60px)';
+          pullIndicator.innerHTML = '↻';
+          pullIndicator.classList.add('rotating');
+          loadData();
+        } else {
+          resetPullIndicator();
+        }
+
+        touchStartY = 0;
+        isPulling = false;
+      }, { passive: true });
+    }
+
+    function resetPullIndicator() {
+      if (!pullIndicator) return;
+      if (appContent) appContent.style.transform = 'translateY(0px)';
+      pullIndicator.classList.remove('rotating');
+      pullIndicator.style.opacity = '0';
+      pullIndicator.style.transform = 'translateX(-50%) scale(0)';
+      pullIndicator.innerHTML = '↓';
+    }
+
+    function openModal() { document.getElementById('modal').style.display = 'flex'; }
+    function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+    function adjustModalFields() {
+      const type = document.getElementById('mType').value;
+      if (type === 'income') {
+        document.getElementById('lblDesc').innerText = 'Nereden / Açıklama';
+        document.getElementById('grpCard').style.display = 'none';
+      } else {
+        document.getElementById('lblDesc').innerText = 'Kime / Açıklama';
+        document.getElementById('grpCard').style.display = 'block';
+      }
+    }
+
+    async function submitEntry() {
+      const type = document.getElementById('mType').value;
+      const rawDate = document.getElementById('mDate').value;
+      let dateFormatted = "";
+      if (rawDate) {
+        const p = rawDate.split("-");
+        dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
+      }
+
+      const payload = {
+        date: dateFormatted,
+        amount: document.getElementById('mAmount').value,
+        merchant: document.getElementById('mDesc').value,
+        card: document.getElementById('mAccount').value
+      };
+
+      closeModal();
+      try {
+        await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'addEntry',
+            type: type,
+            payload: payload
+          })
+        });
+        document.getElementById('mAmount').value = '';
+        document.getElementById('mDesc').value = '';
+        document.getElementById('mAccount').value = '';
+        loadData();
+      } catch (err) {
+        console.error("Kayıt eklenemedi:", err);
+      }
+    }
+  </script>
 </body>
 </html>
