@@ -243,7 +243,7 @@
   <div id="appContent">
     <div class="header">
       <h2 style="font-size: 17px; font-weight: 700;">Harcama Takip</h2>
-      <select id="sheetSelect" class="sheet-select" onchange="loadData()"></select>
+      <select id="sheetSelect" class="sheet-select" onchange="onSheetChange()"></select>
     </div>
 
     <div class="summary-grid">
@@ -322,6 +322,7 @@
 
     let currentData = null;
     let activeTab = 'card';
+    let memoryCache = {}; // Çok hızlı geçiş için bellek içi önbellek
     
     let maskedState = {
       rem: true,
@@ -333,20 +334,21 @@
       document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
       initPullToRefresh();
       
-      // 1. Önce hafızadaki son veriyi 0.01 sn'de ekrana bas
-      loadCachedData();
+      // 1. Önce cihazdaki son verileri anında (0ms) ekrana çiz
+      loadLocalCache();
 
-      // 2. Arka planda en güncel veriyi çek
+      // 2. Arka planda sunucudan güncelle
       fetchInitialData();
     };
 
-    function loadCachedData() {
+    function loadLocalCache() {
       try {
-        const cached = localStorage.getItem('harcama_cache');
+        const cached = localStorage.getItem('harcama_cache_v2');
         if (cached) {
           const parsed = JSON.parse(cached);
           if (parsed.sheets) populateSheetOptions(parsed.sheets, parsed.activeSheet);
           if (parsed.dashboard) {
+            memoryCache[parsed.activeSheet || "Mevcut Ay"] = parsed.dashboard;
             renderDashboard(parsed.dashboard);
             switchTab('card');
           }
@@ -358,14 +360,40 @@
       try {
         const res = await fetch(`${API_URL}?action=getInitialData`);
         const data = await res.json();
-        if (data) {
-          localStorage.setItem('harcama_cache', JSON.stringify(data));
+        if (data && data.dashboard) {
+          localStorage.setItem('harcama_cache_v2', JSON.stringify(data));
+          memoryCache[data.activeSheet || "Mevcut Ay"] = data.dashboard;
           populateSheetOptions(data.sheets, data.activeSheet);
           renderDashboard(data.dashboard);
-          switchTab('card');
         }
       } catch (err) {
         console.error("Veri çekilemedi:", err);
+      } finally {
+        resetPullIndicator();
+      }
+    }
+
+    // Ay Değişiminde Anlık Geçiş (0ms)
+    async function onSheetChange() {
+      const sheet = document.getElementById('sheetSelect').value;
+      
+      // Eğer daha önce açıldıysa hafızadan anında göster
+      if (memoryCache[sheet]) {
+        renderDashboard(memoryCache[sheet]);
+      } else {
+        document.getElementById('cardVal').innerText = "...";
+      }
+
+      // Arka planda sunucudan doğrula/güncelle
+      try {
+        const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(sheet)}`);
+        const data = await res.json();
+        if (data) {
+          memoryCache[sheet] = data;
+          renderDashboard(data);
+        }
+      } catch (err) {
+        console.error("Ay verisi alınamadı:", err);
       } finally {
         resetPullIndicator();
       }
@@ -376,7 +404,10 @@
       try {
         const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(sheet)}`);
         const data = await res.json();
-        renderDashboard(data);
+        if (data) {
+          memoryCache[sheet] = data;
+          renderDashboard(data);
+        }
       } catch (err) {
         console.error("Yüklenemedi:", err);
       } finally {
@@ -583,6 +614,7 @@
             rowIndex: rowIndex
           })
         });
+        delete memoryCache[sheet]; // önbelleği temizle
         loadData();
       } catch (e) {
         console.error("Silinemedi:", e);
@@ -697,6 +729,9 @@
         document.getElementById('mAmount').value = '';
         document.getElementById('mDesc').value = '';
         document.getElementById('mAccount').value = '';
+        
+        const activeSheet = document.getElementById('sheetSelect').value;
+        delete memoryCache[activeSheet];
         loadData();
       } catch (err) {
         console.error("Kayıt eklenemedi:", err);
