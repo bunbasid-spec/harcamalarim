@@ -245,10 +245,17 @@
       cursor: pointer;
       transition: all 0.2s ease;
     }
-    .type-btn.active {
-      background: var(--accent);
+    
+    /* Diğer Harcama (Turuncu) ve Gelir (Yeşil) Buton Stilleri */
+    .type-btn#btnTypeManual.active {
+      background: var(--orange);
       color: #0f172a;
-      box-shadow: 0 2px 8px rgba(56, 189, 248, 0.3);
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+    }
+    .type-btn#btnTypeIncome.active {
+      background: var(--green);
+      color: #0f172a;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
     }
 
     .form-group { margin-bottom: 12px; width: 100%; }
@@ -356,7 +363,7 @@
     <div class="modal-content">
       <h3 style="margin-bottom: 14px; font-size: 16px;" id="modalTitle">Kayıt Ekle</h3>
       
-      <!-- Yan Yana İşlem Türü Butonları -->
+      <!-- Yan Yana İşlem Türü Butonları (Turuncu & Yeşil) -->
       <div class="type-switcher">
         <button type="button" class="type-btn active" id="btnTypeManual" onclick="setModalType('manual')">Diğer Harcama</button>
         <button type="button" class="type-btn" id="btnTypeIncome" onclick="setModalType('income')">Gelir</button>
@@ -391,7 +398,7 @@
   </div>
 
   <script>
-    // ⚠️ APPS SCRIPT EXEC LİNKİNİZİ BURAYA YAPIŞTIRIN:
+    // ⚠️ APPS SCRIPT EXEC LİNKİNİZ:
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentData = null;
