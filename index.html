@@ -8,6 +8,11 @@
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-title" content="Harcama Takip">
   
+  <!-- iOS Ana Ekran Önbellek Engelleme -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
   <link rel="apple-touch-icon" href="https://img.icons8.com/fluent/192/wallet.png">
   <link rel="icon" type="image/png" href="https://img.icons8.com/fluent/192/wallet.png">
 
@@ -126,7 +131,7 @@
     .card-title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
     .card-val { font-size: 20px; font-weight: 700; margin-top: 4px; letter-spacing: 0.5px; }
     
-    .val-rem { font-size: 26px; color: var(--green); }
+    .val-rem { font-size: 26px; }
     .val-card { color: var(--orange); }
     .val-manual { color: var(--orange); }
     .val-inc { color: #34d399; }
@@ -402,8 +407,11 @@
   </div>
 
   <script>
+    // Sürüm Numarası: Kod değiştirdikçe bunu 1.0.2, 1.0.3 yaparsanız uygulama kendini otomatik günceller
+    const CURRENT_VERSION = "1.0.1";
+
     // ⚠️ APPS SCRIPT EXEC LİNKİNİZİ BURAYA YAPIŞTIRIN:
-    const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
+    const API_URL = "BURAYA_APPS_SCRIPT_EXEC_LINKINIZ";
 
     let currentData = null;
     let activeTab = 'card';
@@ -417,11 +425,27 @@
     };
 
     window.onload = function() {
+      // 1. Arka planda kod güncellemesi kontrolü yap
+      checkForAppUpdates();
+
       document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
       initPullToRefresh();
       loadLocalCache();
       fetchInitialData();
     };
+
+    // GitHub'daki yeni index.html'i algılayıp ana ekrandaki uygulamayı otomatik güncelleyen motor
+    async function checkForAppUpdates() {
+      try {
+        const response = await fetch(window.location.href, { cache: "no-store" });
+        const html = await response.text();
+        const match = html.match(/CURRENT_VERSION\s*=\s*["']([^"']+)["']/);
+        if (match && match[1] && match[1] !== CURRENT_VERSION) {
+          localStorage.clear(); // Eski önbelleği boşalt
+          window.location.reload(true); // Sayfayı en yeni kodla yeniden yükle
+        }
+      } catch (e) {}
+    }
 
     function loadLocalCache() {
       try {
@@ -539,12 +563,11 @@
       if (maskedState.rem) {
         remEl.innerText = "••••••";
         remEl.classList.add('masked');
-        remEl.style.color = ""; // Maskeli iken CSS varsayılan rengine döner
+        remEl.style.color = "";
       } else {
         remEl.innerText = currentData.remaining;
         remEl.classList.remove('masked');
-        
-        // Dinamik Renk Kontrolü: Eksi ise Kırmızı, Artı ise Yeşil
+
         const rawRem = (currentData.remaining || "").toString().trim();
         if (rawRem.includes("-")) {
           remEl.style.color = "var(--red)";
@@ -571,6 +594,7 @@
         incEl.classList.remove('masked');
       }
     }
+
     function switchTab(tab) {
       activeTab = tab;
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -795,7 +819,6 @@
       pullIndicator.innerHTML = '↓';
     }
 
-    // Geçmiş Ayda Ekleme Uyarısı ve Onayı
     function handleFabClick() {
       const select = document.getElementById('sheetSelect');
       const currentSheetName = select ? select.value : "Mevcut Ay";
@@ -834,7 +857,6 @@
       }
     }
 
-    // Seçili Olan Hedef Sayfaya Anında (Optimistic) Ekleme Fonksiyonu
     async function submitEntry() {
       const type = modalSelectedType;
       const rawDate = document.getElementById('mDate').value;
@@ -857,13 +879,11 @@
         card: rawAccount
       };
 
-      // 1. Modalı anında kapat ve inputları temizle
       closeModal();
       document.getElementById('mAmount').value = '';
       document.getElementById('mDesc').value = '';
       document.getElementById('mAccount').value = '';
 
-      // 2. Anında (Optimistic UI) seçili olan ayın listesine ekle
       const newItem = {
         rowIndex: 9999,
         date: dateFormatted,
@@ -885,7 +905,6 @@
         renderDashboard(currentData);
       }
 
-      // 3. Arka planda hedef sayfaya yaz ve veriyi eşitle
       try {
         await fetch(API_URL, {
           method: 'POST',
