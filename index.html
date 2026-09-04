@@ -186,18 +186,18 @@
     .item-left .sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
     .item-right { font-weight: 700; font-size: 15px; }
 
-    /* 80px x 80px Boyutunda, Alttan 20px Konumlu FAB Buton */
+    /* 60px x 60px Boyutunda, Alttan 20px Konumlu FAB Buton */
     .fab { 
       position: fixed; 
       bottom: 20px; 
       right: 20px; 
       background: var(--accent); 
       color: #0f172a; 
-      width: 80px; 
-      height: 80px; 
+      width: 60px; 
+      height: 60px; 
       border-radius: 50%; 
       border: none; 
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5); 
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45); 
       cursor: pointer; 
       display: flex; 
       align-items: center; 
@@ -209,10 +209,10 @@
     }
     .fab span {
       display: block;
-      font-size: 44px;
+      font-size: 32px;
       font-weight: 400;
       line-height: 1;
-      margin-top: -4px; /* Tam dikey merkezleme payı */
+      margin-top: -3px;
       user-select: none;
     }
     .fab:active {
@@ -402,8 +402,8 @@
   </div>
 
   <script>
-    // ⚠️ KENDİ APPS SCRIPT EXEC LİNKİNİZİ BURAYA YAPIŞTIRIN:
-    const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
+    // ⚠️ APPS SCRIPT EXEC LİNKİNİZİ BURAYA YAPIŞTIRIN:
+    const API_URL = "BURAYA_APPS_SCRIPT_EXEC_LINKINIZ";
 
     let currentData = null;
     let activeTab = 'card';
@@ -425,7 +425,7 @@
 
     function loadLocalCache() {
       try {
-        const cached = localStorage.getItem('harcama_cache_v4');
+        const cached = localStorage.getItem('harcama_cache_v5');
         if (cached) {
           const parsed = JSON.parse(cached);
           if (parsed.sheets) populateSheetOptions(parsed.sheets, parsed.activeSheet);
@@ -443,7 +443,7 @@
         const res = await fetch(`${API_URL}?action=getInitialData`);
         const data = await res.json();
         if (data && data.dashboard) {
-          localStorage.setItem('harcama_cache_v4', JSON.stringify(data));
+          localStorage.setItem('harcama_cache_v5', JSON.stringify(data));
           memoryCache[data.activeSheet || "Mevcut Ay"] = data.dashboard;
           populateSheetOptions(data.sheets, data.activeSheet);
           renderDashboard(data.dashboard);
@@ -577,9 +577,13 @@
       container.innerHTML = '';
       if (!currentData) return;
 
+      const select = document.getElementById('sheetSelect');
+      const isCurrentMonth = (select && select.value === "Mevcut Ay");
+
       let items = [];
       let isIncome = false;
-      let canDelete = (activeTab === 'manual' || activeTab === 'income');
+      // YALNIZCA "Mevcut Ay" seçiliyse silme aktif olsun
+      let canDelete = isCurrentMonth && (activeTab === 'manual' || activeTab === 'income');
 
       if (activeTab === 'card') {
         items = currentData.cardItems || [];
@@ -627,8 +631,8 @@
               <div class="name">${item.merchant || 'Açıklamasız'}</div>
               <div class="sub">${item.date} ${item.card ? '• ' + item.card : ''}</div>
             </div>
-            <div class="item-right" style="color: var(--red)">
-              -${formattedAmt}
+            <div class="item-right" style="color: ${isIncome ? 'var(--green)' : 'var(--red)'}">
+              ${isIncome ? '+' : '-'}${formattedAmt}
             </div>
           `;
           container.appendChild(div);
