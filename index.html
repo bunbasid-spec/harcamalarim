@@ -186,7 +186,7 @@
     .item-left .sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
     .item-right { font-weight: 700; font-size: 15px; }
 
-    /* 60px x 60px Boyutunda, Alttan 20px Konumlu FAB Buton */
+    /* 70px x 70px FAB Buton */
     .fab { 
       position: fixed; 
       bottom: 20px; 
@@ -363,7 +363,7 @@
     <div id="listContainer"></div>
   </div>
 
-  <button class="fab" onclick="openModal()"><span>+</span></button>
+  <button class="fab" onclick="handleFabClick()"><span>+</span></button>
 
   <div class="modal" id="modal">
     <div class="modal-content">
@@ -403,7 +403,7 @@
 
   <script>
     // ⚠️ APPS SCRIPT EXEC LİNKİNİZİ BURAYA YAPIŞTIRIN:
-    const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
+    const API_URL = "BURAYA_APPS_SCRIPT_EXEC_LINKINIZ";
 
     let currentData = null;
     let activeTab = 'card';
@@ -582,7 +582,6 @@
 
       let items = [];
       let isIncome = false;
-      // YALNIZCA "Mevcut Ay" seçiliyse silme aktif olsun
       let canDelete = isCurrentMonth && (activeTab === 'manual' || activeTab === 'income');
 
       if (activeTab === 'card') {
@@ -788,6 +787,19 @@
       pullIndicator.innerHTML = '↓';
     }
 
+    // Geçmiş Ay Kontrollü FAB Tetikleyicisi
+    function handleFabClick() {
+      const select = document.getElementById('sheetSelect');
+      const isCurrentMonth = (!select || select.value === "Mevcut Ay");
+
+      if (!isCurrentMonth) {
+        const confirmAdd = confirm("Geçmiş bir aydasınız. Yeni kaydı Mevcut Ay tablosuna eklemek istediğinizden emin misiniz?");
+        if (!confirmAdd) return;
+      }
+
+      openModal();
+    }
+
     function openModal() { 
       document.getElementById('modal').style.display = 'flex'; 
     }
@@ -813,6 +825,7 @@
       }
     }
 
+    // Anında (Optimistic) Ekleme Fonksiyonu
     async function submitEntry() {
       const type = modalSelectedType;
       const rawDate = document.getElementById('mDate').value;
@@ -822,14 +835,51 @@
         dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
       }
 
+      const rawAmount = document.getElementById('mAmount').value;
+      const rawDesc = document.getElementById('mDesc').value;
+      const rawAccount = document.getElementById('mAccount').value;
+
       const payload = {
         date: dateFormatted,
-        amount: document.getElementById('mAmount').value,
-        merchant: document.getElementById('mDesc').value,
-        card: document.getElementById('mAccount').value
+        amount: rawAmount,
+        merchant: rawDesc,
+        card: rawAccount
       };
 
+      // 1. Modalı anında kapat ve inputları sıfırla
       closeModal();
+      document.getElementById('mAmount').value = '';
+      document.getElementById('mDesc').value = '';
+      document.getElementById('mAccount').value = '';
+
+      // 2. Optimistic UI: Veriyi anında ekrana ve listeye bas (0ms bekleme)
+      const select = document.getElementById('sheetSelect');
+      if (select && select.value !== "Mevcut Ay") {
+        select.value = "Mevcut Ay";
+      }
+
+      const newItem = {
+        rowIndex: 9999, // Geçici index
+        date: dateFormatted,
+        amount: rawAmount,
+        merchant: rawDesc,
+        card: rawAccount
+      };
+
+      if (currentData) {
+        if (type === 'manual') {
+          if (!currentData.manualItems) currentData.manualItems = [];
+          currentData.manualItems.unshift(newItem);
+          switchTab('manual');
+        } else if (type === 'income') {
+          if (!currentData.incomeItems) currentData.incomeItems = [];
+          currentData.incomeItems.unshift(newItem);
+          switchTab('income');
+        }
+        renderDashboard(currentData);
+      }
+
+      // 3. Arka planda sunucuya yaz ve sessizce eşitle
       try {
         await fetch(API_URL, {
           method: 'POST',
@@ -839,15 +889,11 @@
             payload: payload
           })
         });
-        document.getElementById('mAmount').value = '';
-        document.getElementById('mDesc').value = '';
-        document.getElementById('mAccount').value = '';
-        
-        const activeSheet = document.getElementById('sheetSelect').value;
-        delete memoryCache[activeSheet];
-        loadData();
+        delete memoryCache["Mevcut Ay"];
+        loadData(); // Kesin rakamları arka planda doğrula
       } catch (err) {
         console.error("Kayıt eklenemedi:", err);
+        loadData();
       }
     }
   </script>
