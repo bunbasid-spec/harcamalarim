@@ -539,9 +539,18 @@
       if (maskedState.rem) {
         remEl.innerText = "••••••";
         remEl.classList.add('masked');
+        remEl.style.color = ""; // Maskeli iken CSS varsayılan rengine döner
       } else {
         remEl.innerText = currentData.remaining;
         remEl.classList.remove('masked');
+        
+        // Dinamik Renk Kontrolü: Eksi ise Kırmızı, Artı ise Yeşil
+        const rawRem = (currentData.remaining || "").toString().trim();
+        if (rawRem.includes("-")) {
+          remEl.style.color = "var(--red)";
+        } else {
+          remEl.style.color = "var(--green)";
+        }
       }
 
       const manEl = document.getElementById('manualVal');
@@ -562,7 +571,6 @@
         incEl.classList.remove('masked');
       }
     }
-
     function switchTab(tab) {
       activeTab = tab;
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
