@@ -47,7 +47,7 @@
       padding-top: max(44px, env(safe-area-inset-top));
       padding-left: 16px;
       padding-right: 16px;
-      padding-bottom: calc(20px + env(safe-area-inset-bottom));
+      padding-bottom: 24px;
       margin: 0;
       min-height: 100vh;
     }
@@ -142,6 +142,7 @@
       overflow: hidden;
       border-radius: 10px;
       background: var(--red);
+      transition: all 0.25s ease;
     }
     .swipe-delete-btn {
       position: absolute;
@@ -185,29 +186,37 @@
     .item-left .sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
     .item-right { font-weight: 700; font-size: 15px; }
 
-    /* neuss.de Birebir Tam Boyutlu Yuvarlak FAB Buton */
+    /* Tam Merkezli ve Alttan/Sağdan Net 20px Konumlu FAB Buton */
     .fab { 
       position: fixed; 
-      bottom: calc(20px + env(safe-area-inset-bottom)); 
+      bottom: 20px; 
       right: 20px; 
       background: var(--accent); 
       color: #0f172a; 
-      width: 60px; 
-      height: 60px; 
+      width: 50px; 
+      height: 50px; 
       border-radius: 50%; 
-      font-size: 32px; 
-      font-weight: 500;
       border: none; 
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45); 
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45); 
       cursor: pointer; 
       display: flex; 
       align-items: center; 
       justify-content: center; 
       z-index: 50; 
       transition: transform 0.15s ease;
+      padding: 0;
+      margin: 0;
+    }
+    .fab span {
+      display: block;
+      font-size: 28px;
+      font-weight: 400;
+      line-height: 1;
+      margin-top: -2px; /* Fontun optik merkezleme payı */
+      user-select: none;
     }
     .fab:active {
-      transform: scale(0.92);
+      transform: scale(0.90);
       opacity: 0.9;
     }
     
@@ -218,12 +227,11 @@
       width: 100%; 
       border-radius: 20px 20px 0 0; 
       padding: 20px; 
-      padding-bottom: calc(20px + env(safe-area-inset-bottom)); 
+      padding-bottom: max(25px, env(safe-area-inset-bottom)); 
       border-top: 1px solid var(--border); 
       max-width: 100%; 
     }
     
-    /* Yan Yana Butonlu İşlem Türü Seçimi */
     .type-switcher {
       display: flex;
       gap: 8px;
@@ -246,7 +254,6 @@
       transition: all 0.2s ease;
     }
     
-    /* Diğer Harcama (Turuncu) ve Gelir (Yeşil) Buton Stilleri */
     .type-btn#btnTypeManual.active {
       background: var(--orange);
       color: #0f172a;
@@ -279,7 +286,6 @@
       border-color: var(--accent);
     }
 
-    /* Modal Alt Buton Grubu: Üstte Kaydet (Tam Sıra), Altta Kapat (Tam Sıra) */
     .modal-actions {
       display: flex;
       flex-direction: column;
@@ -357,13 +363,12 @@
     <div id="listContainer"></div>
   </div>
 
-  <button class="fab" onclick="openModal()">+</button>
+  <button class="fab" onclick="openModal()"><span>+</span></button>
 
   <div class="modal" id="modal">
     <div class="modal-content">
       <h3 style="margin-bottom: 14px; font-size: 16px;" id="modalTitle">Kayıt Ekle</h3>
       
-      <!-- Yan Yana İşlem Türü Butonları (Turuncu & Yeşil) -->
       <div class="type-switcher">
         <button type="button" class="type-btn active" id="btnTypeManual" onclick="setModalType('manual')">Diğer Harcama</button>
         <button type="button" class="type-btn" id="btnTypeIncome" onclick="setModalType('income')">Gelir</button>
@@ -389,7 +394,6 @@
         <input type="text" id="mAccount" placeholder="örn: Sparkasse, Nakit">
       </div>
 
-      <!-- Üstte Kaydet (Tam Sıra), Altta Kapat (Tam Sıra) -->
       <div class="modal-actions">
         <button type="button" class="btn-submit" onclick="submitEntry()">Kaydet</button>
         <button type="button" class="btn-cancel" onclick="closeModal()">Kapat</button>
@@ -399,7 +403,7 @@
 
   <script>
     // ⚠️ APPS SCRIPT EXEC LİNKİNİZ:
-    const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbw6H3p9D6K09u_367z2B8p0iA6k_l8K6x7j/exec";
 
     let currentData = null;
     let activeTab = 'card';
@@ -415,13 +419,17 @@
     window.onload = function() {
       document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
       initPullToRefresh();
+      
+      // 1. Önbellekten son hali aç
       loadLocalCache();
+      
+      // 2. Anında en güncel veriyi çekip ekranı tazele
       fetchInitialData();
     };
 
     function loadLocalCache() {
       try {
-        const cached = localStorage.getItem('harcama_cache_v2');
+        const cached = localStorage.getItem('harcama_cache_v3');
         if (cached) {
           const parsed = JSON.parse(cached);
           if (parsed.sheets) populateSheetOptions(parsed.sheets, parsed.activeSheet);
@@ -436,10 +444,11 @@
 
     async function fetchInitialData() {
       try {
-        const res = await fetch(`${API_URL}?action=getInitialData`);
+        // Cache bypass için timestamp ekliyoruz
+        const res = await fetch(`${API_URL}?action=getInitialData&t=${Date.now()}`);
         const data = await res.json();
         if (data && data.dashboard) {
-          localStorage.setItem('harcama_cache_v2', JSON.stringify(data));
+          localStorage.setItem('harcama_cache_v3', JSON.stringify(data));
           memoryCache[data.activeSheet || "Mevcut Ay"] = data.dashboard;
           populateSheetOptions(data.sheets, data.activeSheet);
           renderDashboard(data.dashboard);
@@ -460,7 +469,7 @@
       }
 
       try {
-        const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(sheet)}`);
+        const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(sheet)}&t=${Date.now()}`);
         const data = await res.json();
         if (data) {
           memoryCache[sheet] = data;
@@ -476,7 +485,7 @@
     async function loadData() {
       const sheet = document.getElementById('sheetSelect').value;
       try {
-        const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(sheet)}`);
+        const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(sheet)}&t=${Date.now()}`);
         const data = await res.json();
         if (data) {
           memoryCache[sheet] = data;
@@ -597,6 +606,7 @@
         if (canDelete) {
           const wrapper = document.createElement('div');
           wrapper.className = 'swipe-container';
+          wrapper.id = `item-row-${item.rowIndex}`;
 
           wrapper.innerHTML = `
             <button class="swipe-delete-btn" onclick="deleteItem('${activeTab}', ${item.rowIndex})">Sil</button>
@@ -676,8 +686,30 @@
       });
     }
 
+    // Anında Tepki Veren (Optimistic) Silme Fonksiyonu
     async function deleteItem(type, rowIndex) {
       const sheet = document.getElementById('sheetSelect').value;
+      const rowElement = document.getElementById(`item-row-${rowIndex}`);
+      
+      // 1. Ekranda anında yok et (0.1sn)
+      if (rowElement) {
+        rowElement.style.transform = 'scale(0.8)';
+        rowElement.style.opacity = '0';
+        setTimeout(() => {
+          rowElement.remove();
+        }, 200);
+      }
+
+      // 2. Hafızadaki listeden çıkar
+      if (currentData) {
+        if (type === 'manual' && currentData.manualItems) {
+          currentData.manualItems = currentData.manualItems.filter(i => i.rowIndex !== rowIndex);
+        } else if (type === 'income' && currentData.incomeItems) {
+          currentData.incomeItems = currentData.incomeItems.filter(i => i.rowIndex !== rowIndex);
+        }
+      }
+
+      // 3. Arka planda sunucudan sil ve toplamları güncelle
       try {
         await fetch(API_URL, {
           method: 'POST',
@@ -689,9 +721,10 @@
           })
         });
         delete memoryCache[sheet];
-        loadData();
+        loadData(); // Arka planda rakamları kesinleştir
       } catch (e) {
         console.error("Silinemedi:", e);
+        loadData(); // Hata olursa listeyi geri getir
       }
     }
 
