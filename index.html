@@ -787,13 +787,14 @@
       pullIndicator.innerHTML = '↓';
     }
 
-    // Geçmiş Ay Kontrollü FAB Tetikleyicisi
+    // Geçmiş Ayda Ekleme Uyarısı ve Onayı
     function handleFabClick() {
       const select = document.getElementById('sheetSelect');
-      const isCurrentMonth = (!select || select.value === "Mevcut Ay");
+      const currentSheetName = select ? select.value : "Mevcut Ay";
+      const isCurrentMonth = (currentSheetName === "Mevcut Ay");
 
       if (!isCurrentMonth) {
-        const confirmAdd = confirm("Geçmiş bir aydasınız. Yeni kaydı Mevcut Ay tablosuna eklemek istediğinizden emin misiniz?");
+        const confirmAdd = confirm(`Geçmiş bir aydasınız (${currentSheetName}). Buraya bir ekleme yapmak istediğinize emin misiniz?`);
         if (!confirmAdd) return;
       }
 
@@ -825,7 +826,7 @@
       }
     }
 
-    // Anında (Optimistic) Ekleme Fonksiyonu
+    // Seçili Olan Hedef Sayfaya Anında (Optimistic) Ekleme Fonksiyonu
     async function submitEntry() {
       const type = modalSelectedType;
       const rawDate = document.getElementById('mDate').value;
@@ -838,6 +839,8 @@
       const rawAmount = document.getElementById('mAmount').value;
       const rawDesc = document.getElementById('mDesc').value;
       const rawAccount = document.getElementById('mAccount').value;
+      
+      const targetSheet = document.getElementById('sheetSelect').value;
 
       const payload = {
         date: dateFormatted,
@@ -846,20 +849,15 @@
         card: rawAccount
       };
 
-      // 1. Modalı anında kapat ve inputları sıfırla
+      // 1. Modalı anında kapat ve inputları temizle
       closeModal();
       document.getElementById('mAmount').value = '';
       document.getElementById('mDesc').value = '';
       document.getElementById('mAccount').value = '';
 
-      // 2. Optimistic UI: Veriyi anında ekrana ve listeye bas (0ms bekleme)
-      const select = document.getElementById('sheetSelect');
-      if (select && select.value !== "Mevcut Ay") {
-        select.value = "Mevcut Ay";
-      }
-
+      // 2. Anında (Optimistic UI) seçili olan ayın listesine ekle
       const newItem = {
-        rowIndex: 9999, // Geçici index
+        rowIndex: 9999,
         date: dateFormatted,
         amount: rawAmount,
         merchant: rawDesc,
@@ -879,18 +877,19 @@
         renderDashboard(currentData);
       }
 
-      // 3. Arka planda sunucuya yaz ve sessizce eşitle
+      // 3. Arka planda hedef sayfaya yaz ve veriyi eşitle
       try {
         await fetch(API_URL, {
           method: 'POST',
           body: JSON.stringify({
             action: 'addEntry',
+            sheet: targetSheet,
             type: type,
             payload: payload
           })
         });
-        delete memoryCache["Mevcut Ay"];
-        loadData(); // Kesin rakamları arka planda doğrula
+        delete memoryCache[targetSheet];
+        loadData();
       } catch (err) {
         console.error("Kayıt eklenemedi:", err);
         loadData();
