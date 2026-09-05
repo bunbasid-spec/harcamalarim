@@ -2,963 +2,328 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#0f172a">
-  <meta name="apple-mobile-web-app-title" content="Harcama Takip">
-  
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-
-  <link rel="apple-touch-icon" href="./icon.png">
-  <link rel="icon" type="image/png" href="./icon.png">
-
-  <title>Harcama Takip</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Bütçe & Harcama Takibi</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #0f172a;
       --card-bg: #1e293b;
-      --accent: #38bdf8;
-      --text: #f8fafc;
-      --text-dim: #94a3b8;
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --primary: #3b82f6;
+      --accent-card: #06b6d4;
+      --accent-manual: #f59e0b;
+      --accent-income: #10b981;
+      --accent-tr: #a855f7;
+      --danger: #ef4444;
       --border: #334155;
-      --green: #10b981;
-      --red: #f43f5e;
-      --orange: #f59e0b;
     }
-    * { 
-      box-sizing: border-box; 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-      margin: 0; 
-      padding: 0; 
-      -webkit-tap-highlight-color: transparent;
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-
-    input, textarea {
-      -webkit-user-select: text !important;
-      user-select: text !important;
-      -webkit-touch-callout: default !important;
-    }
-
-    ::-webkit-scrollbar { display: none; }
-    * { -ms-overflow-style: none; scrollbar-width: none; }
-
-    html {
-      background-color: var(--bg);
-      margin: 0;
-      padding: 0;
-    }
-    
-    body { 
-      background-color: var(--bg);
-      color: var(--text); 
-      padding-top: max(44px, env(safe-area-inset-top));
-      padding-left: 16px;
-      padding-right: 16px;
-      padding-bottom: 24px;
-      margin: 0;
-      min-height: 100vh;
-    }
-
-    #appContent {
-      transition: transform 0.2s ease-out;
-      will-change: transform;
-    }
-
-    .status-bar-shield {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: max(44px, env(safe-area-inset-top));
-      background-color: var(--bg);
-      z-index: 150;
-      pointer-events: none;
-    }
-
-    #pullIndicator {
-      position: fixed;
-      top: calc(max(44px, env(safe-area-inset-top)) + 15px);
-      left: 50%;
-      transform: translateX(-50%) scale(0);
-      background: var(--card-bg);
-      border: 2px solid var(--accent);
-      color: var(--accent);
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 26px;
-      font-weight: bold;
-      z-index: 200;
-      opacity: 0;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
-      pointer-events: none;
-      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease;
-    }
-    .rotating { animation: spin 0.7s linear infinite !important; }
-    @keyframes spin { 
-      0% { transform: translateX(-50%) rotate(0deg); }
-      100% { transform: translateX(-50%) rotate(360deg); }
-    }
-
-    .header { 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      margin-bottom: 16px; 
-      padding-top: 6px;
-    }
-    select.sheet-select { 
-      background: var(--card-bg); 
-      color: var(--text); 
-      border: 1px solid var(--border); 
-      padding: 8px 12px; 
-      border-radius: 8px; 
-      font-size: 15px; 
-    }
-
-    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-    .card { 
-      background: var(--card-bg); 
-      border: 1px solid var(--border); 
-      border-radius: 12px; 
-      padding: 12px 14px; 
-    }
-    .card.clickable { cursor: pointer; }
-    .card.clickable:active { opacity: 0.8; transform: scale(0.98); transition: transform 0.1s; }
-    .card.full { grid-column: span 2; background: linear-gradient(135deg, #1e293b, #0f172a); border-color: rgba(56, 189, 248, 0.3); }
-    .card-title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
-    .card-val { font-size: 20px; font-weight: 700; margin-top: 4px; letter-spacing: 0.5px; }
-    
-    .val-rem { font-size: 26px; }
-    .val-card { color: var(--orange); }
-    .val-manual { color: var(--orange); }
-    .val-inc { color: #34d399; }
-    .masked { letter-spacing: 3px; color: var(--text-dim) !important; font-size: 18px; }
-
-    /* Ortadaki Seçim Sekmeleri */
-    .tabs { 
-      display: flex; 
-      background: var(--card-bg); 
-      border: 1px solid var(--border); 
-      border-radius: 10px; 
-      padding: 4px; 
-      margin-bottom: 16px; 
-      gap: 4px;
-    }
-    .tab-btn { 
-      flex: 1; 
-      padding: 8px 0; 
-      text-align: center; 
-      border: none; 
-      background: transparent; 
-      color: var(--text-dim); 
-      font-size: 13px; 
-      font-weight: 600; 
-      border-radius: 7px; 
-      cursor: pointer; 
-      transition: all 0.2s ease;
-    }
-    
-    /* Aktif Sekme Renkleri */
-    .tab-btn#tab-card.active { 
-      background: var(--accent); 
-      color: #0f172a; 
-    }
-    .tab-btn#tab-manual.active { 
-      background: var(--orange); 
-      color: #0f172a; 
-      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
-    }
-    .tab-btn#tab-income.active { 
-      background: var(--green); 
-      color: #0f172a; 
-      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-    }
-
-    .swipe-container {
-      position: relative;
-      margin-bottom: 8px;
-      overflow: hidden;
-      border-radius: 10px;
-      background: var(--red);
-      transition: all 0.25s ease;
-    }
-    .swipe-delete-btn {
-      position: absolute;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      width: 100px;
-      background: var(--red);
-      color: #fff;
-      font-weight: 700;
-      font-size: 14px;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      padding-right: 24px;
-      cursor: pointer;
-      z-index: 1;
-      opacity: 0;
-      transition: opacity 0.1s ease;
-    }
-    .swipe-container.swiping .swipe-delete-btn,
-    .swipe-container.swiped .swipe-delete-btn {
-      opacity: 1;
-    }
-
-    .item-card { 
-      position: relative;
-      background: var(--card-bg); 
-      border: 1px solid var(--border); 
-      border-radius: 10px; 
-      padding: 12px; 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      z-index: 2;
-      transition: transform 0.2s ease-out;
-      width: 100%;
-    }
-    .item-left .name { font-weight: 600; font-size: 14px; }
-    .item-left .sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
-    .item-right { font-weight: 700; font-size: 15px; }
-
-    /* 70px x 70px FAB Buton */
-    .fab { 
-      position: fixed; 
-      bottom: 20px; 
-      right: 20px; 
-      background: var(--accent); 
-      color: #0f172a; 
-      width: 70px; 
-      height: 70px; 
-      border-radius: 50%; 
-      border: none; 
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45); 
-      cursor: pointer; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      z-index: 50; 
-      transition: transform 0.15s ease;
-      padding: 0;
-      margin: 0;
-    }
-    .fab span {
-      display: block;
-      font-size: 40px;
-      font-weight: 400;
-      line-height: 1;
-      margin-top: -3px;
-    }
-    .fab:active {
-      transform: scale(0.92);
-      opacity: 0.9;
-    }
-    
-    /* Modal ve Form Tasarımı */
-    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); align-items: flex-end; z-index: 999; }
-    .modal-content { 
-      background: var(--card-bg); 
-      width: 100%; 
-      border-radius: 20px 20px 0 0; 
-      padding: 20px; 
-      padding-bottom: max(25px, env(safe-area-inset-bottom)); 
-      border-top: 1px solid var(--border); 
-      max-width: 100%; 
-    }
-    
-    .type-switcher {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 14px;
-      background: var(--bg);
-      padding: 4px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-    }
-    .type-btn {
-      flex: 1;
-      padding: 10px 0;
-      border: none;
-      background: transparent;
-      color: var(--text-dim);
-      font-size: 13px;
-      font-weight: 600;
-      border-radius: 7px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .type-btn#btnTypeManual.active {
-      background: var(--orange);
-      color: #0f172a;
-      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
-    }
-    .type-btn#btnTypeIncome.active {
-      background: var(--green);
-      color: #0f172a;
-      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
-    }
-
-    .form-group { margin-bottom: 12px; width: 100%; }
-    .form-group label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
-    
-    .form-group input { 
-      width: 100%; 
-      max-width: 100%; 
-      background: var(--bg); 
-      border: 1px solid var(--border); 
-      color: #fff; 
-      padding: 11px 12px; 
-      border-radius: 8px; 
-      font-size: 15px; 
-      -webkit-appearance: none;
-      appearance: none;
-      display: block;
-      outline: none;
-    }
-    .form-group input:focus {
-      border-color: var(--accent);
-    }
-
-    .modal-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 16px;
-    }
-    .btn-submit { 
-      width: 100%;
-      background: var(--accent); 
-      color: #0f172a; 
-      font-weight: bold; 
-      padding: 13px; 
-      border-radius: 10px; 
-      border: none; 
-      font-size: 15px; 
-      cursor: pointer; 
-      transition: transform 0.1s;
-    }
-    .btn-submit:active { transform: scale(0.98); }
-
-    .btn-cancel { 
-      width: 100%;
-      background: #334155; 
-      color: var(--text); 
-      font-weight: 600; 
-      padding: 12px; 
-      border-radius: 10px; 
-      border: 1px solid var(--border); 
-      font-size: 15px; 
-      cursor: pointer; 
-      transition: transform 0.1s;
-    }
-    .btn-cancel:active { transform: scale(0.98); }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: var(--bg); color: var(--text-main); padding-bottom: 90px; }
+    header { padding: 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+    select.sheet-select { background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; font-weight: 600; outline: none; }
+    .container { padding: 16px; max-width: 600px; margin: 0 auto; }
+    .summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+    .summary-card { background: var(--card-bg); padding: 14px; border-radius: 12px; border-left: 4px solid transparent; }
+    .summary-card.rem { grid-column: span 2; border-left-color: var(--primary); }
+    .summary-card.card-exp { border-left-color: var(--accent-card); }
+    .summary-card.manual-exp { border-left-color: var(--accent-manual); }
+    .summary-card.tr-exp { border-left-color: var(--accent-tr); }
+    .summary-card.income { border-left-color: var(--accent-income); }
+    .summary-title { font-size: 0.8rem; color: var(--text-sub); margin-bottom: 4px; }
+    .summary-val { font-size: 1.25rem; font-weight: 700; }
+    .nav-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 16px; }
+    .nav-btn { background: var(--card-bg); border: 1px solid var(--border); color: var(--text-sub); padding: 10px 4px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; text-align: center; }
+    .nav-btn.active.tab-card { background: var(--accent-card); color: #000; border-color: var(--accent-card); }
+    .nav-btn.active.tab-manual { background: var(--accent-manual); color: #000; border-color: var(--accent-manual); }
+    .nav-btn.active.tab-tr { background: var(--accent-tr); color: #fff; border-color: var(--accent-tr); }
+    .nav-btn.active.tab-income { background: var(--accent-income); color: #000; border-color: var(--accent-income); }
+    .items-list { display: flex; flex-direction: column; gap: 8px; }
+    .item-card { background: var(--card-bg); padding: 12px 14px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); }
+    .item-info { display: flex; flex-direction: column; gap: 3px; }
+    .item-title { font-weight: 600; font-size: 0.95rem; }
+    .item-sub { font-size: 0.75rem; color: var(--text-sub); }
+    .item-amount { font-weight: 700; font-size: 1rem; text-align: right; }
+    .item-eur-sub { font-size: 0.75rem; color: var(--accent-tr); font-weight: 500; }
+    .del-btn { background: transparent; border: none; color: var(--danger); font-size: 1.1rem; margin-left: 12px; cursor: pointer; padding: 4px; }
+    .fab { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; border: none; box-shadow: 0 4px 14px rgba(0,0,0,0.4); cursor: pointer; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 16px; z-index: 100; }
+    .modal-content { background: var(--card-bg); width: 100%; max-width: 400px; padding: 20px; border-radius: 14px; border: 1px solid var(--border); }
+    .modal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 14px; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.8rem; color: var(--text-sub); margin-bottom: 4px; }
+    .form-group input, .form-group select { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text-main); padding: 10px; border-radius: 8px; font-size: 0.95rem; outline: none; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 18px; }
+    .modal-btn { flex: 1; padding: 10px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; }
+    .modal-btn.cancel { background: var(--border); color: var(--text-main); }
+    .modal-btn.save { background: var(--primary); color: #fff; }
+    .empty-state { text-align: center; color: var(--text-sub); padding: 30px 0; font-size: 0.9rem; }
   </style>
 </head>
 <body>
 
-  <div class="status-bar-shield"></div>
-  <div id="pullIndicator">↓</div>
+  <header>
+    <div style="font-weight:700; font-size:1.1rem;">💰 Bütçe Takip</div>
+    <select id="sheetSelect" class="sheet-select" onchange="changeSheet()"></select>
+  </header>
 
-  <div id="appContent">
-    <div class="header">
-      <h2 style="font-size: 17px; font-weight: 700;">Harcama Takip</h2>
-      <select id="sheetSelect" class="sheet-select" onchange="onSheetChange()"></select>
-    </div>
-
+  <div class="container">
     <div class="summary-grid">
-      <div class="card full clickable" onclick="toggleMask('rem')">
-        <div class="card-title">Kalan Bakiye</div>
-        <div class="card-val val-rem masked" id="remVal">••••••</div>
+      <div class="summary-card rem">
+        <div class="summary-title">Kalan Bakiye</div>
+        <div class="summary-val" id="remVal">...</div>
       </div>
-      
-      <div class="card">
-        <div class="card-title">Kart Harcamaları</div>
-        <div class="card-val val-card" id="cardVal">...</div>
+      <div class="summary-card card-exp">
+        <div class="summary-title">Kart Harcaması</div>
+        <div class="summary-val" id="cardVal">...</div>
       </div>
-      
-      <div class="card clickable" onclick="toggleMask('manual')">
-        <div class="card-title">Diğer Harcamalar</div>
-        <div class="card-val val-manual masked" id="manualVal">••••••</div>
+      <div class="summary-card manual-exp">
+        <div class="summary-title">Diğer Harcamalar</div>
+        <div class="summary-val" id="manualVal">...</div>
       </div>
-      
-      <div class="card full clickable" onclick="toggleMask('inc')">
-        <div class="card-title">Toplam Gelir</div>
-        <div class="card-val val-inc masked" id="incVal">••••••</div>
+      <div class="summary-card tr-exp">
+        <div class="summary-title">TR Ödemeleri (€)</div>
+        <div class="summary-val" id="trVal">...</div>
+      </div>
+      <div class="summary-card income">
+        <div class="summary-title">Gelirler</div>
+        <div class="summary-val" id="incomeVal">...</div>
       </div>
     </div>
 
-    <div class="tabs">
-      <button class="tab-btn active" id="tab-card" onclick="switchTab('card')">Kart</button>
-      <button class="tab-btn" id="tab-manual" onclick="switchTab('manual')">Diğer</button>
-      <button class="tab-btn" id="tab-income" onclick="switchTab('income')">Gelir</button>
+    <div class="nav-tabs">
+      <button class="nav-btn active tab-card" onclick="setTab('card')">Kart</button>
+      <button class="nav-btn tab-manual" onclick="setTab('manual')">Diğer</button>
+      <button class="nav-btn tab-tr" onclick="setTab('tr')">TR</button>
+      <button class="nav-btn tab-income" onclick="setTab('income')">Gelir</button>
     </div>
 
-    <div id="listContainer"></div>
+    <div id="itemsList" class="items-list"></div>
   </div>
 
-  <button class="fab" onclick="handleFabClick()"><span>+</span></button>
+  <button class="fab" onclick="openModal()">+</button>
 
-  <div class="modal" id="modal">
+  <!-- Ekleme Modalı -->
+  <div id="modal" class="modal">
     <div class="modal-content">
-      <h3 style="margin-bottom: 14px; font-size: 16px;" id="modalTitle">Kayıt Ekle</h3>
-      
-      <div class="type-switcher">
-        <button type="button" class="type-btn active" id="btnTypeManual" onclick="setModalType('manual')">Diğer Harcama</button>
-        <button type="button" class="type-btn" id="btnTypeIncome" onclick="setModalType('income')">Gelir</button>
+      <div class="modal-title" id="modalTitle">Yeni Kayıt</div>
+      <div class="form-group">
+        <label>İşlem Türü</label>
+        <select id="entryType" onchange="onTypeChange()">
+          <option value="manual">Diğer Harcama (Nakit/EFT)</option>
+          <option value="tr">TR Ödemesi (₺)</option>
+          <option value="income">Gelir</option>
+        </select>
       </div>
-
       <div class="form-group">
         <label>Tarih</label>
-        <input type="date" id="mDate">
+        <input type="date" id="entryDate">
       </div>
-
       <div class="form-group">
-        <label>Tutar (€)</label>
-        <input type="text" id="mAmount" placeholder="örn: 50,00 €">
+        <label id="amountLabel">Tutar (€)</label>
+        <input type="number" step="0.01" id="entryAmount" placeholder="0.00">
       </div>
-
-      <div class="form-group" id="lblDescGroup">
-        <label id="lblDesc">Kime / Açıklama</label>
-        <input type="text" id="mDesc" placeholder="örn: Ev Sahibi / Kira">
+      <div class="form-group">
+        <label id="merchantLabel">Açıklama / Harcama Yeri</label>
+        <input type="text" id="entryMerchant" placeholder="örn: Market, Kira">
       </div>
-
-      <div class="form-group" id="grpCard">
-        <label>Hesap / Ödeme Türü</label>
-        <input type="text" id="mAccount" placeholder="örn: Sparkasse, Nakit">
+      <div class="form-group" id="cardGroup">
+        <label>Kart / Ödeme Kanalı</label>
+        <input type="text" id="entryCard" placeholder="örn: Nakit, Banka">
       </div>
-
       <div class="modal-actions">
-        <button type="button" class="btn-submit" onclick="submitEntry()">Kaydet</button>
-        <button type="button" class="btn-cancel" onclick="closeModal()">Kapat</button>
+        <button class="modal-btn cancel" onclick="closeModal()">İptal</button>
+        <button class="modal-btn save" id="saveBtn" onclick="saveEntry()">Kaydet</button>
       </div>
     </div>
   </div>
 
   <script>
-    const CURRENT_VERSION = "1.0.3";
+    let appData = null;
+    let currentTab = 'card';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec'; // https://script.google.com/macros/s/.../exec
 
-    // ⚠️ APPS SCRIPT EXEC LİNKİNİZİ BURAYA YAPIŞTIRIN:
-    const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
-
-    let currentData = null;
-    let activeTab = 'card';
-    let modalSelectedType = 'manual';
-    let memoryCache = {};
-    
-    let maskedState = {
-      rem: true,
-      manual: true,
-      inc: true
+    window.onload = () => {
+      loadInitialData();
+      document.getElementById('entryDate').valueAsDate = new Date();
     };
 
-    window.onload = function() {
-      checkForAppUpdates();
-      document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
-      initPullToRefresh();
-      loadLocalCache();
-      fetchInitialData();
-    };
-
-    async function checkForAppUpdates() {
-      try {
-        const response = await fetch(window.location.href, { cache: "no-store" });
-        const html = await response.text();
-        const match = html.match(/CURRENT_VERSION\s*=\s*["']([^"']+)["']/);
-        if (match && match[1] && match[1] !== CURRENT_VERSION) {
-          localStorage.clear();
-          window.location.reload(true);
-        }
-      } catch (e) {}
-    }
-
-    function loadLocalCache() {
-      try {
-        const cached = localStorage.getItem('harcama_cache_v5');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed.sheets) populateSheetOptions(parsed.sheets, parsed.activeSheet);
-          if (parsed.dashboard) {
-            memoryCache[parsed.activeSheet || "Mevcut Ay"] = parsed.dashboard;
-            renderDashboard(parsed.dashboard);
-            switchTab('card');
-          }
-        }
-      } catch (e) {}
-    }
-
-    async function fetchInitialData() {
-      try {
-        const res = await fetch(`${API_URL}?action=getInitialData`);
-        const data = await res.json();
-        if (data && data.dashboard) {
-          localStorage.setItem('harcama_cache_v5', JSON.stringify(data));
-          memoryCache[data.activeSheet || "Mevcut Ay"] = data.dashboard;
-          populateSheetOptions(data.sheets, data.activeSheet);
+    function loadInitialData() {
+      fetch(`${API_URL}?action=getInitialData`)
+        .then(res => res.json())
+        .then(data => {
+          appData = data;
+          populateSheets(data.sheets, data.activeSheet);
           renderDashboard(data.dashboard);
-        }
-      } catch (err) {
-        console.error("Veri çekilemedi:", err);
-      } finally {
-        resetPullIndicator();
-      }
+        });
     }
 
-    async function onSheetChange() {
-      const sheet = document.getElementById('sheetSelect').value;
-      if (memoryCache[sheet]) {
-        renderDashboard(memoryCache[sheet]);
-      } else {
-        document.getElementById('cardVal').innerText = "...";
-      }
-
-      try {
-        const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(sheet)}`);
-        const data = await res.json();
-        if (data) {
-          memoryCache[sheet] = data;
-          renderDashboard(data);
-        }
-      } catch (err) {
-        console.error("Ay verisi alınamadı:", err);
-      } finally {
-        resetPullIndicator();
-      }
+    function changeSheet() {
+      const selected = document.getElementById('sheetSelect').value;
+      fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(selected)}`)
+        .then(res => res.json())
+        .then(dash => renderDashboard(dash));
     }
 
-    async function loadData() {
-      const sheet = document.getElementById('sheetSelect').value;
-      try {
-        const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(sheet)}`);
-        const data = await res.json();
-        if (data) {
-          memoryCache[sheet] = data;
-          renderDashboard(data);
-        }
-      } catch (err) {
-        console.error("Yüklenemedi:", err);
-      } finally {
-        resetPullIndicator();
-      }
-    }
-
-    function populateSheetOptions(sheets, activeSheet) {
-      const select = document.getElementById('sheetSelect');
-      const currentSelected = select.value;
-      select.innerHTML = '';
-      sheets.forEach(name => {
+    function populateSheets(sheets, active) {
+      const sel = document.getElementById('sheetSelect');
+      sel.innerHTML = '';
+      sheets.forEach(s => {
         const opt = document.createElement('option');
-        opt.value = name;
-        opt.innerText = name;
-        if (currentSelected ? name === currentSelected : (name === activeSheet || name === "Mevcut Ay")) {
-          opt.selected = true;
-        }
-        select.appendChild(opt);
+        opt.value = s;
+        opt.textContent = s;
+        if (s === active) opt.selected = true;
+        sel.appendChild(opt);
       });
     }
 
-    function formatAmount(val) {
-      if (!val) return "€0,00";
-      let str = val.toString().trim();
-      if (str.includes("€")) return str;
-      
-      let num = parseFloat(str.replace(/\./g, '').replace(',', '.'));
-      if (isNaN(num)) return str;
-      return "€" + num.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    function renderDashboard(dash) {
+      if (!dash) return;
+      document.getElementById('remVal').textContent = dash.remaining;
+      document.getElementById('cardVal').textContent = dash.cardTotal;
+      document.getElementById('manualVal').textContent = dash.manualTotal;
+      document.getElementById('trVal').textContent = dash.trTotal || '€0,00';
+      document.getElementById('incomeVal').textContent = dash.incomeTotal;
+      renderList(dash);
     }
 
-    function renderDashboard(data) {
-      currentData = data;
-      if (!data) return;
-
-      document.getElementById('cardVal').innerText = data.cardTotal;
-      updateMaskedDisplay();
-      renderCurrentList();
-    }
-
-    function toggleMask(key) {
-      maskedState[key] = !maskedState[key];
-      updateMaskedDisplay();
-    }
-
-    function updateMaskedDisplay() {
-      if (!currentData) return;
-
-      const remEl = document.getElementById('remVal');
-      if (maskedState.rem) {
-        remEl.innerText = "••••••";
-        remEl.classList.add('masked');
-        remEl.style.color = "";
-      } else {
-        remEl.innerText = currentData.remaining;
-        remEl.classList.remove('masked');
-
-        const rawRem = (currentData.remaining || "").toString().trim();
-        if (rawRem.includes("-")) {
-          remEl.style.color = "var(--red)";
-        } else {
-          remEl.style.color = "var(--green)";
-        }
-      }
-
-      const manEl = document.getElementById('manualVal');
-      if (maskedState.manual) {
-        manEl.innerText = "••••••";
-        manEl.classList.add('masked');
-      } else {
-        manEl.innerText = currentData.manualTotal;
-        manEl.classList.remove('masked');
-      }
-
-      const incEl = document.getElementById('incVal');
-      if (maskedState.inc) {
-        incEl.innerText = "••••••";
-        incEl.classList.add('masked');
-      } else {
-        incEl.innerText = currentData.incomeTotal;
-        incEl.classList.remove('masked');
+    function setTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector(`.tab-${tab}`).classList.add('active');
+      if (appData && appData.dashboard) {
+        changeSheet();
       }
     }
 
-    function switchTab(tab) {
-      activeTab = tab;
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      const targetBtn = document.getElementById('tab-' + tab);
-      if (targetBtn) targetBtn.classList.add('active');
-      renderCurrentList();
-    }
-
-    function renderCurrentList() {
-      const container = document.getElementById('listContainer');
-      if (!container) return;
+    function renderList(dash) {
+      const container = document.getElementById('itemsList');
       container.innerHTML = '';
-      if (!currentData) return;
-
-      const select = document.getElementById('sheetSelect');
-      const isCurrentMonth = (select && select.value === "Mevcut Ay");
-
       let items = [];
-      let isIncome = false;
-      let canDelete = isCurrentMonth && (activeTab === 'manual' || activeTab === 'income');
 
-      if (activeTab === 'card') {
-        items = currentData.cardItems || [];
-      } else if (activeTab === 'manual') {
-        items = currentData.manualItems || [];
-      } else if (activeTab === 'income') {
-        items = currentData.incomeItems || [];
-        isIncome = true;
-      }
+      if (currentTab === 'card') items = dash.cardItems || [];
+      else if (currentTab === 'manual') items = dash.manualItems || [];
+      else if (currentTab === 'tr') items = dash.trItems || [];
+      else if (currentTab === 'income') items = dash.incomeItems || [];
 
-      if (!items || items.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-dim)">Kayıt bulunamadı.</div>';
+      if (items.length === 0) {
+        container.innerHTML = '<div class="empty-state">Bu sekmede henüz kayıt yok.</div>';
         return;
       }
 
       items.forEach(item => {
-        const formattedAmt = formatAmount(item.amount);
+        const div = document.createElement('div');
+        div.className = 'item-card';
 
-        if (canDelete) {
-          const wrapper = document.createElement('div');
-          wrapper.className = 'swipe-container';
-          wrapper.id = `item-row-${item.rowIndex}`;
+        let subText = item.date;
+        if (item.card) subText += ` • ${item.card}`;
+        if (currentTab === 'tr' && item.rate) subText += ` • Kur: ${item.rate}`;
 
-          wrapper.innerHTML = `
-            <button class="swipe-delete-btn" onclick="deleteItem('${activeTab}', ${item.rowIndex})">Sil</button>
-            <div class="item-card">
-              <div class="item-left">
-                <div class="name">${item.merchant || 'Açıklamasız'}</div>
-                <div class="sub">${item.date} ${item.card ? '• ' + item.card : ''}</div>
-              </div>
-              <div class="item-right" style="color: ${isIncome ? 'var(--green)' : 'var(--red)'}">
-                ${isIncome ? '+' : '-'}${formattedAmt}
-              </div>
-            </div>
-          `;
-
-          attachSwipeEvents(wrapper.querySelector('.item-card'), wrapper);
-          container.appendChild(wrapper);
-        } else {
-          const div = document.createElement('div');
-          div.className = 'item-card';
-          div.style.marginBottom = '8px';
-          div.innerHTML = `
-            <div class="item-left">
-              <div class="name">${item.merchant || 'Açıklamasız'}</div>
-              <div class="sub">${item.date} ${item.card ? '• ' + item.card : ''}</div>
-            </div>
-            <div class="item-right" style="color: ${isIncome ? 'var(--green)' : 'var(--red)'}">
-              ${isIncome ? '+' : '-'}${formattedAmt}
-            </div>
-          `;
-          container.appendChild(div);
+        let eurSub = '';
+        if (currentTab === 'tr' && item.eurAmount) {
+          eurSub = `<div class="item-eur-sub">${item.eurAmount}</div>`;
         }
+
+        let deleteBtn = '';
+        if (currentTab !== 'card') {
+          deleteBtn = `<button class="del-btn" onclick="deleteEntry('${currentTab}', ${item.rowIndex})">✕</button>`;
+        }
+
+        div.innerHTML = `
+          <div class="item-info">
+            <div class="item-title">${item.merchant || 'Açıklamasız'}</div>
+            <div class="item-sub">${subText}</div>
+          </div>
+          <div style="display:flex; align-items:center;">
+            <div style="text-align:right;">
+              <div class="item-amount">${item.amount}</div>
+              ${eurSub}
+            </div>
+            ${deleteBtn}
+          </div>
+        `;
+        container.appendChild(div);
       });
     }
 
-    let currentlySwiped = null;
-    let currentlySwipedContainer = null;
-
-    function attachSwipeEvents(card, container) {
-      let startX = 0;
-      let currentX = 0;
-
-      card.addEventListener('touchstart', e => {
-        if (currentlySwiped && currentlySwiped !== card) {
-          currentlySwiped.style.transform = 'translateX(0px)';
-          if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped', 'swiping');
-          currentlySwiped = null;
-          currentlySwipedContainer = null;
-        }
-        startX = e.touches[0].clientX;
-      }, { passive: true });
-
-      card.addEventListener('touchmove', e => {
-        currentX = e.touches[0].clientX;
-        let diff = currentX - startX;
-        if (diff < 0 && diff > -100) {
-          container.classList.add('swiping');
-          card.style.transform = `translateX(${diff}px)`;
-        }
-      }, { passive: true });
-
-      card.addEventListener('touchend', () => {
-        let diff = currentX - startX;
-        if (diff < -50) {
-          card.style.transform = 'translateX(-80px)';
-          container.classList.add('swiped');
-          container.classList.remove('swiping');
-          currentlySwiped = card;
-          currentlySwipedContainer = container;
-        } else {
-          card.style.transform = 'translateX(0px)';
-          container.classList.remove('swiped', 'swiping');
-          if (currentlySwiped === card) {
-            currentlySwiped = null;
-            currentlySwipedContainer = null;
-          }
-        }
-      });
-    }
-
-    async function deleteItem(type, rowIndex) {
-      const sheet = document.getElementById('sheetSelect').value;
-      const rowElement = document.getElementById(`item-row-${rowIndex}`);
-      
-      if (rowElement) {
-        rowElement.style.transform = 'scale(0.8)';
-        rowElement.style.opacity = '0';
-        setTimeout(() => {
-          rowElement.remove();
-        }, 200);
-      }
-
-      if (currentData) {
-        if (type === 'manual' && currentData.manualItems) {
-          currentData.manualItems = currentData.manualItems.filter(i => i.rowIndex !== rowIndex);
-        } else if (type === 'income' && currentData.incomeItems) {
-          currentData.incomeItems = currentData.incomeItems.filter(i => i.rowIndex !== rowIndex);
-        }
-      }
-
-      try {
-        await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'deleteEntry',
-            sheet: sheet,
-            type: type,
-            rowIndex: rowIndex
-          })
-        });
-        delete memoryCache[sheet];
-        loadData();
-      } catch (e) {
-        console.error("Silinemedi:", e);
-        loadData();
-      }
-    }
-
-    let touchStartY = 0;
-    let isPulling = false;
-    let pullIndicator = null;
-    let appContent = null;
-
-    function initPullToRefresh() {
-      pullIndicator = document.getElementById('pullIndicator');
-      appContent = document.getElementById('appContent');
-
-      document.addEventListener('touchstart', e => {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-        if (scrollTop <= 5) {
-          touchStartY = e.touches[0].clientY;
-          isPulling = true;
-        } else {
-          isPulling = false;
-        }
-      }, { passive: true });
-
-      document.addEventListener('touchmove', e => {
-        if (!isPulling || touchStartY === 0) return;
-        
-        let currentY = e.touches[0].clientY;
-        let distance = currentY - touchStartY;
-
-        if (distance > 0) {
-          let pullOffset = Math.min(80, distance * 0.45);
-          appContent.style.transform = `translateY(${pullOffset}px)`;
-
-          let scale = Math.min(1, distance / 70);
-          pullIndicator.style.opacity = scale;
-          pullIndicator.style.transform = `translateX(-50%) scale(${scale})`;
-          pullIndicator.innerHTML = '↓';
-        }
-      }, { passive: true });
-
-      document.addEventListener('touchend', e => {
-        if (!isPulling || touchStartY === 0) return;
-        
-        let touchEndY = e.changedTouches[0].clientY;
-        let distance = touchEndY - touchStartY;
-
-        if (distance > 70) {
-          appContent.style.transform = 'translateY(60px)';
-          pullIndicator.innerHTML = '↻';
-          pullIndicator.classList.add('rotating');
-          loadData();
-        } else {
-          resetPullIndicator();
-        }
-
-        touchStartY = 0;
-        isPulling = false;
-      }, { passive: true });
-    }
-
-    function resetPullIndicator() {
-      if (!pullIndicator) return;
-      if (appContent) appContent.style.transform = 'translateY(0px)';
-      pullIndicator.classList.remove('rotating');
-      pullIndicator.style.opacity = '0';
-      pullIndicator.style.transform = 'translateX(-50%) scale(0)';
-      pullIndicator.innerHTML = '↓';
-    }
-
-    function handleFabClick() {
-      const select = document.getElementById('sheetSelect');
-      const currentSheetName = select ? select.value : "Mevcut Ay";
-      const isCurrentMonth = (currentSheetName === "Mevcut Ay");
-
-      if (!isCurrentMonth) {
-        const confirmAdd = confirm(`Geçmiş bir aydasınız (${currentSheetName}). Buraya bir ekleme yapmak istediğinize emin misiniz?`);
-        if (!confirmAdd) return;
-      }
-
-      openModal();
-    }
-
-    function openModal() { 
-      document.getElementById('modal').style.display = 'flex'; 
-    }
-    function closeModal() { 
-      document.getElementById('modal').style.display = 'none'; 
-    }
-
-    function setModalType(type) {
-      modalSelectedType = type;
-      const btnManual = document.getElementById('btnTypeManual');
-      const btnIncome = document.getElementById('btnTypeIncome');
+    function onTypeChange() {
+      const type = document.getElementById('entryType').value;
+      const cardGroup = document.getElementById('cardGroup');
+      const merchantInput = document.getElementById('entryMerchant');
+      const amountLabel = document.getElementById('amountLabel');
 
       if (type === 'income') {
-        btnIncome.classList.add('active');
-        btnManual.classList.remove('active');
-        document.getElementById('lblDesc').innerText = 'Nereden / Açıklama';
-        document.getElementById('grpCard').style.display = 'none';
+        cardGroup.style.display = 'none';
+        merchantInput.placeholder = 'örn: Maaş, Prim vb.';
+        amountLabel.textContent = 'Tutar (€)';
+      } else if (type === 'tr') {
+        cardGroup.style.display = 'none';
+        merchantInput.placeholder = 'örn: Spotify, Enpara';
+        amountLabel.textContent = 'Tutar (₺)';
       } else {
-        btnManual.classList.add('active');
-        btnIncome.classList.remove('active');
-        document.getElementById('lblDesc').innerText = 'Kime / Açıklama';
-        document.getElementById('grpCard').style.display = 'block';
+        cardGroup.style.display = 'block';
+        merchantInput.placeholder = 'örn: Market, Akaryakıt';
+        amountLabel.textContent = 'Tutar (€)';
       }
     }
 
-    async function submitEntry() {
-      const type = modalSelectedType;
-      const rawDate = document.getElementById('mDate').value;
-      let dateFormatted = "";
-      if (rawDate) {
-        const p = rawDate.split("-");
-        dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
-      }
+    function openModal() {
+      document.getElementById('modal').style.display = 'flex';
+      onTypeChange();
+    }
 
-      const rawAmount = document.getElementById('mAmount').value;
-      const rawDesc = document.getElementById('mDesc').value;
-      const rawAccount = document.getElementById('mAccount').value;
-      
-      const targetSheet = document.getElementById('sheetSelect').value;
+    function closeModal() {
+      document.getElementById('modal').style.display = 'none';
+    }
 
-      const payload = {
-        date: dateFormatted,
-        amount: rawAmount,
-        merchant: rawDesc,
-        card: rawAccount
-      };
+    function saveEntry() {
+      const type = document.getElementById('entryType').value;
+      const date = document.getElementById('entryDate').value;
+      const amount = document.getElementById('entryAmount').value;
+      const merchant = document.getElementById('entryMerchant').value;
+      const card = document.getElementById('entryCard').value;
+      const sheet = document.getElementById('sheetSelect').value;
 
-      closeModal();
-      document.getElementById('mAmount').value = '';
-      document.getElementById('mDesc').value = '';
-      document.getElementById('mAccount').value = '';
+      if (!amount) return alert('Lütfen tutar giriniz.');
 
-      const newItem = {
-        rowIndex: 9999,
-        date: dateFormatted,
-        amount: rawAmount,
-        merchant: rawDesc,
-        card: rawAccount
-      };
+      const saveBtn = document.getElementById('saveBtn');
+      saveBtn.textContent = 'Kaydediliyor...';
+      saveBtn.disabled = true;
 
-      if (currentData) {
-        if (type === 'manual') {
-          if (!currentData.manualItems) currentData.manualItems = [];
-          currentData.manualItems.unshift(newItem);
-          switchTab('manual');
-        } else if (type === 'income') {
-          if (!currentData.incomeItems) currentData.incomeItems = [];
-          currentData.incomeItems.unshift(newItem);
-          switchTab('income');
-        }
-        renderDashboard(currentData);
-      }
+      fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'addEntry',
+          sheet: sheet,
+          type: type,
+          payload: { date, amount, merchant, card }
+        })
+      })
+      .then(res => res.json())
+      .then(() => {
+        saveBtn.textContent = 'Kaydet';
+        saveBtn.disabled = false;
+        closeModal();
+        changeSheet();
+      });
+    }
 
-      try {
-        await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'addEntry',
-            sheet: targetSheet,
-            type: type,
-            payload: payload
-          })
-        });
-        delete memoryCache[targetSheet];
-        loadData();
-      } catch (err) {
-        console.error("Kayıt eklenemedi:", err);
-        loadData();
-      }
+    function deleteEntry(type, rowIndex) {
+      if (!confirm('Bu kaydı silmek istediğinize emin misiniz?')) return;
+      const sheet = document.getElementById('sheetSelect').value;
+
+      fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'deleteEntry',
+          sheet: sheet,
+          type: type,
+          rowIndex: rowIndex
+        })
+      })
+      .then(res => res.json())
+      .then(() => changeSheet());
     }
   </script>
 </body>
