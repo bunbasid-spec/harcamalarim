@@ -145,7 +145,7 @@
       box-shadow: 0 2px 6px rgba(56, 189, 248, 0.3);
     }
 
-    /* Sabit Genişlikli Sağ Üst Seçici */
+    /* Sağ Üst Filtre Seçici (Sabit Genişlik) */
     select.sheet-select { 
       background: var(--card-bg); 
       color: var(--text); 
@@ -154,12 +154,8 @@
       border-radius: 8px; 
       font-size: 14px; 
       outline: none;
-      width: 140px;
-      min-width: 140px;
-      max-width: 140px;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      overflow: hidden;
+      min-width: 135px;
+      text-align: right;
     }
 
     /* Kart Izgaraları */
@@ -256,11 +252,12 @@
       color: #fff;
       font-weight: 700;
       font-size: 13px;
-      padding: 0 16px;
+      padding: 0 18px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      white-space: nowrap;
     }
     .swipe-btn.pay { background: var(--orange); }
     .swipe-btn.close { background: var(--primary-blue); }
@@ -345,6 +342,7 @@
     .type-btn#btnTypeDebtGive.active { background: var(--red); color: #ffffff; }
     .type-btn#btnTypeDebtGet.active { background: var(--green); color: #0f172a; }
 
+    /* Form Elemanları ve Tarih Alanı Taşma Koruması */
     .form-group { 
       margin-bottom: 12px; 
       width: 100%; 
@@ -417,7 +415,7 @@
         <button class="mod-btn" id="modDebts" onclick="switchModule('debts')">Borçlar</button>
       </div>
       
-      <!-- Sağ Üst Seçici -->
+      <!-- Sağ Üst Seçici (Genişliği Sabit) -->
       <select id="sheetSelect" class="sheet-select" onchange="onFilterChange()"></select>
     </div>
 
@@ -631,8 +629,8 @@
         fetchInitialData();
       } else {
         select.innerHTML = `
-          <option value="active" selected>Aktif</option>
-          <option value="archive">Arşiv</option>
+          <option value="active" selected>Aktif Borçlar</option>
+          <option value="archive">Borçlar Arşiv</option>
         `;
         loadDebtsData();
       }
@@ -905,7 +903,7 @@
     }
 
     // ==========================================
-    // SWIPE (KAYDIRMA) MOTORU
+    // SWIPE (KAYDIRMA) MOTORU - GENİŞLETİLMİŞ ERİŞİM
     // ==========================================
     let currentlySwiped = null;
     let currentlySwipedContainer = null;
@@ -926,7 +924,8 @@
       card.addEventListener('touchmove', e => {
         currentX = e.touches[0].clientX;
         let diff = currentX - startX;
-        if (diff < 0 && diff > -180) {
+        let maxDrag = (currentModule === 'debts' && document.getElementById('sheetSelect').value !== 'archive') ? -240 : -100;
+        if (diff < 0 && diff > maxDrag) {
           container.classList.add('swiping');
           card.style.transform = `translateX(${diff}px)`;
         }
@@ -934,9 +933,11 @@
 
       card.addEventListener('touchend', () => {
         let diff = currentX - startX;
-        let maxOffset = (currentModule === 'debts' && document.getElementById('sheetSelect').value !== 'archive') ? -160 : -80;
+        let isDebtActive = (currentModule === 'debts' && document.getElementById('sheetSelect').value !== 'archive');
+        let snapOffset = isDebtActive ? -215 : -80; // 3 butonun tamamının tam sığması için 215px
+        
         if (diff < -50) {
-          card.style.transform = `translateX(${maxOffset}px)`;
+          card.style.transform = `translateX(${snapOffset}px)`;
           container.classList.add('swiped');
           container.classList.remove('swiping');
           currentlySwiped = card; currentlySwipedContainer = container;
