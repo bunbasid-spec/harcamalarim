@@ -126,19 +126,18 @@
       font-size: 15px; 
     }
 
-    /* Üst Özet Kartları ve Tam Kavisli Sol Kenarlıklar */
+    /* Üst Özet Kartları ve Kusursuz Kavisli Sol Kenarlıklar */
     .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
     
     .card { 
       background: var(--card-bg); 
       border: 1px solid var(--border); 
       border-radius: 12px; 
-      padding: 12px 14px 12px 18px; 
+      padding: 12px 14px 12px 16px; 
       position: relative;
-      overflow: hidden; /* Kenarlık kavisinin kartın dışına taşmasını engeller */
+      overflow: hidden;
     }
 
-    /* Sol kavisli renk şeridi */
     .card::before {
       content: "";
       position: absolute;
@@ -146,7 +145,8 @@
       top: 0;
       bottom: 0;
       width: 4px;
-      border-radius: 12px 0 0 12px;
+      border-top-left-radius: 12px;
+      border-bottom-left-radius: 12px;
     }
 
     .card.card-rem::before { background-color: #2563eb; }
@@ -211,7 +211,7 @@
     .tab-btn#tab-income.active { 
       background: var(--green); 
       color: #0f172a; 
-      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+      box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35);
     }
 
     .swipe-container {
@@ -494,7 +494,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "1.0.5";
+    const CURRENT_VERSION = "1.0.6";
 
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
@@ -532,7 +532,7 @@
 
     function loadLocalCache() {
       try {
-        const cached = localStorage.getItem('harcama_cache_v7');
+        const cached = localStorage.getItem('harcama_cache_v8');
         if (cached) {
           const parsed = JSON.parse(cached);
           if (parsed.sheets) populateSheetOptions(parsed.sheets, parsed.activeSheet);
@@ -550,7 +550,7 @@
         const res = await fetch(`${API_URL}?action=getInitialData`);
         const data = await res.json();
         if (data && data.dashboard) {
-          localStorage.setItem('harcama_cache_v7', JSON.stringify(data));
+          localStorage.setItem('harcama_cache_v8', JSON.stringify(data));
           memoryCache[data.activeSheet || "Mevcut Ay"] = data.dashboard;
           populateSheetOptions(data.sheets, data.activeSheet);
           renderDashboard(data.dashboard);
