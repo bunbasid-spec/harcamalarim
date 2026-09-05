@@ -21,6 +21,8 @@
       --bg: #0f172a;
       --card-bg: #1e293b;
       --accent: #38bdf8;
+      --primary-blue: #2563eb;
+      --accent-card: #06b6d4;
       --text: #f8fafc;
       --text-dim: #94a3b8;
       --border: #334155;
@@ -126,40 +128,27 @@
       font-size: 15px; 
     }
 
-    /* Üst Özet Kartları ve Kusursuz Kavisli Sol Kenarlıklar */
-    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    /* B versiyonunun birebir kenar şeritli kart tasarımı */
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
     
-    .card { 
+    .summary-card { 
       background: var(--card-bg); 
-      border: 1px solid var(--border); 
+      padding: 14px 16px; 
       border-radius: 12px; 
-      padding: 12px 14px 12px 16px; 
-      position: relative;
-      overflow: hidden;
+      border-left: 4px solid transparent; 
     }
+    
+    .summary-card.rem { grid-column: span 2; border-left-color: var(--primary-blue); }
+    .summary-card.card-exp { border-left-color: var(--accent-card); }
+    .summary-card.manual-exp { border-left-color: var(--orange); }
+    .summary-card.tr-exp { border-left-color: var(--purple); }
+    .summary-card.income { border-left-color: var(--green); }
 
-    .card::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 4px;
-      border-top-left-radius: 12px;
-      border-bottom-left-radius: 12px;
-    }
-
-    .card.card-rem::before { background-color: #2563eb; }
-    .card.card-card::before { background-color: #38bdf8; }
-    .card.card-manual::before { background-color: #f59e0b; }
-    .card.card-tr::before { background-color: #a855f7; }
-    .card.card-inc::before { background-color: #10b981; }
-
-    .card.clickable { cursor: pointer; }
-    .card.clickable:active { opacity: 0.8; transform: scale(0.98); transition: transform 0.1s; }
-    .card.full { grid-column: span 2; }
-    .card-title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
-    .card-val { font-size: 20px; font-weight: 700; margin-top: 4px; letter-spacing: 0.5px; }
+    .summary-card.clickable { cursor: pointer; }
+    .summary-card.clickable:active { opacity: 0.8; transform: scale(0.98); transition: transform 0.1s; }
+    
+    .summary-title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+    .summary-val { font-size: 20px; font-weight: 700; margin-top: 4px; letter-spacing: 0.5px; }
     
     .val-rem { font-size: 24px; }
     .val-card { color: var(--text); }
@@ -211,7 +200,7 @@
     .tab-btn#tab-income.active { 
       background: var(--green); 
       color: #0f172a; 
-      box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35);
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
     }
 
     .swipe-container {
@@ -415,31 +404,31 @@
       <select id="sheetSelect" class="sheet-select" onchange="onSheetChange()"></select>
     </div>
 
-    <!-- 5'li Şık Izgara ve Kavisli Sol Kenarlıklar -->
+    <!-- 5'li B versiyonundaki şık kartlar -->
     <div class="summary-grid">
-      <div class="card full card-rem clickable" onclick="toggleMask('rem')">
-        <div class="card-title">Kalan Bakiye</div>
-        <div class="card-val val-rem masked" id="remVal">••••••</div>
+      <div class="summary-card rem clickable" onclick="toggleMask('rem')">
+        <div class="summary-title">Kalan Bakiye</div>
+        <div class="summary-val val-rem masked" id="remVal">••••••</div>
       </div>
       
-      <div class="card card-card">
-        <div class="card-title">Kart Harcaması</div>
-        <div class="card-val val-card" id="cardVal">...</div>
+      <div class="summary-card card-exp">
+        <div class="summary-title">Kart Harcaması</div>
+        <div class="summary-val val-card" id="cardVal">...</div>
       </div>
       
-      <div class="card card-manual clickable" onclick="toggleMask('manual')">
-        <div class="card-title">Diğer Harcamalar</div>
-        <div class="card-val val-manual masked" id="manualVal">••••••</div>
+      <div class="summary-card manual-exp clickable" onclick="toggleMask('manual')">
+        <div class="summary-title">Diğer Harcamalar</div>
+        <div class="summary-val val-manual masked" id="manualVal">••••••</div>
       </div>
       
-      <div class="card card-tr clickable" onclick="toggleMask('tr')">
-        <div class="card-title">TR Ödemeleri (€)</div>
-        <div class="card-val val-tr masked" id="trVal">••••••</div>
+      <div class="summary-card tr-exp clickable" onclick="toggleMask('tr')">
+        <div class="summary-title">TR Ödemeleri (€)</div>
+        <div class="summary-val val-tr masked" id="trVal">••••••</div>
       </div>
       
-      <div class="card card-inc clickable" onclick="toggleMask('inc')">
-        <div class="card-title">Gelirler</div>
-        <div class="card-val val-inc masked" id="incVal">••••••</div>
+      <div class="summary-card income clickable" onclick="toggleMask('inc')">
+        <div class="summary-title">Gelirler</div>
+        <div class="summary-val val-inc masked" id="incVal">••••••</div>
       </div>
     </div>
 
@@ -494,7 +483,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "1.0.6";
+    const CURRENT_VERSION = "1.0.7";
 
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
@@ -532,7 +521,7 @@
 
     function loadLocalCache() {
       try {
-        const cached = localStorage.getItem('harcama_cache_v8');
+        const cached = localStorage.getItem('harcama_cache_v9');
         if (cached) {
           const parsed = JSON.parse(cached);
           if (parsed.sheets) populateSheetOptions(parsed.sheets, parsed.activeSheet);
@@ -550,7 +539,7 @@
         const res = await fetch(`${API_URL}?action=getInitialData`);
         const data = await res.json();
         if (data && data.dashboard) {
-          localStorage.setItem('harcama_cache_v8', JSON.stringify(data));
+          localStorage.setItem('harcama_cache_v9', JSON.stringify(data));
           memoryCache[data.activeSheet || "Mevcut Ay"] = data.dashboard;
           populateSheetOptions(data.sheets, data.activeSheet);
           renderDashboard(data.dashboard);
