@@ -15,7 +15,7 @@
   <link rel="apple-touch-icon" href="./icon.png">
   <link rel="icon" type="image/png" href="./icon.png">
 
-  <title>Harcama Takip</title>
+  <title>Harcama & Borç Takip</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -118,16 +118,44 @@
       margin-bottom: 16px; 
       padding-top: 6px;
     }
+
+    /* Sol Üst İki Modül Butonları (Segmented Switch) */
+    .module-switcher {
+      display: flex;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2px;
+      gap: 2px;
+    }
+    .mod-btn {
+      padding: 6px 14px;
+      border: none;
+      background: transparent;
+      color: var(--text-dim);
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .mod-btn.active {
+      background: var(--accent);
+      color: #0f172a;
+      box-shadow: 0 2px 6px rgba(56, 189, 248, 0.3);
+    }
+
     select.sheet-select { 
       background: var(--card-bg); 
       color: var(--text); 
       border: 1px solid var(--border); 
       padding: 8px 12px; 
       border-radius: 8px; 
-      font-size: 15px; 
+      font-size: 14px; 
+      outline: none;
     }
 
-    /* Üst Özet Kartları */
+    /* Kart Izgaraları */
     .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
     
     .summary-card { 
@@ -142,6 +170,11 @@
     .summary-card.manual-exp { border-left-color: var(--orange); }
     .summary-card.tr-exp { border-left-color: var(--purple); }
     .summary-card.income { border-left-color: var(--green); }
+    
+    /* Borç Modülü Kart Renkleri */
+    .summary-card.debt-net { grid-column: span 2; border-left-color: var(--accent); }
+    .summary-card.debt-give { border-left-color: var(--red); }
+    .summary-card.debt-get { border-left-color: var(--green); }
 
     .summary-card.clickable { cursor: pointer; }
     .summary-card.clickable:active { opacity: 0.8; transform: scale(0.98); transition: transform 0.1s; }
@@ -156,7 +189,7 @@
     .val-inc { color: var(--text); }
     .masked { letter-spacing: 3px; color: var(--text-dim) !important; font-size: 18px; }
 
-    /* 4'lü Seçim Sekmeleri */
+    /* Sekmeler */
     .tabs { 
       display: flex; 
       background: var(--card-bg); 
@@ -180,27 +213,13 @@
       transition: all 0.2s ease;
     }
     
-    /* Aktif Sekme Renkleri */
-    .tab-btn#tab-card.active { 
-      background: var(--accent); 
-      color: #0f172a; 
-      box-shadow: 0 2px 8px rgba(56, 189, 248, 0.35);
-    }
-    .tab-btn#tab-manual.active { 
-      background: var(--orange); 
-      color: #0f172a; 
-      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
-    }
-    .tab-btn#tab-tr.active { 
-      background: var(--purple); 
-      color: #ffffff; 
-      box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35);
-    }
-    .tab-btn#tab-income.active { 
-      background: var(--green); 
-      color: #0f172a; 
-      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
-    }
+    .tab-btn#tab-card.active { background: var(--accent); color: #0f172a; box-shadow: 0 2px 8px rgba(56, 189, 248, 0.35); }
+    .tab-btn#tab-manual.active { background: var(--orange); color: #0f172a; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35); }
+    .tab-btn#tab-tr.active { background: var(--purple); color: #ffffff; box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35); }
+    .tab-btn#tab-income.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); }
+    
+    .tab-btn#tab-debt-give.active { background: var(--red); color: #fff; box-shadow: 0 2px 8px rgba(244, 63, 94, 0.35); }
+    .tab-btn#tab-debt-get.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); }
 
     .swipe-container {
       position: relative;
@@ -210,30 +229,35 @@
       background: var(--red);
       transition: all 0.25s ease;
     }
-    .swipe-delete-btn {
+    .swipe-actions {
       position: absolute;
       right: 0;
       top: 0;
       bottom: 0;
-      width: 100px;
-      background: var(--red);
-      color: #fff;
-      font-weight: 700;
-      font-size: 14px;
-      border: none;
       display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      padding-right: 24px;
-      cursor: pointer;
       z-index: 1;
       opacity: 0;
       transition: opacity 0.1s ease;
     }
-    .swipe-container.swiping .swipe-delete-btn,
-    .swipe-container.swiped .swipe-delete-btn {
+    .swipe-container.swiping .swipe-actions,
+    .swipe-container.swiped .swipe-actions {
       opacity: 1;
     }
+
+    .swipe-btn {
+      border: none;
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 0 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .swipe-btn.pay { background: var(--orange); }
+    .swipe-btn.close { background: var(--primary-blue); }
+    .swipe-btn.delete { background: var(--red); }
 
     .item-card { 
       position: relative; 
@@ -253,7 +277,6 @@
     .item-right { font-weight: 700; font-size: 15px; text-align: right; }
     .item-right .sub-eur { font-size: 11px; color: var(--text-dim); font-weight: 500; margin-top: 2px; }
 
-    /* 70px x 70px FAB Buton */
     .fab { 
       position: fixed; 
       bottom: 20px; 
@@ -271,22 +294,10 @@
       justify-content: center; 
       z-index: 50; 
       transition: transform 0.15s ease; 
-      padding: 0; 
-      margin: 0; 
     }
-    .fab span {
-      display: block;
-      font-size: 40px;
-      font-weight: 400;
-      line-height: 1;
-      margin-top: -3px;
-    }
-    .fab:active {
-      transform: scale(0.92);
-      opacity: 0.9;
-    }
+    .fab span { display: block; font-size: 40px; font-weight: 400; line-height: 1; margin-top: -3px; }
+    .fab:active { transform: scale(0.92); opacity: 0.9; }
     
-    /* Modal ve Form Tasarımı */
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); align-items: flex-end; z-index: 999; }
     .modal-content { 
       background: var(--card-bg); 
@@ -295,7 +306,6 @@
       padding: 20px; 
       padding-bottom: max(25px, env(safe-area-inset-bottom)); 
       border-top: 1px solid var(--border); 
-      max-width: 100%; 
     }
     
     .type-switcher {
@@ -320,49 +330,29 @@
       transition: all 0.2s ease;
     }
     
-    .type-btn#btnTypeManual.active {
-      background: var(--orange);
-      color: #0f172a;
-      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
-    }
-    .type-btn#btnTypeTR.active {
-      background: var(--purple);
-      color: #ffffff;
-      box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35);
-    }
-    .type-btn#btnTypeIncome.active {
-      background: var(--green);
-      color: #0f172a;
-      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
-    }
+    .type-btn#btnTypeManual.active { background: var(--orange); color: #0f172a; }
+    .type-btn#btnTypeTR.active { background: var(--purple); color: #ffffff; }
+    .type-btn#btnTypeIncome.active { background: var(--green); color: #0f172a; }
+    
+    .type-btn#btnTypeDebtGive.active { background: var(--red); color: #ffffff; }
+    .type-btn#btnTypeDebtGet.active { background: var(--green); color: #0f172a; }
 
     .form-group { margin-bottom: 12px; width: 100%; }
     .form-group label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
     
     .form-group input { 
       width: 100%; 
-      max-width: 100%; 
       background: var(--bg); 
       border: 1px solid var(--border); 
       color: #fff; 
       padding: 11px 12px; 
       border-radius: 8px; 
       font-size: 15px; 
-      -webkit-appearance: none;
-      appearance: none;
-      display: block;
       outline: none;
     }
-    .form-group input:focus {
-      border-color: var(--accent);
-    }
+    .form-group input:focus { border-color: var(--accent); }
 
-    .modal-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 16px;
-    }
+    .modal-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
     .btn-submit { 
       width: 100%;
       background: var(--accent); 
@@ -373,10 +363,7 @@
       border: none; 
       font-size: 15px; 
       cursor: pointer; 
-      transition: transform 0.1s;
     }
-    .btn-submit:active { transform: scale(0.98); }
-
     .btn-cancel { 
       width: 100%;
       background: #334155; 
@@ -387,9 +374,7 @@
       border: 1px solid var(--border); 
       font-size: 15px; 
       cursor: pointer; 
-      transition: transform 0.1s;
     }
-    .btn-cancel:active { transform: scale(0.98); }
   </style>
 </head>
 <body>
@@ -399,44 +384,70 @@
 
   <div id="appContent">
     <div class="header">
-      <h2 style="font-size: 17px; font-weight: 700;">Harcama Takip</h2>
-      <select id="sheetSelect" class="sheet-select" onchange="onSheetChange()"></select>
+      <!-- Sol Üst Modül Seçici -->
+      <div class="module-switcher">
+        <button class="mod-btn active" id="modBudget" onclick="switchModule('budget')">Bütçe</button>
+        <button class="mod-btn" id="modDebts" onclick="switchModule('debts')">Borçlar</button>
+      </div>
+      
+      <!-- Sağ Üst Seçici (Bütçede Ay Listesi, Borçlarda Aktif/Arşiv) -->
+      <select id="sheetSelect" class="sheet-select" onchange="onFilterChange()"></select>
     </div>
 
-    <!-- 5'li Şık Izgara -->
-    <div class="summary-grid">
-      <div class="summary-card rem clickable" onclick="toggleMask('rem')">
-        <div class="summary-title">Kalan Bakiye</div>
-        <div class="summary-val val-rem masked" id="remVal">••••••</div>
+    <!-- 1. BÜTÇE MODÜLÜ GÖRÜNÜMÜ -->
+    <div id="viewBudget">
+      <div class="summary-grid">
+        <div class="summary-card rem clickable" onclick="toggleMask('rem')">
+          <div class="summary-title">Kalan Bakiye</div>
+          <div class="summary-val val-rem masked" id="remVal">••••••</div>
+        </div>
+        <div class="summary-card card-exp">
+          <div class="summary-title">Kart Harcaması</div>
+          <div class="summary-val val-card" id="cardVal">...</div>
+        </div>
+        <div class="summary-card manual-exp clickable" onclick="toggleMask('manual')">
+          <div class="summary-title">Diğer Harcamalar</div>
+          <div class="summary-val val-manual masked" id="manualVal">••••••</div>
+        </div>
+        <div class="summary-card tr-exp clickable" onclick="toggleMask('tr')">
+          <div class="summary-title">TR Ödemeleri (€)</div>
+          <div class="summary-val val-tr masked" id="trVal">••••••</div>
+        </div>
+        <div class="summary-card income clickable" onclick="toggleMask('inc')">
+          <div class="summary-title">Gelirler</div>
+          <div class="summary-val val-inc masked" id="incVal">••••••</div>
+        </div>
       </div>
-      
-      <div class="summary-card card-exp">
-        <div class="summary-title">Kart Harcaması</div>
-        <div class="summary-val val-card" id="cardVal">...</div>
-      </div>
-      
-      <div class="summary-card manual-exp clickable" onclick="toggleMask('manual')">
-        <div class="summary-title">Diğer Harcamalar</div>
-        <div class="summary-val val-manual masked" id="manualVal">••••••</div>
-      </div>
-      
-      <div class="summary-card tr-exp clickable" onclick="toggleMask('tr')">
-        <div class="summary-title">TR Ödemeleri (€)</div>
-        <div class="summary-val val-tr masked" id="trVal">••••••</div>
-      </div>
-      
-      <div class="summary-card income clickable" onclick="toggleMask('inc')">
-        <div class="summary-title">Gelirler</div>
-        <div class="summary-val val-inc masked" id="incVal">••••••</div>
+
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-card" onclick="switchBudgetTab('card')">Kart</button>
+        <button class="tab-btn" id="tab-manual" onclick="switchBudgetTab('manual')">Diğer</button>
+        <button class="tab-btn" id="tab-tr" onclick="switchBudgetTab('tr')">TR</button>
+        <button class="tab-btn" id="tab-income" onclick="switchBudgetTab('income')">Gelir</button>
       </div>
     </div>
 
-    <!-- 4'lü Sekmeler (Kart, Diğer, TR, Gelir) -->
-    <div class="tabs">
-      <button class="tab-btn active" id="tab-card" onclick="switchTab('card')">Kart</button>
-      <button class="tab-btn" id="tab-manual" onclick="switchTab('manual')">Diğer</button>
-      <button class="tab-btn" id="tab-tr" onclick="switchTab('tr')">TR</button>
-      <button class="tab-btn" id="tab-income" onclick="switchTab('income')">Gelir</button>
+    <!-- 2. BORÇLAR MODÜLÜ GÖRÜNÜMÜ -->
+    <div id="viewDebts" style="display: none;">
+      <div class="summary-grid">
+        <div class="summary-card debt-net clickable" onclick="toggleMask('debtNet')">
+          <div class="summary-title">Net Borç / Alacak Durumu</div>
+          <div class="summary-val val-rem masked" id="debtNetVal">••••••</div>
+        </div>
+        <div class="summary-card debt-give clickable" onclick="toggleMask('debtGive')">
+          <div class="summary-title">Borçlarım (Aldıklarım)</div>
+          <div class="summary-val masked" id="debtGiveVal" style="color:var(--red);">••••••</div>
+        </div>
+        <div class="summary-card debt-get clickable" onclick="toggleMask('debtGet')">
+          <div class="summary-title">Alacaklarım (Verdiklerim)</div>
+          <div class="summary-val masked" id="debtGetVal" style="color:var(--green);">••••••</div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-debt-give" onclick="switchDebtTab('debt')">Borçlarım</button>
+        <button class="tab-btn" id="tab-debt-get" onclick="switchDebtTab('credit')">Alacaklarım</button>
+      </div>
     </div>
 
     <div id="listContainer"></div>
@@ -444,9 +455,10 @@
 
   <button class="fab" onclick="handleFabClick()"><span>+</span></button>
 
-  <div class="modal" id="modal">
+  <!-- BÜTÇE EKLEME MODALI -->
+  <div class="modal" id="modalBudget">
     <div class="modal-content">
-      <h3 style="margin-bottom: 14px; font-size: 16px;" id="modalTitle">Kayıt Ekle</h3>
+      <h3 style="margin-bottom: 14px; font-size: 16px;">Kayıt Ekle</h3>
       
       <div class="type-switcher">
         <button type="button" class="type-btn active" id="btnTypeManual" onclick="setModalType('manual')">Diğer</button>
@@ -458,49 +470,87 @@
         <label>Tarih</label>
         <input type="date" id="mDate">
       </div>
-
       <div class="form-group">
         <label id="lblAmount">Tutar (€)</label>
         <input type="text" id="mAmount" placeholder="örn: 50,00 €">
       </div>
-
-      <div class="form-group" id="lblDescGroup">
+      <div class="form-group">
         <label id="lblDesc">Kime / Açıklama</label>
         <input type="text" id="mDesc" placeholder="örn: Ev Sahibi / Kira">
       </div>
-
       <div class="form-group" id="grpCard">
         <label>Hesap / Ödeme Türü</label>
         <input type="text" id="mAccount" placeholder="örn: Sparkasse, Nakit">
       </div>
 
       <div class="modal-actions">
-        <button type="button" class="btn-submit" onclick="submitEntry()">Kaydet</button>
-        <button type="button" class="btn-cancel" onclick="closeModal()">Kapat</button>
+        <button type="button" class="btn-submit" onclick="submitBudgetEntry()">Kaydet</button>
+        <button type="button" class="btn-cancel" onclick="closeModal('modalBudget')">Kapat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BORÇ EKLEME MODALI -->
+  <div class="modal" id="modalDebt">
+    <div class="modal-content">
+      <h3 style="margin-bottom: 14px; font-size: 16px;">Yeni Borç / Alacak Ekle</h3>
+      
+      <div class="type-switcher">
+        <button type="button" class="type-btn active" id="btnTypeDebtGive" onclick="setDebtModalType('debt')">Borç Aldım</button>
+        <button type="button" class="type-btn" id="btnTypeDebtGet" onclick="setDebtModalType('credit')">Borç Verdim</button>
+      </div>
+
+      <div class="form-group">
+        <label id="lblDebtPerson">Kimden Aldım</label>
+        <input type="text" id="mDebtPerson" placeholder="örn: Kardeşim, Ahmet">
+      </div>
+      <div class="form-group">
+        <label>Tarih</label>
+        <input type="date" id="mDebtDate">
+      </div>
+      <div class="form-group">
+        <label>Toplam Tutar (€)</label>
+        <input type="text" id="mDebtAmount" placeholder="örn: 1.000,00 €">
+      </div>
+      <div class="form-group">
+        <label>Şu Ana Kadar Ödenen (€)</label>
+        <input type="text" id="mDebtPaid" placeholder="örn: 0,00 €">
+      </div>
+      <div class="form-group">
+        <label>Durum / Not</label>
+        <input type="text" id="mDebtNote" placeholder="örn: Devam Ediyor, Elden">
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-submit" onclick="submitDebtEntry()">Kaydet</button>
+        <button type="button" class="btn-cancel" onclick="closeModal('modalDebt')">Kapat</button>
       </div>
     </div>
   </div>
 
   <script>
-    const CURRENT_VERSION = "1.0.9";
-
+    const CURRENT_VERSION = "2.0.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
+    let currentModule = 'budget';
     let currentData = null;
-    let activeTab = 'card';
+    let debtsData = null;
+    
+    let activeBudgetTab = 'card';
+    let activeDebtTab = 'debt';
     let modalSelectedType = 'manual';
+    let modalDebtSelectedType = 'debt';
     let memoryCache = {};
     
     let maskedState = {
-      rem: true,
-      manual: true,
-      tr: true,
-      inc: true
+      rem: true, manual: true, tr: true, inc: true,
+      debtNet: true, debtGive: true, debtGet: true
     };
 
     window.onload = function() {
       checkForAppUpdates();
       document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('mDebtDate').value = new Date().toISOString().split('T')[0];
       initPullToRefresh();
       loadLocalCache();
       fetchInitialData();
@@ -520,14 +570,13 @@
 
     function loadLocalCache() {
       try {
-        const cached = localStorage.getItem('harcama_cache_v11');
+        const cached = localStorage.getItem('harcama_cache_v20');
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (parsed.sheets) populateSheetOptions(parsed.sheets, parsed.activeSheet);
+          if (parsed.sheets) populateBudgetSheets(parsed.sheets, parsed.activeSheet);
           if (parsed.dashboard) {
             memoryCache[parsed.activeSheet || "Mevcut Ay"] = parsed.dashboard;
             renderDashboard(parsed.dashboard);
-            switchTab('card');
           }
         }
       } catch (e) {}
@@ -538,9 +587,9 @@
         const res = await fetch(`${API_URL}?action=getInitialData`);
         const data = await res.json();
         if (data && data.dashboard) {
-          localStorage.setItem('harcama_cache_v11', JSON.stringify(data));
+          localStorage.setItem('harcama_cache_v20', JSON.stringify(data));
           memoryCache[data.activeSheet || "Mevcut Ay"] = data.dashboard;
-          populateSheetOptions(data.sheets, data.activeSheet);
+          populateBudgetSheets(data.sheets, data.activeSheet);
           renderDashboard(data.dashboard);
         }
       } catch (err) {
@@ -550,55 +599,64 @@
       }
     }
 
-    async function onSheetChange() {
-      const sheet = document.getElementById('sheetSelect').value;
-      if (memoryCache[sheet]) {
-        renderDashboard(memoryCache[sheet]);
-      } else {
-        document.getElementById('cardVal').innerText = "...";
-      }
+    // ==========================================
+    // MODÜL GEÇİŞİ (BÜTÇE / BORÇLAR)
+    // ==========================================
+    function switchModule(mod) {
+      currentModule = mod;
+      document.getElementById('modBudget').classList.toggle('active', mod === 'budget');
+      document.getElementById('modDebts').classList.toggle('active', mod === 'debts');
 
-      try {
-        const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(sheet)}`);
-        const data = await res.json();
-        if (data) {
-          memoryCache[sheet] = data;
-          renderDashboard(data);
-        }
-      } catch (err) {
-        console.error("Ay verisi alınamadı:", err);
-      } finally {
-        resetPullIndicator();
-      }
-    }
+      document.getElementById('viewBudget').style.display = (mod === 'budget') ? 'block' : 'none';
+      document.getElementById('viewDebts').style.display = (mod === 'debts') ? 'block' : 'none';
 
-    async function loadData() {
-      const sheet = document.getElementById('sheetSelect').value;
-      try {
-        const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(sheet)}`);
-        const data = await res.json();
-        if (data) {
-          memoryCache[sheet] = data;
-          renderDashboard(data);
-        }
-      } catch (err) {
-        console.error("Yüklenemedi:", err);
-      } finally {
-        resetPullIndicator();
-      }
-    }
-
-    function populateSheetOptions(sheets, activeSheet) {
       const select = document.getElementById('sheetSelect');
-      const currentSelected = select.value;
+      if (mod === 'budget') {
+        fetchInitialData();
+      } else {
+        select.innerHTML = `
+          <option value="active" selected>Aktif Borçlar</option>
+          <option value="archive">Borçlar Arşiv</option>
+        `;
+        loadDebtsData();
+      }
+    }
+
+    function onFilterChange() {
+      if (currentModule === 'budget') {
+        const sheet = document.getElementById('sheetSelect').value;
+        if (memoryCache[sheet]) renderDashboard(memoryCache[sheet]);
+        fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(sheet)}`)
+          .then(res => res.json())
+          .then(data => { if (data) { memoryCache[sheet] = data; renderDashboard(data); } });
+      } else {
+        loadDebtsData();
+      }
+    }
+
+    async function loadDebtsData() {
+      const isArchive = document.getElementById('sheetSelect').value === 'archive';
+      try {
+        const res = await fetch(`${API_URL}?action=getDebtsData&archive=${isArchive}`);
+        const data = await res.json();
+        debtsData = data;
+        renderDebtsDashboard(data);
+      } catch (e) {
+        console.error("Borç verisi alınamadı:", e);
+      } finally {
+        resetPullIndicator();
+      }
+    }
+
+    function populateBudgetSheets(sheets, activeSheet) {
+      if (currentModule !== 'budget') return;
+      const select = document.getElementById('sheetSelect');
       select.innerHTML = '';
       sheets.forEach(name => {
         const opt = document.createElement('option');
         opt.value = name;
         opt.innerText = name;
-        if (currentSelected ? name === currentSelected : (name === activeSheet || name === "Mevcut Ay")) {
-          opt.selected = true;
-        }
+        if (name === activeSheet || name === "Mevcut Ay") opt.selected = true;
         select.appendChild(opt);
       });
     }
@@ -607,105 +665,46 @@
       if (!val) return "€0,00";
       let str = val.toString().trim();
       if (str.includes("€") || str.includes("₺")) return str;
-      
       let num = parseFloat(str.replace(/\./g, '').replace(',', '.'));
       if (isNaN(num)) return str;
       return "€" + num.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
+    // ==========================================
+    // BÜTÇE DASHBOARD & LİSTE
+    // ==========================================
     function renderDashboard(data) {
       currentData = data;
-      if (!data) return;
-
+      if (!data || currentModule !== 'budget') return;
       document.getElementById('cardVal').innerText = data.cardTotal;
       updateMaskedDisplay();
-      renderCurrentList();
+      renderBudgetList();
     }
 
-    function toggleMask(key) {
-      maskedState[key] = !maskedState[key];
-      updateMaskedDisplay();
+    function switchBudgetTab(tab) {
+      activeBudgetTab = tab;
+      document.querySelectorAll('#viewBudget .tab-btn').forEach(btn => btn.classList.remove('active'));
+      const target = document.getElementById('tab-' + tab);
+      if (target) target.classList.add('active');
+      renderBudgetList();
     }
 
-    function updateMaskedDisplay() {
-      if (!currentData) return;
-
-      const remEl = document.getElementById('remVal');
-      if (maskedState.rem) {
-        remEl.innerText = "••••••";
-        remEl.classList.add('masked');
-        remEl.style.color = "";
-      } else {
-        remEl.innerText = currentData.remaining;
-        remEl.classList.remove('masked');
-
-        const rawRem = (currentData.remaining || "").toString().trim();
-        if (rawRem.includes("-")) {
-          remEl.style.color = "var(--red)";
-        } else {
-          remEl.style.color = "var(--green)";
-        }
-      }
-
-      const manEl = document.getElementById('manualVal');
-      if (maskedState.manual) {
-        manEl.innerText = "••••••";
-        manEl.classList.add('masked');
-      } else {
-        manEl.innerText = currentData.manualTotal;
-        manEl.classList.remove('masked');
-      }
-
-      const trEl = document.getElementById('trVal');
-      if (maskedState.tr) {
-        trEl.innerText = "••••••";
-        trEl.classList.add('masked');
-      } else {
-        trEl.innerText = currentData.trTotal || "€0,00";
-        trEl.classList.remove('masked');
-      }
-
-      const incEl = document.getElementById('incVal');
-      if (maskedState.inc) {
-        incEl.innerText = "••••••";
-        incEl.classList.add('masked');
-      } else {
-        incEl.innerText = currentData.incomeTotal;
-        incEl.classList.remove('masked');
-      }
-    }
-
-    function switchTab(tab) {
-      activeTab = tab;
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      const targetBtn = document.getElementById('tab-' + tab);
-      if (targetBtn) targetBtn.classList.add('active');
-      renderCurrentList();
-    }
-
-    function renderCurrentList() {
+    function renderBudgetList() {
       const container = document.getElementById('listContainer');
-      if (!container) return;
       container.innerHTML = '';
-      if (!currentData) return;
+      if (!currentData || currentModule !== 'budget') return;
 
       const select = document.getElementById('sheetSelect');
       const isCurrentMonth = (select && select.value === "Mevcut Ay");
 
       let items = [];
       let isIncome = false;
-      let canDelete = isCurrentMonth && (activeTab === 'manual' || activeTab === 'income' || activeTab === 'tr');
+      let canDelete = isCurrentMonth && (activeBudgetTab === 'manual' || activeBudgetTab === 'income' || activeBudgetTab === 'tr');
 
-      if (activeTab === 'card') {
-        items = currentData.cardItems || [];
-      } else if (activeTab === 'manual') {
-        items = currentData.manualItems || [];
-      } else if (activeTab === 'tr') {
-        items = currentData.trItems || [];
-      } else if (activeTab === 'income') {
-        items = currentData.incomeItems || [];
-        isIncome = true;
-      }
+      if (activeBudgetTab === 'card') items = currentData.cardItems || [];
+      else if (activeBudgetTab === 'manual') items = currentData.manualItems || [];
+      else if (activeBudgetTab === 'tr') items = currentData.trItems || [];
+      else if (activeBudgetTab === 'income') { items = currentData.incomeItems || []; isIncome = true; }
 
       if (!items || items.length === 0) {
         container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-dim)">Kayıt bulunamadı.</div>';
@@ -716,42 +715,25 @@
         const formattedAmt = formatAmount(item.amount);
         let subText = item.date;
         if (item.card) subText += ` • ${item.card}`;
-        if (activeTab === 'tr' && item.rate) subText += ` • Kur: ${item.rate}`;
+        if (activeBudgetTab === 'tr' && item.rate) subText += ` • Kur: ${item.rate}`;
 
-        let eurSub = '';
-        if (activeTab === 'tr' && item.eurAmount) {
-          eurSub = `<div class="sub-eur">${item.eurAmount}</div>`;
-        }
-
+        let eurSub = (activeBudgetTab === 'tr' && item.eurAmount) ? `<div class="sub-eur">${item.eurAmount}</div>` : '';
         let itemColor = isIncome ? 'var(--green)' : 'var(--red)';
         let sign = isIncome ? '+' : '-';
 
-        if (canDelete) {
-          const wrapper = document.createElement('div');
-          wrapper.className = 'swipe-container';
-          wrapper.id = `item-row-${item.rowIndex}`;
+        const wrapper = document.createElement('div');
+        wrapper.className = canDelete ? 'swipe-container' : '';
+        wrapper.id = `item-row-${item.rowIndex}`;
 
-          wrapper.innerHTML = `
-            <button class="swipe-delete-btn" onclick="deleteItem('${activeTab}', ${item.rowIndex})">Sil</button>
-            <div class="item-card">
-              <div class="item-left">
-                <div class="name">${item.merchant || 'Açıklamasız'}</div>
-                <div class="sub">${subText}</div>
-              </div>
-              <div class="item-right" style="color: ${itemColor}">
-                ${sign}${formattedAmt}
-                ${eurSub}
-              </div>
-            </div>
-          `;
+        let deleteAction = canDelete ? `
+          <div class="swipe-actions">
+            <button class="swipe-btn delete" onclick="deleteBudgetItem('${activeBudgetTab}', ${item.rowIndex})">Sil</button>
+          </div>
+        ` : '';
 
-          attachSwipeEvents(wrapper.querySelector('.item-card'), wrapper);
-          container.appendChild(wrapper);
-        } else {
-          const div = document.createElement('div');
-          div.className = 'item-card';
-          div.style.marginBottom = '8px';
-          div.innerHTML = `
+        wrapper.innerHTML = `
+          ${deleteAction}
+          <div class="item-card">
             <div class="item-left">
               <div class="name">${item.merchant || 'Açıklamasız'}</div>
               <div class="sub">${subText}</div>
@@ -760,12 +742,141 @@
               ${sign}${formattedAmt}
               ${eurSub}
             </div>
-          `;
-          container.appendChild(div);
-        }
+          </div>
+        `;
+
+        if (canDelete) attachSwipeEvents(wrapper.querySelector('.item-card'), wrapper);
+        container.appendChild(wrapper);
       });
     }
 
+    // ==========================================
+    // BORÇLAR DASHBOARD & LİSTE
+    // ==========================================
+    function renderDebtsDashboard(data) {
+      if (!data || currentModule !== 'debts') return;
+      updateMaskedDisplay();
+      renderDebtsList();
+    }
+
+    function switchDebtTab(tab) {
+      activeDebtTab = tab;
+      document.querySelectorAll('#viewDebts .tab-btn').forEach(btn => btn.classList.remove('active'));
+      const target = document.getElementById(tab === 'debt' ? 'tab-debt-give' : 'tab-debt-get');
+      if (target) target.classList.add('active');
+      renderDebtsList();
+    }
+
+    function renderDebtsList() {
+      const container = document.getElementById('listContainer');
+      container.innerHTML = '';
+      if (!debtsData || currentModule !== 'debts') return;
+
+      const isArchive = document.getElementById('sheetSelect').value === 'archive';
+      let items = (activeDebtTab === 'debt') ? debtsData.debts : debtsData.credits;
+
+      if (!items || items.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-dim)">Kayıt bulunamadı.</div>';
+        return;
+      }
+
+      items.forEach(item => {
+        const total = formatAmount(item.totalAmount);
+        const rem = formatAmount(item.remainingAmount);
+        const paid = formatAmount(item.paidAmount);
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'swipe-container';
+        wrapper.id = `debt-row-${item.rowIndex}`;
+
+        let swipeButtons = '';
+        if (!isArchive) {
+          swipeButtons = `
+            <div class="swipe-actions">
+              <button class="swipe-btn pay" onclick="handleDebtPayment('${activeDebtTab}', ${item.rowIndex})">Ödeme</button>
+              <button class="swipe-btn close" onclick="handleDebtArchive('${activeDebtTab}', ${item.rowIndex})">Kapat</button>
+              <button class="swipe-btn delete" onclick="handleDebtDelete('${activeDebtTab}', ${item.rowIndex})">Sil</button>
+            </div>
+          `;
+        } else {
+          swipeButtons = `
+            <div class="swipe-actions">
+              <button class="swipe-btn delete" onclick="handleDebtDelete('${activeDebtTab}', ${item.rowIndex})">Sil</button>
+            </div>
+          `;
+        }
+
+        wrapper.innerHTML = `
+          ${swipeButtons}
+          <div class="item-card">
+            <div class="item-left">
+              <div class="name">${item.person}</div>
+              <div class="sub">${item.date} • ${item.statusOrDate || ''} (Ödenen: ${paid})</div>
+            </div>
+            <div class="item-right" style="color: ${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">
+              ${total}
+              <div class="sub-eur">Kalan: ${rem}</div>
+            </div>
+          </div>
+        `;
+
+        attachSwipeEvents(wrapper.querySelector('.item-card'), wrapper);
+        container.appendChild(wrapper);
+      });
+    }
+
+    // ==========================================
+    // MASKELEME (GİZLE / GÖSTER)
+    // ==========================================
+    function toggleMask(key) {
+      maskedState[key] = !maskedState[key];
+      updateMaskedDisplay();
+    }
+
+    function updateMaskedDisplay() {
+      if (currentModule === 'budget' && currentData) {
+        const remEl = document.getElementById('remVal');
+        if (maskedState.rem) {
+          remEl.innerText = "••••••"; remEl.classList.add('masked'); remEl.style.color = "";
+        } else {
+          remEl.innerText = currentData.remaining; remEl.classList.remove('masked');
+          remEl.style.color = (currentData.remaining || "").toString().includes("-") ? "var(--red)" : "var(--green)";
+        }
+
+        const manEl = document.getElementById('manualVal');
+        manEl.innerText = maskedState.manual ? "••••••" : currentData.manualTotal;
+        manEl.classList.toggle('masked', maskedState.manual);
+
+        const trEl = document.getElementById('trVal');
+        trEl.innerText = maskedState.tr ? "••••••" : (currentData.trTotal || "€0,00");
+        trEl.classList.toggle('masked', maskedState.tr);
+
+        const incEl = document.getElementById('incVal');
+        incEl.innerText = maskedState.inc ? "••••••" : currentData.incomeTotal;
+        incEl.classList.toggle('masked', maskedState.inc);
+      } 
+      else if (currentModule === 'debts' && debtsData) {
+        const netEl = document.getElementById('debtNetVal');
+        if (maskedState.debtNet) {
+          netEl.innerText = "••••••"; netEl.classList.add('masked'); netEl.style.color = "";
+        } else {
+          netEl.innerText = debtsData.netBalance; netEl.classList.remove('masked');
+          netEl.style.color = (debtsData.netBalance || "").toString().includes("-") ? "var(--red)" : "var(--green)";
+        }
+
+        const giveEl = document.getElementById('debtGiveVal');
+        giveEl.innerText = maskedState.debtGive ? "••••••" : debtsData.totalDebt;
+        giveEl.classList.toggle('masked', maskedState.debtGive);
+
+        const getEl = document.getElementById('debtGetVal');
+        getEl.innerText = maskedState.debtGet ? "••••••" : debtsData.totalCredit;
+        getEl.classList.toggle('masked', maskedState.debtGet);
+      }
+    }
+
+    // ==========================================
+    // SWIPE (KAYDIRMA) MOTORU
+    // ==========================================
     let currentlySwiped = null;
     let currentlySwipedContainer = null;
 
@@ -777,8 +888,7 @@
         if (currentlySwiped && currentlySwiped !== card) {
           currentlySwiped.style.transform = 'translateX(0px)';
           if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped', 'swiping');
-          currentlySwiped = null;
-          currentlySwipedContainer = null;
+          currentlySwiped = null; currentlySwipedContainer = null;
         }
         startX = e.touches[0].clientX;
       }, { passive: true });
@@ -786,7 +896,7 @@
       card.addEventListener('touchmove', e => {
         currentX = e.touches[0].clientX;
         let diff = currentX - startX;
-        if (diff < 0 && diff > -100) {
+        if (diff < 0 && diff > -180) {
           container.classList.add('swiping');
           card.style.transform = `translateX(${diff}px)`;
         }
@@ -794,63 +904,96 @@
 
       card.addEventListener('touchend', () => {
         let diff = currentX - startX;
+        let maxOffset = (currentModule === 'debts' && document.getElementById('sheetSelect').value !== 'archive') ? -160 : -80;
         if (diff < -50) {
-          card.style.transform = 'translateX(-80px)';
+          card.style.transform = `translateX(${maxOffset}px)`;
           container.classList.add('swiped');
           container.classList.remove('swiping');
-          currentlySwiped = card;
-          currentlySwipedContainer = container;
+          currentlySwiped = card; currentlySwipedContainer = container;
         } else {
           card.style.transform = 'translateX(0px)';
           container.classList.remove('swiped', 'swiping');
-          if (currentlySwiped === card) {
-            currentlySwiped = null;
-            currentlySwipedContainer = null;
-          }
+          if (currentlySwiped === card) { currentlySwiped = null; currentlySwipedContainer = null; }
         }
       });
     }
 
-    async function deleteItem(type, rowIndex) {
-      const sheet = document.getElementById('sheetSelect').value;
-      const rowElement = document.getElementById(`item-row-${rowIndex}`);
-      
-      if (rowElement) {
-        rowElement.style.transform = 'scale(0.8)';
-        rowElement.style.opacity = '0';
-        setTimeout(() => {
-          rowElement.remove();
-        }, 200);
-      }
+    // ==========================================
+    // BORÇLAR İŞLEM FONKSİYONLARI
+    // ==========================================
+    async function handleDebtPayment(debtType, rowIndex) {
+      const pay = prompt("Eklemek istediğiniz ödeme tutarını girin (€):");
+      if (!pay) return;
 
-      if (currentData) {
-        if (type === 'manual' && currentData.manualItems) {
-          currentData.manualItems = currentData.manualItems.filter(i => i.rowIndex !== rowIndex);
-        } else if (type === 'tr' && currentData.trItems) {
-          currentData.trItems = currentData.trItems.filter(i => i.rowIndex !== rowIndex);
-        } else if (type === 'income' && currentData.incomeItems) {
-          currentData.incomeItems = currentData.incomeItems.filter(i => i.rowIndex !== rowIndex);
-        }
-      }
-
-      try {
-        await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'deleteEntry',
-            sheet: sheet,
-            type: type,
-            rowIndex: rowIndex
-          })
-        });
-        delete memoryCache[sheet];
-        loadData();
-      } catch (e) {
-        console.error("Silinemedi:", e);
-        loadData();
-      }
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'updateDebtPayment',
+          debtType: debtType,
+          rowIndex: rowIndex,
+          amount: pay
+        })
+      });
+      loadDebtsData();
     }
 
+    async function handleDebtArchive(debtType, rowIndex) {
+      if (!confirm("Bu borç/alacak kapandı olarak arşive taşınsın mı?")) return;
+
+      const row = document.getElementById(`debt-row-${rowIndex}`);
+      if (row) row.remove();
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'archiveDebt',
+          debtType: debtType,
+          rowIndex: rowIndex
+        })
+      });
+      loadDebtsData();
+    }
+
+    async function handleDebtDelete(debtType, rowIndex) {
+      if (!confirm("Bu kaydı tamamen silmek istediğinize emin misiniz?")) return;
+      const isArchive = document.getElementById('sheetSelect').value === 'archive';
+
+      const row = document.getElementById(`debt-row-${rowIndex}`);
+      if (row) row.remove();
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'deleteDebt',
+          debtType: debtType,
+          rowIndex: rowIndex,
+          isArchive: isArchive
+        })
+      });
+      loadDebtsData();
+    }
+
+    async function deleteBudgetItem(type, rowIndex) {
+      const sheet = document.getElementById('sheetSelect').value;
+      const row = document.getElementById(`item-row-${rowIndex}`);
+      if (row) row.remove();
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'deleteEntry',
+          sheet: sheet,
+          type: type,
+          rowIndex: rowIndex
+        })
+      });
+      delete memoryCache[sheet];
+      onFilterChange();
+    }
+
+    // ==========================================
+    // PULL TO REFRESH
+    // ==========================================
     let touchStartY = 0;
     let isPulling = false;
     let pullIndicator = null;
@@ -872,14 +1015,12 @@
 
       document.addEventListener('touchmove', e => {
         if (!isPulling || touchStartY === 0) return;
-        
         let currentY = e.touches[0].clientY;
         let distance = currentY - touchStartY;
 
         if (distance > 0) {
           let pullOffset = Math.min(80, distance * 0.45);
           appContent.style.transform = `translateY(${pullOffset}px)`;
-
           let scale = Math.min(1, distance / 70);
           pullIndicator.style.opacity = scale;
           pullIndicator.style.transform = `translateX(-50%) scale(${scale})`;
@@ -889,7 +1030,6 @@
 
       document.addEventListener('touchend', e => {
         if (!isPulling || touchStartY === 0) return;
-        
         let touchEndY = e.changedTouches[0].clientY;
         let distance = touchEndY - touchStartY;
 
@@ -897,11 +1037,10 @@
           appContent.style.transform = 'translateY(60px)';
           pullIndicator.innerHTML = '↻';
           pullIndicator.classList.add('rotating');
-          loadData();
+          onFilterChange();
         } else {
           resetPullIndicator();
         }
-
         touchStartY = 0;
         isPulling = false;
       }, { passive: true });
@@ -916,57 +1055,46 @@
       pullIndicator.innerHTML = '↓';
     }
 
+    // ==========================================
+    // MODAL & KAYIT EKLEME
+    // ==========================================
     function handleFabClick() {
-      const select = document.getElementById('sheetSelect');
-      const currentSheetName = select ? select.value : "Mevcut Ay";
-      const isCurrentMonth = (currentSheetName === "Mevcut Ay");
-
-      if (!isCurrentMonth) {
-        const confirmAdd = confirm(`Geçmiş bir aydasınız (${currentSheetName}). Buraya bir ekleme yapmak istediğinize emin misiniz?`);
-        if (!confirmAdd) return;
+      if (currentModule === 'budget') {
+        document.getElementById('modalBudget').style.display = 'flex';
+      } else {
+        document.getElementById('modalDebt').style.display = 'flex';
       }
-
-      openModal();
     }
 
-    function openModal() { 
-      document.getElementById('modal').style.display = 'flex'; 
-    }
-    function closeModal() { 
-      document.getElementById('modal').style.display = 'none'; 
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
     }
 
     function setModalType(type) {
       modalSelectedType = type;
-      const btnManual = document.getElementById('btnTypeManual');
-      const btnTR = document.getElementById('btnTypeTR');
-      const btnIncome = document.getElementById('btnTypeIncome');
+      document.querySelectorAll('#modalBudget .type-btn').forEach(b => b.classList.remove('active'));
       const lblAmount = document.getElementById('lblAmount');
       const lblDesc = document.getElementById('lblDesc');
       const grpCard = document.getElementById('grpCard');
       const mDesc = document.getElementById('mDesc');
       const mAmount = document.getElementById('mAmount');
 
-      btnManual.classList.remove('active');
-      btnTR.classList.remove('active');
-      btnIncome.classList.remove('active');
-
       if (type === 'income') {
-        btnIncome.classList.add('active');
+        document.getElementById('btnTypeIncome').classList.add('active');
         lblDesc.innerText = 'Nereden / Açıklama';
         lblAmount.innerText = 'Tutar (€)';
         mAmount.placeholder = 'örn: 500,00 €';
         mDesc.placeholder = 'örn: Maaş, Prim vb.';
         grpCard.style.display = 'none';
       } else if (type === 'tr') {
-        btnTR.classList.add('active');
+        document.getElementById('btnTypeTR').classList.add('active');
         lblDesc.innerText = 'Nereye / Açıklama';
         lblAmount.innerText = 'Tutar (₺)';
         mAmount.placeholder = 'örn: 500,00 ₺';
         mDesc.placeholder = 'örn: Spotify, Enpara';
         grpCard.style.display = 'none';
       } else {
-        btnManual.classList.add('active');
+        document.getElementById('btnTypeManual').classList.add('active');
         lblDesc.innerText = 'Kime / Açıklama';
         lblAmount.innerText = 'Tutar (€)';
         mAmount.placeholder = 'örn: 50,00 €';
@@ -975,7 +1103,21 @@
       }
     }
 
-    async function submitEntry() {
+    function setDebtModalType(type) {
+      modalDebtSelectedType = type;
+      document.querySelectorAll('#modalDebt .type-btn').forEach(b => b.classList.remove('active'));
+      const lblPerson = document.getElementById('lblDebtPerson');
+
+      if (type === 'debt') {
+        document.getElementById('btnTypeDebtGive').classList.add('active');
+        lblPerson.innerText = 'Kimden Borç Aldım';
+      } else {
+        document.getElementById('btnTypeDebtGet').classList.add('active');
+        lblPerson.innerText = 'Kime Borç Verdim';
+      }
+    }
+
+    async function submitBudgetEntry() {
       const type = modalSelectedType;
       const rawDate = document.getElementById('mDate').value;
       let dateFormatted = "";
@@ -984,65 +1126,61 @@
         dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
       }
 
-      const rawAmount = document.getElementById('mAmount').value;
-      const rawDesc = document.getElementById('mDesc').value;
-      const rawAccount = document.getElementById('mAccount').value;
-      
-      const targetSheet = document.getElementById('sheetSelect').value;
-
       const payload = {
         date: dateFormatted,
-        amount: rawAmount,
-        merchant: rawDesc,
-        card: rawAccount
+        amount: document.getElementById('mAmount').value,
+        merchant: document.getElementById('mDesc').value,
+        card: document.getElementById('mAccount').value
       };
 
-      closeModal();
+      closeModal('modalBudget');
       document.getElementById('mAmount').value = '';
       document.getElementById('mDesc').value = '';
       document.getElementById('mAccount').value = '';
 
-      const newItem = {
-        rowIndex: 9999,
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'addEntry',
+          sheet: document.getElementById('sheetSelect').value,
+          type: type,
+          payload: payload
+        })
+      });
+      onFilterChange();
+    }
+
+    async function submitDebtEntry() {
+      const rawDate = document.getElementById('mDebtDate').value;
+      let dateFormatted = "";
+      if (rawDate) {
+        const p = rawDate.split("-");
+        dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
+      }
+
+      const payload = {
+        person: document.getElementById('mDebtPerson').value,
         date: dateFormatted,
-        amount: rawAmount,
-        merchant: rawDesc,
-        card: rawAccount
+        amount: document.getElementById('mDebtAmount').value,
+        paid: document.getElementById('mDebtPaid').value,
+        note: document.getElementById('mDebtNote').value
       };
 
-      if (currentData) {
-        if (type === 'manual') {
-          if (!currentData.manualItems) currentData.manualItems = [];
-          currentData.manualItems.unshift(newItem);
-          switchTab('manual');
-        } else if (type === 'tr') {
-          if (!currentData.trItems) currentData.trItems = [];
-          currentData.trItems.unshift(newItem);
-          switchTab('tr');
-        } else if (type === 'income') {
-          if (!currentData.incomeItems) currentData.incomeItems = [];
-          currentData.incomeItems.unshift(newItem);
-          switchTab('income');
-        }
-        renderDashboard(currentData);
-      }
+      closeModal('modalDebt');
+      document.getElementById('mDebtPerson').value = '';
+      document.getElementById('mDebtAmount').value = '';
+      document.getElementById('mDebtPaid').value = '';
+      document.getElementById('mDebtNote').value = '';
 
-      try {
-        await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'addEntry',
-            sheet: targetSheet,
-            type: type,
-            payload: payload
-          })
-        });
-        delete memoryCache[targetSheet];
-        loadData();
-      } catch (err) {
-        console.error("Kayıt eklenemedi:", err);
-        loadData();
-      }
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'addDebt',
+          debtType: modalDebtSelectedType,
+          payload: payload
+        })
+      });
+      loadDebtsData();
     }
   </script>
 </body>
