@@ -21,12 +21,14 @@
       --bg: #0f172a;
       --card-bg: #1e293b;
       --accent: #38bdf8;
+      --primary-blue: #2563eb;
       --text: #f8fafc;
       --text-dim: #94a3b8;
       --border: #334155;
       --green: #10b981;
       --red: #f43f5e;
       --orange: #f59e0b;
+      --purple: #a855f7;
     }
     * { 
       box-sizing: border-box; 
@@ -125,26 +127,45 @@
       font-size: 15px; 
     }
 
+    /* Üst Özet Kartları ve Özel Sol Çizgi Tasarımı */
     .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
     .card { 
       background: var(--card-bg); 
       border: 1px solid var(--border); 
       border-radius: 12px; 
       padding: 12px 14px; 
+      position: relative;
+      overflow: hidden;
     }
+    .card::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 10px;
+      bottom: 10px;
+      width: 4px;
+      border-radius: 0 4px 4px 0;
+    }
+    .card.card-rem::before { background-color: var(--primary-blue); }
+    .card.card-card::before { background-color: var(--accent); }
+    .card.card-manual::before { background-color: var(--orange); }
+    .card.card-tr::before { background-color: var(--purple); }
+    .card.card-inc::before { background-color: var(--green); }
+
     .card.clickable { cursor: pointer; }
     .card.clickable:active { opacity: 0.8; transform: scale(0.98); transition: transform 0.1s; }
-    .card.full { grid-column: span 2; background: linear-gradient(135deg, #1e293b, #0f172a); border-color: rgba(56, 189, 248, 0.3); }
+    .card.full { grid-column: span 2; }
     .card-title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
     .card-val { font-size: 20px; font-weight: 700; margin-top: 4px; letter-spacing: 0.5px; }
     
-    .val-rem { font-size: 26px; }
-    .val-card { color: var(--orange); }
-    .val-manual { color: var(--orange); }
-    .val-inc { color: #34d399; }
+    .val-rem { font-size: 24px; }
+    .val-card { color: var(--text); }
+    .val-manual { color: var(--text); }
+    .val-tr { color: var(--text); }
+    .val-inc { color: var(--text); }
     .masked { letter-spacing: 3px; color: var(--text-dim) !important; font-size: 18px; }
 
-    /* Ortadaki Seçim Sekmeleri */
+    /* 4'lü Seçim Sekmeleri */
     .tabs { 
       display: flex; 
       background: var(--card-bg); 
@@ -172,16 +193,22 @@
     .tab-btn#tab-card.active { 
       background: var(--accent); 
       color: #0f172a; 
+      box-shadow: 0 2px 8px rgba(56, 189, 248, 0.35);
     }
     .tab-btn#tab-manual.active { 
       background: var(--orange); 
       color: #0f172a; 
-      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+    }
+    .tab-btn#tab-tr.active { 
+      background: var(--purple); 
+      color: #ffffff; 
+      box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35);
     }
     .tab-btn#tab-income.active { 
       background: var(--green); 
       color: #0f172a; 
-      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
     }
 
     .swipe-container {
@@ -218,7 +245,7 @@
     }
 
     .item-card { 
-      position: relative;
+      position: relative; 
       background: var(--card-bg); 
       border: 1px solid var(--border); 
       border-radius: 10px; 
@@ -226,13 +253,14 @@
       display: flex; 
       justify-content: space-between; 
       align-items: center; 
-      z-index: 2;
-      transition: transform 0.2s ease-out;
-      width: 100%;
+      z-index: 2; 
+      transition: transform 0.2s ease-out; 
+      width: 100%; 
     }
     .item-left .name { font-weight: 600; font-size: 14px; }
     .item-left .sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
-    .item-right { font-weight: 700; font-size: 15px; }
+    .item-right { font-weight: 700; font-size: 15px; text-align: right; }
+    .item-right .sub-eur { font-size: 11px; color: var(--purple); font-weight: 500; margin-top: 2px; }
 
     /* 70px x 70px FAB Buton */
     .fab { 
@@ -251,9 +279,9 @@
       align-items: center; 
       justify-content: center; 
       z-index: 50; 
-      transition: transform 0.15s ease;
-      padding: 0;
-      margin: 0;
+      transition: transform 0.15s ease; 
+      padding: 0; 
+      margin: 0; 
     }
     .fab span {
       display: block;
@@ -281,7 +309,7 @@
     
     .type-switcher {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       margin-bottom: 14px;
       background: var(--bg);
       padding: 4px;
@@ -294,7 +322,7 @@
       border: none;
       background: transparent;
       color: var(--text-dim);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       border-radius: 7px;
       cursor: pointer;
@@ -305,6 +333,11 @@
       background: var(--orange);
       color: #0f172a;
       box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+    }
+    .type-btn#btnTypeTR.active {
+      background: var(--purple);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35);
     }
     .type-btn#btnTypeIncome.active {
       background: var(--green);
@@ -379,31 +412,39 @@
       <select id="sheetSelect" class="sheet-select" onchange="onSheetChange()"></select>
     </div>
 
+    <!-- 5'li Şık Izgara ve Sol Vurgu Çizgileri -->
     <div class="summary-grid">
-      <div class="card full clickable" onclick="toggleMask('rem')">
+      <div class="card full card-rem clickable" onclick="toggleMask('rem')">
         <div class="card-title">Kalan Bakiye</div>
         <div class="card-val val-rem masked" id="remVal">••••••</div>
       </div>
       
-      <div class="card">
-        <div class="card-title">Kart Harcamaları</div>
+      <div class="card card-card">
+        <div class="card-title">Kart Harcaması</div>
         <div class="card-val val-card" id="cardVal">...</div>
       </div>
       
-      <div class="card clickable" onclick="toggleMask('manual')">
+      <div class="card card-manual clickable" onclick="toggleMask('manual')">
         <div class="card-title">Diğer Harcamalar</div>
         <div class="card-val val-manual masked" id="manualVal">••••••</div>
       </div>
       
-      <div class="card full clickable" onclick="toggleMask('inc')">
-        <div class="card-title">Toplam Gelir</div>
+      <div class="card card-tr clickable" onclick="toggleMask('tr')">
+        <div class="card-title">TR Ödemeleri (€)</div>
+        <div class="card-val val-tr masked" id="trVal">••••••</div>
+      </div>
+      
+      <div class="card card-inc clickable" onclick="toggleMask('inc')">
+        <div class="card-title">Gelirler</div>
         <div class="card-val val-inc masked" id="incVal">••••••</div>
       </div>
     </div>
 
+    <!-- 4'lü Sekmeler (Kart, Diğer, TR, Gelir) -->
     <div class="tabs">
       <button class="tab-btn active" id="tab-card" onclick="switchTab('card')">Kart</button>
       <button class="tab-btn" id="tab-manual" onclick="switchTab('manual')">Diğer</button>
+      <button class="tab-btn" id="tab-tr" onclick="switchTab('tr')">TR</button>
       <button class="tab-btn" id="tab-income" onclick="switchTab('income')">Gelir</button>
     </div>
 
@@ -417,7 +458,8 @@
       <h3 style="margin-bottom: 14px; font-size: 16px;" id="modalTitle">Kayıt Ekle</h3>
       
       <div class="type-switcher">
-        <button type="button" class="type-btn active" id="btnTypeManual" onclick="setModalType('manual')">Diğer Harcama</button>
+        <button type="button" class="type-btn active" id="btnTypeManual" onclick="setModalType('manual')">Diğer</button>
+        <button type="button" class="type-btn" id="btnTypeTR" onclick="setModalType('tr')">TR (₺)</button>
         <button type="button" class="type-btn" id="btnTypeIncome" onclick="setModalType('income')">Gelir</button>
       </div>
 
@@ -427,7 +469,7 @@
       </div>
 
       <div class="form-group">
-        <label>Tutar (€)</label>
+        <label id="lblAmount">Tutar (€)</label>
         <input type="text" id="mAmount" placeholder="örn: 50,00 €">
       </div>
 
@@ -449,9 +491,9 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "1.0.3";
+    const CURRENT_VERSION = "1.0.4";
 
-    // ⚠️ APPS SCRIPT EXEC LİNKİNİZİ BURAYA YAPIŞTIRIN:
+    // ⚠️ APPS SCRIPT EXEC LİNKİNİZ:
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentData = null;
@@ -462,6 +504,7 @@
     let maskedState = {
       rem: true,
       manual: true,
+      tr: true,
       inc: true
     };
 
@@ -487,7 +530,7 @@
 
     function loadLocalCache() {
       try {
-        const cached = localStorage.getItem('harcama_cache_v5');
+        const cached = localStorage.getItem('harcama_cache_v6');
         if (cached) {
           const parsed = JSON.parse(cached);
           if (parsed.sheets) populateSheetOptions(parsed.sheets, parsed.activeSheet);
@@ -505,7 +548,7 @@
         const res = await fetch(`${API_URL}?action=getInitialData`);
         const data = await res.json();
         if (data && data.dashboard) {
-          localStorage.setItem('harcama_cache_v5', JSON.stringify(data));
+          localStorage.setItem('harcama_cache_v6', JSON.stringify(data));
           memoryCache[data.activeSheet || "Mevcut Ay"] = data.dashboard;
           populateSheetOptions(data.sheets, data.activeSheet);
           renderDashboard(data.dashboard);
@@ -573,7 +616,7 @@
     function formatAmount(val) {
       if (!val) return "€0,00";
       let str = val.toString().trim();
-      if (str.includes("€")) return str;
+      if (str.includes("€") || str.includes("₺")) return str;
       
       let num = parseFloat(str.replace(/\./g, '').replace(',', '.'));
       if (isNaN(num)) return str;
@@ -623,6 +666,15 @@
         manEl.classList.remove('masked');
       }
 
+      const trEl = document.getElementById('trVal');
+      if (maskedState.tr) {
+        trEl.innerText = "••••••";
+        trEl.classList.add('masked');
+      } else {
+        trEl.innerText = currentData.trTotal || "€0,00";
+        trEl.classList.remove('masked');
+      }
+
       const incEl = document.getElementById('incVal');
       if (maskedState.inc) {
         incEl.innerText = "••••••";
@@ -652,12 +704,14 @@
 
       let items = [];
       let isIncome = false;
-      let canDelete = isCurrentMonth && (activeTab === 'manual' || activeTab === 'income');
+      let canDelete = isCurrentMonth && (activeTab === 'manual' || activeTab === 'income' || activeTab === 'tr');
 
       if (activeTab === 'card') {
         items = currentData.cardItems || [];
       } else if (activeTab === 'manual') {
         items = currentData.manualItems || [];
+      } else if (activeTab === 'tr') {
+        items = currentData.trItems || [];
       } else if (activeTab === 'income') {
         items = currentData.incomeItems || [];
         isIncome = true;
@@ -670,6 +724,18 @@
 
       items.forEach(item => {
         const formattedAmt = formatAmount(item.amount);
+        let subText = item.date;
+        if (item.card) subText += ` • ${item.card}`;
+        if (activeTab === 'tr' && item.rate) subText += ` • Kur: ${item.rate}`;
+
+        let eurSub = '';
+        if (activeTab === 'tr' && item.eurAmount) {
+          eurSub = `<div class="sub-eur">${item.eurAmount}</div>`;
+        }
+
+        let itemColor = isIncome ? 'var(--green)' : (activeTab === 'tr' ? 'var(--purple)' : 'var(--red)');
+        let sign = isIncome ? '+' : '-';
+        if (activeTab === 'tr') sign = '';
 
         if (canDelete) {
           const wrapper = document.createElement('div');
@@ -681,10 +747,11 @@
             <div class="item-card">
               <div class="item-left">
                 <div class="name">${item.merchant || 'Açıklamasız'}</div>
-                <div class="sub">${item.date} ${item.card ? '• ' + item.card : ''}</div>
+                <div class="sub">${subText}</div>
               </div>
-              <div class="item-right" style="color: ${isIncome ? 'var(--green)' : 'var(--red)'}">
-                ${isIncome ? '+' : '-'}${formattedAmt}
+              <div class="item-right" style="color: ${itemColor}">
+                ${sign}${formattedAmt}
+                ${eurSub}
               </div>
             </div>
           `;
@@ -698,10 +765,11 @@
           div.innerHTML = `
             <div class="item-left">
               <div class="name">${item.merchant || 'Açıklamasız'}</div>
-              <div class="sub">${item.date} ${item.card ? '• ' + item.card : ''}</div>
+              <div class="sub">${subText}</div>
             </div>
-            <div class="item-right" style="color: ${isIncome ? 'var(--green)' : 'var(--red)'}">
-              ${isIncome ? '+' : '-'}${formattedAmt}
+            <div class="item-right" style="color: ${itemColor}">
+              ${sign}${formattedAmt}
+              ${eurSub}
             </div>
           `;
           container.appendChild(div);
@@ -769,6 +837,8 @@
       if (currentData) {
         if (type === 'manual' && currentData.manualItems) {
           currentData.manualItems = currentData.manualItems.filter(i => i.rowIndex !== rowIndex);
+        } else if (type === 'tr' && currentData.trItems) {
+          currentData.trItems = currentData.trItems.filter(i => i.rowIndex !== rowIndex);
         } else if (type === 'income' && currentData.incomeItems) {
           currentData.incomeItems = currentData.incomeItems.filter(i => i.rowIndex !== rowIndex);
         }
@@ -880,18 +950,31 @@
     function setModalType(type) {
       modalSelectedType = type;
       const btnManual = document.getElementById('btnTypeManual');
+      const btnTR = document.getElementById('btnTypeTR');
       const btnIncome = document.getElementById('btnTypeIncome');
+      const lblAmount = document.getElementById('lblAmount');
+      const lblDesc = document.getElementById('lblDesc');
+      const grpCard = document.getElementById('grpCard');
+
+      btnManual.classList.remove('active');
+      btnTR.classList.remove('active');
+      btnIncome.classList.remove('active');
 
       if (type === 'income') {
         btnIncome.classList.add('active');
-        btnManual.classList.remove('active');
-        document.getElementById('lblDesc').innerText = 'Nereden / Açıklama';
-        document.getElementById('grpCard').style.display = 'none';
+        lblDesc.innerText = 'Nereden / Açıklama';
+        lblAmount.innerText = 'Tutar (€)';
+        grpCard.style.display = 'none';
+      } else if (type === 'tr') {
+        btnTR.classList.add('active');
+        lblDesc.innerText = 'Nereye / Açıklama';
+        lblAmount.innerText = 'Tutar (₺)';
+        grpCard.style.display = 'none';
       } else {
         btnManual.classList.add('active');
-        btnIncome.classList.remove('active');
-        document.getElementById('lblDesc').innerText = 'Kime / Açıklama';
-        document.getElementById('grpCard').style.display = 'block';
+        lblDesc.innerText = 'Kime / Açıklama';
+        lblAmount.innerText = 'Tutar (€)';
+        grpCard.style.display = 'block';
       }
     }
 
@@ -935,6 +1018,10 @@
           if (!currentData.manualItems) currentData.manualItems = [];
           currentData.manualItems.unshift(newItem);
           switchTab('manual');
+        } else if (type === 'tr') {
+          if (!currentData.trItems) currentData.trItems = [];
+          currentData.trItems.unshift(newItem);
+          switchTab('tr');
         } else if (type === 'income') {
           if (!currentData.incomeItems) currentData.incomeItems = [];
           currentData.incomeItems.unshift(newItem);
