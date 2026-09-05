@@ -111,25 +111,30 @@
       100% { transform: translateX(-50%) rotate(360deg); }
     }
 
+    /* Üst Başlık Grid Düzeni: Alt kartlarla birebir eşit genişlik */
     .header { 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
       margin-bottom: 16px; 
       padding-top: 6px;
+      align-items: center;
     }
 
-    /* Sol Üst İki Modül Butonları */
+    /* Sol Üst Modül Butonları */
     .module-switcher {
       display: flex;
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 2px;
-      gap: 2px;
+      padding: 3px;
+      gap: 3px;
+      width: 100%;
+      height: 38px;
     }
     .mod-btn {
-      padding: 6px 14px;
+      flex: 1;
+      padding: 0;
       border: none;
       background: transparent;
       color: var(--text-dim);
@@ -137,6 +142,9 @@
       font-weight: 600;
       border-radius: 6px;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       transition: all 0.2s ease;
     }
     .mod-btn.active {
@@ -145,17 +153,19 @@
       box-shadow: 0 2px 6px rgba(56, 189, 248, 0.3);
     }
 
-    /* Sağ Üst Filtre Seçici (Sabit Genişlik) */
+    /* Sağ Üst Filtre Seçici */
     select.sheet-select { 
+      width: 100%;
+      height: 38px;
       background: var(--card-bg); 
       color: var(--text); 
       border: 1px solid var(--border); 
-      padding: 8px 12px; 
+      padding: 0 10px; 
       border-radius: 8px; 
-      font-size: 14px; 
+      font-size: 13px; 
+      font-weight: 600;
       outline: none;
-      min-width: 135px;
-      text-align: right;
+      text-align: center;
     }
 
     /* Kart Izgaraları */
@@ -224,13 +234,13 @@
     .tab-btn#tab-debt-give.active { background: var(--red); color: #fff; box-shadow: 0 2px 8px rgba(244, 63, 94, 0.35); }
     .tab-btn#tab-debt-get.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); }
 
+    /* Kaydırma ve Eylem Butonları Yapısı */
     .swipe-container {
       position: relative;
       margin-bottom: 8px;
       overflow: hidden;
       border-radius: 10px;
-      background: var(--red);
-      transition: all 0.25s ease;
+      background: transparent;
     }
     .swipe-actions {
       position: absolute;
@@ -240,7 +250,7 @@
       display: flex;
       z-index: 1;
       opacity: 0;
-      transition: opacity 0.1s ease;
+      transition: opacity 0.15s ease;
     }
     .swipe-container.swiping .swipe-actions,
     .swipe-container.swiped .swipe-actions {
@@ -252,16 +262,16 @@
       color: #fff;
       font-weight: 700;
       font-size: 13px;
-      padding: 0 18px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       white-space: nowrap;
+      padding: 0;
     }
-    .swipe-btn.pay { background: var(--orange); }
-    .swipe-btn.close { background: var(--primary-blue); }
-    .swipe-btn.delete { background: var(--red); }
+    .swipe-btn.pay { background: var(--orange); width: 70px; }
+    .swipe-btn.close { background: var(--primary-blue); width: 70px; }
+    .swipe-btn.delete { background: var(--red); width: 70px; }
 
     .item-card { 
       position: relative; 
@@ -342,7 +352,6 @@
     .type-btn#btnTypeDebtGive.active { background: var(--red); color: #ffffff; }
     .type-btn#btnTypeDebtGet.active { background: var(--green); color: #0f172a; }
 
-    /* Form Elemanları ve Tarih Alanı Taşma Koruması */
     .form-group { 
       margin-bottom: 12px; 
       width: 100%; 
@@ -408,14 +417,13 @@
   <div id="pullIndicator">↓</div>
 
   <div id="appContent">
+    <!-- Eşit Genişlikli Üst Başlık Grid Yapısı -->
     <div class="header">
-      <!-- Sol Üst Modül Seçici -->
       <div class="module-switcher">
         <button class="mod-btn active" id="modBudget" onclick="switchModule('budget')">Bütçe</button>
         <button class="mod-btn" id="modDebts" onclick="switchModule('debts')">Borçlar</button>
       </div>
       
-      <!-- Sağ Üst Seçici (Genişliği Sabit) -->
       <select id="sheetSelect" class="sheet-select" onchange="onFilterChange()"></select>
     </div>
 
@@ -554,7 +562,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.0.3";
+    const CURRENT_VERSION = "2.0.4";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -613,9 +621,6 @@
       }
     }
 
-    // ==========================================
-    // MODÜL GEÇİŞİ (BÜTÇE / BORÇLAR)
-    // ==========================================
     function switchModule(mod) {
       currentModule = mod;
       document.getElementById('modBudget').classList.toggle('active', mod === 'budget');
@@ -698,9 +703,6 @@
       return "€" + num.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    // ==========================================
-    // BÜTÇE DASHBOARD & LİSTE
-    // ==========================================
     function renderDashboard(data) {
       currentData = data;
       if (!data || currentModule !== 'budget') return;
@@ -778,9 +780,6 @@
       });
     }
 
-    // ==========================================
-    // BORÇLAR DASHBOARD & LİSTE
-    // ==========================================
     function renderDebtsDashboard(data) {
       if (!data || currentModule !== 'debts') return;
       updateMaskedDisplay();
@@ -820,7 +819,7 @@
         let swipeButtons = '';
         if (!isArchive) {
           swipeButtons = `
-            <div class="swipe-actions">
+            <div class="swipe-actions" style="width: 210px;">
               <button class="swipe-btn pay" onclick="handleDebtPayment('${activeDebtTab}', ${item.rowIndex})">Ödeme</button>
               <button class="swipe-btn close" onclick="handleDebtArchive('${activeDebtTab}', ${item.rowIndex})">Kapat</button>
               <button class="swipe-btn delete" onclick="handleDebtDelete('${activeDebtTab}', ${item.rowIndex})">Sil</button>
@@ -828,7 +827,7 @@
           `;
         } else {
           swipeButtons = `
-            <div class="swipe-actions">
+            <div class="swipe-actions" style="width: 70px;">
               <button class="swipe-btn delete" onclick="handleDebtDelete('${activeDebtTab}', ${item.rowIndex})">Sil</button>
             </div>
           `;
@@ -853,9 +852,6 @@
       });
     }
 
-    // ==========================================
-    // MASKELEME (GİZLE / GÖSTER)
-    // ==========================================
     function toggleMask(key) {
       maskedState[key] = !maskedState[key];
       updateMaskedDisplay();
@@ -902,9 +898,7 @@
       }
     }
 
-    // ==========================================
-    // SWIPE (KAYDIRMA) MOTORU - GENİŞLETİLMİŞ ERİŞİM
-    // ==========================================
+    /* Swipe Motoru: 210px Net Snap */
     let currentlySwiped = null;
     let currentlySwipedContainer = null;
 
@@ -924,7 +918,9 @@
       card.addEventListener('touchmove', e => {
         currentX = e.touches[0].clientX;
         let diff = currentX - startX;
-        let maxDrag = (currentModule === 'debts' && document.getElementById('sheetSelect').value !== 'archive') ? -240 : -100;
+        let isDebtActive = (currentModule === 'debts' && document.getElementById('sheetSelect').value !== 'archive');
+        let maxDrag = isDebtActive ? -230 : -90;
+        
         if (diff < 0 && diff > maxDrag) {
           container.classList.add('swiping');
           card.style.transform = `translateX(${diff}px)`;
@@ -934,9 +930,9 @@
       card.addEventListener('touchend', () => {
         let diff = currentX - startX;
         let isDebtActive = (currentModule === 'debts' && document.getElementById('sheetSelect').value !== 'archive');
-        let snapOffset = isDebtActive ? -215 : -80; // 3 butonun tamamının tam sığması için 215px
+        let snapOffset = isDebtActive ? -210 : -70; // 3 buton için net 210px
         
-        if (diff < -50) {
+        if (diff < -40) {
           card.style.transform = `translateX(${snapOffset}px)`;
           container.classList.add('swiped');
           container.classList.remove('swiping');
@@ -949,9 +945,6 @@
       });
     }
 
-    // ==========================================
-    // BORÇLAR İŞLEM FONKSİYONLARI
-    // ==========================================
     async function handleDebtPayment(debtType, rowIndex) {
       const pay = prompt("Eklemek istediğiniz ödeme tutarını girin (€):");
       if (!pay) return;
@@ -1022,9 +1015,6 @@
       onFilterChange();
     }
 
-    // ==========================================
-    // PULL TO REFRESH
-    // ==========================================
     let touchStartY = 0;
     let isPulling = false;
     let pullIndicator = null;
@@ -1086,9 +1076,6 @@
       pullIndicator.innerHTML = '↓';
     }
 
-    // ==========================================
-    // MODAL & KAYIT EKLEME
-    // ==========================================
     function handleFabClick() {
       if (currentModule === 'budget') {
         document.getElementById('modalBudget').style.display = 'flex';
