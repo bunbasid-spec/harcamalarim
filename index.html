@@ -119,7 +119,7 @@
       padding-top: 6px;
     }
 
-    /* Sol Üst İki Modül Butonları (Segmented Switch) */
+    /* Sol Üst İki Modül Butonları */
     .module-switcher {
       display: flex;
       background: var(--card-bg);
@@ -390,7 +390,7 @@
         <button class="mod-btn" id="modDebts" onclick="switchModule('debts')">Borçlar</button>
       </div>
       
-      <!-- Sağ Üst Seçici (Bütçede Ay Listesi, Borçlarda Aktif/Arşiv) -->
+      <!-- Sağ Üst Seçici -->
       <select id="sheetSelect" class="sheet-select" onchange="onFilterChange()"></select>
     </div>
 
@@ -529,7 +529,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.0.0";
+    const CURRENT_VERSION = "2.0.1";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -552,7 +552,6 @@
       document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
       document.getElementById('mDebtDate').value = new Date().toISOString().split('T')[0];
       initPullToRefresh();
-      loadLocalCache();
       fetchInitialData();
     };
 
@@ -568,29 +567,19 @@
       } catch (e) {}
     }
 
-    function loadLocalCache() {
-      try {
-        const cached = localStorage.getItem('harcama_cache_v20');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed.sheets) populateBudgetSheets(parsed.sheets, parsed.activeSheet);
-          if (parsed.dashboard) {
-            memoryCache[parsed.activeSheet || "Mevcut Ay"] = parsed.dashboard;
-            renderDashboard(parsed.dashboard);
-          }
-        }
-      } catch (e) {}
-    }
-
     async function fetchInitialData() {
       try {
         const res = await fetch(`${API_URL}?action=getInitialData`);
         const data = await res.json();
-        if (data && data.dashboard) {
-          localStorage.setItem('harcama_cache_v20', JSON.stringify(data));
-          memoryCache[data.activeSheet || "Mevcut Ay"] = data.dashboard;
+        if (data && data.sheets) {
           populateBudgetSheets(data.sheets, data.activeSheet);
-          renderDashboard(data.dashboard);
+          if (data.dashboard) {
+            currentData = data.dashboard;
+            memoryCache[data.activeSheet || "Mevcut Ay"] = data.dashboard;
+            renderDashboard(data.dashboard);
+          } else {
+            onFilterChange();
+          }
         }
       } catch (err) {
         console.error("Veri çekilemedi:", err);
@@ -625,10 +614,24 @@
     function onFilterChange() {
       if (currentModule === 'budget') {
         const sheet = document.getElementById('sheetSelect').value;
-        if (memoryCache[sheet]) renderDashboard(memoryCache[sheet]);
+        if (!sheet) return;
+
+        if (memoryCache[sheet]) {
+          renderDashboard(memoryCache[sheet]);
+        } else {
+          document.getElementById('cardVal').innerText = "...";
+        }
+
         fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(sheet)}`)
           .then(res => res.json())
-          .then(data => { if (data) { memoryCache[sheet] = data; renderDashboard(data); } });
+          .then(data => {
+            if (data) {
+              memoryCache[sheet] = data;
+              renderDashboard(data);
+            }
+          })
+          .catch(err => console.error("Ay verisi alınamadı:", err))
+          .finally(() => resetPullIndicator());
       } else {
         loadDebtsData();
       }
