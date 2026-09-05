@@ -945,6 +945,7 @@
       const lblDesc = document.getElementById('lblDesc');
       const grpCard = document.getElementById('grpCard');
       const mDesc = document.getElementById('mDesc');
+      const mAmount = document.getElementById('mAmount');
 
       btnManual.classList.remove('active');
       btnTR.classList.remove('active');
@@ -954,18 +955,21 @@
         btnIncome.classList.add('active');
         lblDesc.innerText = 'Nereden / Açıklama';
         lblAmount.innerText = 'Tutar (€)';
+        mAmount.placeholder = 'örn: 500,00 €';
         mDesc.placeholder = 'örn: Maaş, Prim vb.';
         grpCard.style.display = 'none';
       } else if (type === 'tr') {
         btnTR.classList.add('active');
         lblDesc.innerText = 'Nereye / Açıklama';
         lblAmount.innerText = 'Tutar (₺)';
+        mAmount.placeholder = 'örn: 500,00 ₺';
         mDesc.placeholder = 'örn: Spotify, Enpara';
         grpCard.style.display = 'none';
       } else {
         btnManual.classList.add('active');
         lblDesc.innerText = 'Kime / Açıklama';
         lblAmount.innerText = 'Tutar (€)';
+        mAmount.placeholder = 'örn: 50,00 €';
         mDesc.placeholder = 'örn: Ev Sahibi / Kira';
         grpCard.style.display = 'block';
       }
