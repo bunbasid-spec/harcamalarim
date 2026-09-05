@@ -22,7 +22,6 @@
       --card-bg: #1e293b;
       --accent: #38bdf8;
       --primary-blue: #2563eb;
-      --accent-card: #06b6d4;
       --text: #f8fafc;
       --text-dim: #94a3b8;
       --border: #334155;
@@ -128,7 +127,7 @@
       font-size: 15px; 
     }
 
-    /* B versiyonunun birebir kenar şeritli kart tasarımı */
+    /* Üst Özet Kartları */
     .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
     
     .summary-card { 
@@ -404,7 +403,7 @@
       <select id="sheetSelect" class="sheet-select" onchange="onSheetChange()"></select>
     </div>
 
-    <!-- 5'li B versiyonundaki şık kartlar -->
+    <!-- 5'li Şık Izgara -->
     <div class="summary-grid">
       <div class="summary-card rem clickable" onclick="toggleMask('rem')">
         <div class="summary-title">Kalan Bakiye</div>
@@ -483,7 +482,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "1.0.7";
+    const CURRENT_VERSION = "1.0.8";
 
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
@@ -521,7 +520,7 @@
 
     function loadLocalCache() {
       try {
-        const cached = localStorage.getItem('harcama_cache_v9');
+        const cached = localStorage.getItem('harcama_cache_v10');
         if (cached) {
           const parsed = JSON.parse(cached);
           if (parsed.sheets) populateSheetOptions(parsed.sheets, parsed.activeSheet);
@@ -539,7 +538,7 @@
         const res = await fetch(`${API_URL}?action=getInitialData`);
         const data = await res.json();
         if (data && data.dashboard) {
-          localStorage.setItem('harcama_cache_v9', JSON.stringify(data));
+          localStorage.setItem('harcama_cache_v10', JSON.stringify(data));
           memoryCache[data.activeSheet || "Mevcut Ay"] = data.dashboard;
           populateSheetOptions(data.sheets, data.activeSheet);
           renderDashboard(data.dashboard);
@@ -724,9 +723,9 @@
           eurSub = `<div class="sub-eur">${item.eurAmount}</div>`;
         }
 
-        let itemColor = isIncome ? 'var(--green)' : (activeTab === 'tr' ? 'var(--purple)' : 'var(--red)');
+        // Renk ve Eksi/Artı İşareti: Gelirler yeşil (+), diğer tüm harcamalar (Kart, Diğer, TR) kırmızı (-)
+        let itemColor = isIncome ? 'var(--green)' : 'var(--red)';
         let sign = isIncome ? '+' : '-';
-        if (activeTab === 'tr') sign = '';
 
         if (canDelete) {
           const wrapper = document.createElement('div');
