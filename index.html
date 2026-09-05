@@ -251,7 +251,7 @@
     .item-left .name { font-weight: 600; font-size: 14px; }
     .item-left .sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
     .item-right { font-weight: 700; font-size: 15px; text-align: right; }
-    .item-right .sub-eur { font-size: 11px; color: var(--purple); font-weight: 500; margin-top: 2px; }
+    .item-right .sub-eur { font-size: 11px; color: var(--text-dim); font-weight: 500; margin-top: 2px; }
 
     /* 70px x 70px FAB Buton */
     .fab { 
@@ -482,7 +482,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "1.0.8";
+    const CURRENT_VERSION = "1.0.9";
 
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
@@ -520,7 +520,7 @@
 
     function loadLocalCache() {
       try {
-        const cached = localStorage.getItem('harcama_cache_v10');
+        const cached = localStorage.getItem('harcama_cache_v11');
         if (cached) {
           const parsed = JSON.parse(cached);
           if (parsed.sheets) populateSheetOptions(parsed.sheets, parsed.activeSheet);
@@ -538,7 +538,7 @@
         const res = await fetch(`${API_URL}?action=getInitialData`);
         const data = await res.json();
         if (data && data.dashboard) {
-          localStorage.setItem('harcama_cache_v10', JSON.stringify(data));
+          localStorage.setItem('harcama_cache_v11', JSON.stringify(data));
           memoryCache[data.activeSheet || "Mevcut Ay"] = data.dashboard;
           populateSheetOptions(data.sheets, data.activeSheet);
           renderDashboard(data.dashboard);
@@ -723,7 +723,6 @@
           eurSub = `<div class="sub-eur">${item.eurAmount}</div>`;
         }
 
-        // Renk ve Eksi/Artı İşareti: Gelirler yeşil (+), diğer tüm harcamalar (Kart, Diğer, TR) kırmızı (-)
         let itemColor = isIncome ? 'var(--green)' : 'var(--red)';
         let sign = isIncome ? '+' : '-';
 
