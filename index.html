@@ -145,6 +145,7 @@
       box-shadow: 0 2px 6px rgba(56, 189, 248, 0.3);
     }
 
+    /* Sabit Genişlikli Sağ Üst Seçici */
     select.sheet-select { 
       background: var(--card-bg); 
       color: var(--text); 
@@ -153,6 +154,12 @@
       border-radius: 8px; 
       font-size: 14px; 
       outline: none;
+      width: 140px;
+      min-width: 140px;
+      max-width: 140px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
     }
 
     /* Kart Izgaraları */
@@ -338,7 +345,6 @@
     .type-btn#btnTypeDebtGive.active { background: var(--red); color: #ffffff; }
     .type-btn#btnTypeDebtGet.active { background: var(--green); color: #0f172a; }
 
-    /* Form Elemanları ve Tarih Alanı Taşma Koruması */
     .form-group { 
       margin-bottom: 12px; 
       width: 100%; 
@@ -550,7 +556,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.0.2";
+    const CURRENT_VERSION = "2.0.3";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -625,8 +631,8 @@
         fetchInitialData();
       } else {
         select.innerHTML = `
-          <option value="active" selected>Aktif Borçlar</option>
-          <option value="archive">Borçlar Arşiv</option>
+          <option value="active" selected>Aktif</option>
+          <option value="archive">Arşiv</option>
         `;
         loadDebtsData();
       }
