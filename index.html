@@ -126,22 +126,34 @@
       font-size: 15px; 
     }
 
-    /* Üst Özet Kartları ve Kenar Vurguları */
+    /* Üst Özet Kartları ve Tam Kavisli Sol Kenarlıklar */
     .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    
     .card { 
       background: var(--card-bg); 
       border: 1px solid var(--border); 
       border-radius: 12px; 
-      padding: 12px 14px 12px 16px; 
+      padding: 12px 14px 12px 18px; 
       position: relative;
-      border-left-width: 4px;
+      overflow: hidden; /* Kenarlık kavisinin kartın dışına taşmasını engeller */
     }
-    
-    .card.card-rem { border-left-color: #2563eb; }
-    .card.card-card { border-left-color: #38bdf8; }
-    .card.card-manual { border-left-color: #f59e0b; }
-    .card.card-tr { border-left-color: #a855f7; }
-    .card.card-inc { border-left-color: #10b981; }
+
+    /* Sol kavisli renk şeridi */
+    .card::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      border-radius: 12px 0 0 12px;
+    }
+
+    .card.card-rem::before { background-color: #2563eb; }
+    .card.card-card::before { background-color: #38bdf8; }
+    .card.card-manual::before { background-color: #f59e0b; }
+    .card.card-tr::before { background-color: #a855f7; }
+    .card.card-inc::before { background-color: #10b981; }
 
     .card.clickable { cursor: pointer; }
     .card.clickable:active { opacity: 0.8; transform: scale(0.98); transition: transform 0.1s; }
