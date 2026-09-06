@@ -250,18 +250,18 @@
       position: absolute;
       right: 0;
       top: 0;
-      bottom: 0;
+      height: 58px;
       width: 100%;
       pointer-events: none;
       display: flex;
       justify-content: flex-end;
+      z-index: 10;
     }
     .swipe-actions {
       position: relative;
       height: 100%;
       display: flex;
       align-items: stretch;
-      z-index: 1;
       opacity: 0;
       transition: opacity 0.15s ease;
       border-radius: 0 10px 10px 0;
@@ -605,8 +605,8 @@
         <label>Toplam Tutar (€)</label>
         <input type="text" id="mDebtAmount" placeholder="örn: 1.000,00 €">
       </div>
+      <div class="form-group" id="lblDebtPaid">Şu Ana Kadar Ödenen (€)</div>
       <div class="form-group">
-        <label id="lblDebtPaid">Şu Ana Kadar Ödenen (€)</label>
         <input type="text" id="mDebtPaid" placeholder="örn: 0,00 €">
       </div>
 
@@ -643,7 +643,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.1.9";
+    const CURRENT_VERSION = "2.2.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -869,10 +869,9 @@
       
       const isArchive = document.getElementById('sheetSelect').value === 'archive';
       
-      // Arşivde sol ve sağ kart başlıkları birebir 2 satır olarak eşitlendi
-      document.getElementById('lblDebtNetTitle').innerHTML = isArchive ? "NET KAPANAN DURUM" : "NET BORÇ / ALACAK DURUMU";
-      document.getElementById('lblDebtGiveTitle').innerHTML = isArchive ? "KAPATTIĞIM<br>BORÇLAR" : "BORÇLARIM (ALDIKLARIM)";
-      document.getElementById('lblDebtGetTitle').innerHTML = isArchive ? "TAHSİL ETTİĞİM<br>ALACAKLAR" : "ALACAKLARIM (VERDİKLERİM)";
+      document.getElementById('lblDebtNetTitle').innerText = isArchive ? "NET KAPANAN DURUM" : "NET BORÇ / ALACAK DURUMU";
+      document.getElementById('lblDebtGiveTitle').innerText = isArchive ? "KAPATTIĞIM BORÇLAR" : "BORÇLARIM (ALDIKLARIM)";
+      document.getElementById('lblDebtGetTitle').innerText = isArchive ? "TAHSİL ETTİĞİM ALACAKLAR" : "ALACAKLARIM (VERDİKLERİM)";
 
       updateMaskedDisplay();
       renderDebtsList();
@@ -1141,6 +1140,7 @@
         let diffX = currentX - startX;
         let diffY = currentY - startY;
 
+        // SAF DOKUNMA (TAP) ALGILANDIĞINDA
         if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10) {
           if (currentlySwiped === card) {
             card.style.transform = 'translateX(0px)';
@@ -1149,11 +1149,20 @@
             currentlySwipedContainer = null;
           } else if (accordionId) {
             const acc = document.getElementById(accordionId);
-            if (acc) acc.classList.toggle('open');
+            if (acc) {
+              const isOpen = acc.classList.contains('open');
+              // Önce açık olan tüm akordiyonları kapat
+              document.querySelectorAll('.accordion-body').forEach(el => el.classList.remove('open'));
+              // Tıklanan kapalıysa aç
+              if (!isOpen) {
+                acc.classList.add('open');
+              }
+            }
           }
           return;
         }
 
+        // YATAY KAYDIRMA YAPILDIYSA
         if (isHorizontal) {
           let isDebtActive = (currentModule === 'debts' && activeDebtTab !== 'history' && document.getElementById('sheetSelect').value !== 'archive');
           let snapOffset = isDebtActive ? -225 : -75;
