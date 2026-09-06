@@ -245,21 +245,26 @@
       background: transparent;
       display: flex;
       flex-direction: column;
-      overflow: visible;
+      overflow: hidden;
     }
     .swipe-actions {
       position: absolute;
       right: 0;
       top: 0;
-      height: 58px;
+      bottom: 0;
+      height: 100%;
       display: flex;
       align-items: stretch;
       z-index: 1;
       border-radius: 0 10px 10px 0;
       overflow: hidden;
       pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
     }
-    .swipe-container.swiped .swipe-actions {
+    .swipe-container.swiped .swipe-actions,
+    .swipe-container.swiping .swipe-actions {
+      opacity: 1;
       pointer-events: auto;
     }
 
@@ -300,7 +305,8 @@
       cursor: pointer;
       touch-action: pan-y;
     }
-    .swipe-container.swiped .item-card {
+    .swipe-container.swiped .item-card,
+    .swipe-container.swiping .item-card {
       border-top-right-radius: 0;
       border-bottom-right-radius: 0;
     }
@@ -595,10 +601,6 @@
         <label>Toplam Tutar (€)</label>
         <input type="text" id="mDebtAmount" placeholder="örn: 1.000,00 €">
       </div>
-      <div class="form-group" id="lblDebtPaid">Şu Ana Kadar Ödenen (€)</div>
-      <div class="form-group">
-        <input type="text" id="mDebtPaid" placeholder="örn: 0,00 €">
-      </div>
 
       <div class="modal-actions">
         <button type="button" class="btn-submit" onclick="submitDebtEntry()">Kaydet</button>
@@ -633,7 +635,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.2.1";
+    const CURRENT_VERSION = "2.2.2";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1069,9 +1071,6 @@
       }
     }
 
-    // ==========================================
-    // SAĞLAM SWIPE & AKORDİYON MANTIĞI
-    // ==========================================
     let currentlySwiped = null;
     let currentlySwipedContainer = null;
 
@@ -1117,6 +1116,7 @@
           let maxDrag = isDebtActive ? -240 : -90;
           
           if (diffX < 0 && diffX > maxDrag) {
+            container.classList.add('swiping');
             card.style.transform = `translateX(${diffX}px)`;
           }
         }
@@ -1126,18 +1126,17 @@
         let diffX = currentX - startX;
         let diffY = currentY - startY;
 
-        // DOKUNMA / TAP ALGILANDIĞINDA
+        // DOKUNMA / TAP
         if (Math.abs(diffX) < 8 && Math.abs(diffY) < 8) {
           if (currentlySwiped === card) {
             card.style.transform = 'translateX(0px)';
-            container.classList.remove('swiped');
+            container.classList.remove('swiped', 'swiping');
             currentlySwiped = null;
             currentlySwipedContainer = null;
           } else if (accordionId) {
             const acc = document.getElementById(accordionId);
             if (acc) {
               const isOpen = acc.classList.contains('open');
-              // Diğer açık olanları kapat
               document.querySelectorAll('.accordion-body').forEach(el => el.classList.remove('open'));
               if (!isOpen) {
                 acc.classList.add('open');
@@ -1147,24 +1146,24 @@
           return;
         }
 
-        // SOLA KAYDIRMA ALGILANDIĞINDA
+        // SOLA KAYDIRMA
         if (isHorizontal) {
           let isDebtActive = (currentModule === 'debts' && activeDebtTab !== 'history' && document.getElementById('sheetSelect').value !== 'archive');
           let snapOffset = isDebtActive ? -225 : -75;
 
           if (diffX < -35) {
-            // Kaydırırken akordiyon açıksa kapat
             if (accordionId) {
               const acc = document.getElementById(accordionId);
               if (acc) acc.classList.remove('open');
             }
             card.style.transform = `translateX(${snapOffset}px)`;
             container.classList.add('swiped');
+            container.classList.remove('swiping');
             currentlySwiped = card;
             currentlySwipedContainer = container;
           } else {
             card.style.transform = 'translateX(0px)';
-            container.classList.remove('swiped');
+            container.classList.remove('swiped', 'swiping');
             if (currentlySwiped === card) {
               currentlySwiped = null;
               currentlySwipedContainer = null;
@@ -1177,7 +1176,7 @@
     function resetCurrentSwipe() {
       if (currentlySwiped) {
         currentlySwiped.style.transform = 'translateX(0px)';
-        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped');
+        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped', 'swiping');
         currentlySwiped = null;
         currentlySwipedContainer = null;
       }
@@ -1416,16 +1415,13 @@
       modalDebtSelectedType = type;
       document.querySelectorAll('#modalDebt .type-btn').forEach(b => b.classList.remove('active'));
       const lblPerson = document.getElementById('lblDebtPerson');
-      const lblPaid = document.getElementById('lblDebtPaid');
 
       if (type === 'debt') {
         document.getElementById('btnTypeDebtGive').classList.add('active');
         lblPerson.innerText = 'Kimden Borç Aldım';
-        lblPaid.innerText = 'Şu Ana Kadar Ödenen (€)';
       } else {
         document.getElementById('btnTypeDebtGet').classList.add('active');
         lblPerson.innerText = 'Kime Borç Verdim';
-        lblPaid.innerText = 'Şu Ana Kadar Alınan (€)';
       }
     }
 
@@ -1474,13 +1470,12 @@
         person: document.getElementById('mDebtPerson').value,
         date: dateFormatted,
         amount: document.getElementById('mDebtAmount').value,
-        paid: document.getElementById('mDebtPaid').value
+        paid: "0"
       };
 
       closeModal('modalDebt');
       document.getElementById('mDebtPerson').value = '';
       document.getElementById('mDebtAmount').value = '';
-      document.getElementById('mDebtPaid').value = '';
 
       await fetch(API_URL, {
         method: 'POST',
