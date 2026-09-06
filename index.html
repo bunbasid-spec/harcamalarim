@@ -111,7 +111,7 @@
       100% { transform: translateX(-50%) rotate(360deg); }
     }
 
-    /* Üst Başlık Grid Düzeni: Alt kartlarla birebir eşit genişlik */
+    /* Üst Başlık Grid Düzeni */
     .header { 
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -147,10 +147,16 @@
       justify-content: center;
       transition: all 0.2s ease;
     }
-    .mod-btn.active {
+    .mod-btn#modBudget.active {
       background: var(--accent);
       color: #0f172a;
       box-shadow: 0 2px 6px rgba(56, 189, 248, 0.3);
+    }
+    /* Borçlar Aktifken Turuncu Vurgu */
+    .mod-btn#modDebts.active {
+      background: var(--orange);
+      color: #0f172a;
+      box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
     }
 
     /* Sağ Üst Filtre Seçici */
@@ -184,7 +190,6 @@
     .summary-card.tr-exp { border-left-color: var(--purple); }
     .summary-card.income { border-left-color: var(--green); }
     
-    /* Borç Modülü Kart Renkleri */
     .summary-card.debt-net { grid-column: span 2; border-left-color: var(--accent); }
     .summary-card.debt-give { border-left-color: var(--red); }
     .summary-card.debt-get { border-left-color: var(--green); }
@@ -234,23 +239,29 @@
     .tab-btn#tab-debt-give.active { background: var(--red); color: #fff; box-shadow: 0 2px 8px rgba(244, 63, 94, 0.35); }
     .tab-btn#tab-debt-get.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); }
 
-    /* Kaydırma ve Eylem Butonları Yapısı */
+    /* Kaydırma ve Eylem Butonları */
     .swipe-container {
       position: relative;
       margin-bottom: 8px;
       overflow: hidden;
       border-radius: 10px;
       background: transparent;
+      display: flex;
+      align-items: stretch;
     }
     .swipe-actions {
       position: absolute;
       right: 0;
       top: 0;
       bottom: 0;
+      height: 100%;
       display: flex;
+      align-items: stretch;
       z-index: 1;
       opacity: 0;
       transition: opacity 0.15s ease;
+      border-radius: 0 10px 10px 0;
+      overflow: hidden;
     }
     .swipe-container.swiping .swipe-actions,
     .swipe-container.swiped .swipe-actions {
@@ -268,6 +279,9 @@
       justify-content: center;
       white-space: nowrap;
       padding: 0;
+      height: 100%;
+      margin: 0;
+      box-sizing: border-box;
     }
     .swipe-btn.pay { background: var(--orange); width: 70px; }
     .swipe-btn.close { background: var(--primary-blue); width: 70px; }
@@ -285,6 +299,7 @@
       z-index: 2; 
       transition: transform 0.2s ease-out; 
       width: 100%; 
+      box-sizing: border-box;
     }
     .item-left .name { font-weight: 600; font-size: 14px; }
     .item-left .sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
@@ -417,7 +432,6 @@
   <div id="pullIndicator">↓</div>
 
   <div id="appContent">
-    <!-- Eşit Genişlikli Üst Başlık Grid Yapısı -->
     <div class="header">
       <div class="module-switcher">
         <button class="mod-btn active" id="modBudget" onclick="switchModule('budget')">Bütçe</button>
@@ -507,7 +521,7 @@
         <label id="lblAmount">Tutar (€)</label>
         <input type="text" id="mAmount" placeholder="örn: 50,00 €">
       </div>
-      <div class="form-group">
+      <div class="form-group" id="lblDescGroup">
         <label id="lblDesc">Kime / Açıklama</label>
         <input type="text" id="mDesc" placeholder="örn: Ev Sahibi / Kira">
       </div>
@@ -562,7 +576,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.0.4";
+    const CURRENT_VERSION = "2.0.5";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -635,7 +649,7 @@
       } else {
         select.innerHTML = `
           <option value="active" selected>Aktif Borçlar</option>
-          <option value="archive">Borçlar Arşiv</option>
+          <option value="archive">Arşiv</option>
         `;
         loadDebtsData();
       }
@@ -898,7 +912,6 @@
       }
     }
 
-    /* Swipe Motoru: 210px Net Snap */
     let currentlySwiped = null;
     let currentlySwipedContainer = null;
 
@@ -930,7 +943,7 @@
       card.addEventListener('touchend', () => {
         let diff = currentX - startX;
         let isDebtActive = (currentModule === 'debts' && document.getElementById('sheetSelect').value !== 'archive');
-        let snapOffset = isDebtActive ? -210 : -70; // 3 buton için net 210px
+        let snapOffset = isDebtActive ? -210 : -70;
         
         if (diff < -40) {
           card.style.transform = `translateX(${snapOffset}px)`;
