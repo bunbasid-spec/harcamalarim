@@ -246,11 +246,19 @@
       display: flex;
       flex-direction: column;
     }
-    .swipe-actions {
+    .swipe-actions-wrapper {
       position: absolute;
       right: 0;
       top: 0;
-      height: 58px;
+      bottom: 0;
+      width: 100%;
+      pointer-events: none;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .swipe-actions {
+      position: relative;
+      height: 100%;
       display: flex;
       align-items: stretch;
       z-index: 1;
@@ -258,6 +266,7 @@
       transition: opacity 0.15s ease;
       border-radius: 0 10px 10px 0;
       overflow: hidden;
+      pointer-events: auto;
     }
     .swipe-container.swiping .swipe-actions,
     .swipe-container.swiped .swipe-actions {
@@ -311,7 +320,7 @@
     .item-right { font-weight: 700; font-size: 15px; text-align: right; }
     .item-right .sub-eur { font-size: 11px; color: var(--text-dim); font-weight: 500; margin-top: 2px; }
 
-    /* Akordiyon Detay Paneli (Sütunlar Hizalandı) */
+    /* Akordiyon Detay Paneli */
     .accordion-body {
       display: none;
       background: #131d31;
@@ -597,7 +606,7 @@
         <input type="text" id="mDebtAmount" placeholder="örn: 1.000,00 €">
       </div>
       <div class="form-group">
-        <label>Şu Ana Kadar Ödenen (€)</label>
+        <label id="lblDebtPaid">Şu Ana Kadar Ödenen (€)</label>
         <input type="text" id="mDebtPaid" placeholder="örn: 0,00 €">
       </div>
 
@@ -634,7 +643,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.1.2";
+    const CURRENT_VERSION = "2.1.3";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -829,8 +838,10 @@
         wrapper.id = `item-row-${item.rowIndex}`;
 
         let deleteAction = canDelete ? `
-          <div class="swipe-actions" style="width: 75px;">
-            <button class="swipe-btn delete" onclick="deleteBudgetItem('${activeBudgetTab}', ${item.rowIndex})">Sil</button>
+          <div class="swipe-actions-wrapper">
+            <div class="swipe-actions" style="width: 75px;">
+              <button class="swipe-btn delete" onclick="deleteBudgetItem('${activeBudgetTab}', ${item.rowIndex})">Sil</button>
+            </div>
           </div>
         ` : '';
 
@@ -931,16 +942,20 @@
         let swipeButtons = '';
         if (!isArchive) {
           swipeButtons = `
-            <div class="swipe-actions" style="width: 225px;">
-              <button class="swipe-btn pay" onclick="openPaymentModal('${activeDebtTab}', ${item.rowIndex}, '${item.person}')">Ödeme</button>
-              <button class="swipe-btn close" onclick="handleDebtArchive('${activeDebtTab}', ${item.rowIndex})">Kapat</button>
-              <button class="swipe-btn delete" onclick="handleDebtDelete('${activeDebtTab}', ${item.rowIndex})">Sil</button>
+            <div class="swipe-actions-wrapper">
+              <div class="swipe-actions" style="width: 225px;">
+                <button class="swipe-btn pay" onclick="openPaymentModal('${activeDebtTab}', ${item.rowIndex}, '${item.person}')">Ödeme</button>
+                <button class="swipe-btn close" onclick="handleDebtArchive('${activeDebtTab}', ${item.rowIndex})">Kapat</button>
+                <button class="swipe-btn delete" onclick="handleDebtDelete('${activeDebtTab}', ${item.rowIndex})">Sil</button>
+              </div>
             </div>
           `;
         } else {
           swipeButtons = `
-            <div class="swipe-actions" style="width: 75px;">
-              <button class="swipe-btn delete" onclick="handleDebtDelete('${activeDebtTab}', ${item.rowIndex})">Sil</button>
+            <div class="swipe-actions-wrapper">
+              <div class="swipe-actions" style="width: 75px;">
+                <button class="swipe-btn delete" onclick="handleDebtDelete('${activeDebtTab}', ${item.rowIndex})">Sil</button>
+              </div>
             </div>
           `;
         }
@@ -948,6 +963,7 @@
         // AKORDİYON İÇERİĞİ
         let initialLabel = (activeDebtTab === 'debt') ? 'Borç Alındı' : 'Borç Verildi';
         let initialColor = (activeDebtTab === 'debt') ? 'var(--red)' : 'var(--green)';
+        let paymentColor = (activeDebtTab === 'debt') ? 'var(--green)' : 'var(--red)';
 
         let histHtml = `
           <div class="acc-row">
@@ -964,18 +980,32 @@
               <div class="acc-row">
                 <span class="acc-date">📅 ${h.date}</span>
                 <span class="acc-note">Geri Ödeme</span>
-                <span class="acc-amount" style="color: var(--green)">${formatAmount(h.amount)}</span>
+                <span class="acc-amount" style="color: ${paymentColor}">${formatAmount(h.amount)}</span>
               </div>
             `;
           });
         }
+
+        // Arşivdeyse Kapanma Tarihi Satırı
+        let archiveCloseHtml = '';
+        if (isArchive && item.statusOrDate) {
+          archiveCloseHtml = `
+            <div class="acc-row" style="color: var(--text-dim); border-top: 1px dashed rgba(255,255,255,0.08); margin-top: 4px; padding-top: 4px;">
+              <span class="acc-date">📅 ${item.statusOrDate}</span>
+              <span class="acc-note" style="color: var(--text-dim)">Kapanma Tarihi</span>
+              <span class="acc-amount" style="color: var(--text-dim)">Kapandı</span>
+            </div>
+          `;
+        }
+
+        let subLabel = (activeDebtTab === 'debt') ? 'Ödenen' : 'Alınan';
 
         const cardEl = document.createElement('div');
         cardEl.className = 'item-card';
         cardEl.innerHTML = `
           <div class="item-left">
             <div class="name">${item.person} <span style="font-size:10px; color:var(--text-dim)">▼</span></div>
-            <div class="sub">${item.date} • Ödenen: ${paid}</div>
+            <div class="sub">${item.date} • ${subLabel}: ${paid}</div>
           </div>
           <div class="item-right" style="color: ${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">
             ${total}
@@ -989,6 +1019,7 @@
         accBody.innerHTML = `
           <div style="font-size: 11px; font-weight: 700; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase;">İşlem Geçmişi</div>
           ${histHtml}
+          ${archiveCloseHtml}
           <div class="acc-row" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); font-weight: bold;">
             <span style="grid-column: span 2;">Kalan Tutar</span>
             <span class="acc-amount" style="color:${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">${rem}</span>
@@ -1365,13 +1396,16 @@
       modalDebtSelectedType = type;
       document.querySelectorAll('#modalDebt .type-btn').forEach(b => b.classList.remove('active'));
       const lblPerson = document.getElementById('lblDebtPerson');
+      const lblPaid = document.getElementById('lblDebtPaid');
 
       if (type === 'debt') {
         document.getElementById('btnTypeDebtGive').classList.add('active');
         lblPerson.innerText = 'Kimden Borç Aldım';
+        lblPaid.innerText = 'Şu Ana Kadar Ödenen (€)';
       } else {
         document.getElementById('btnTypeDebtGet').classList.add('active');
         lblPerson.innerText = 'Kime Borç Verdim';
+        lblPaid.innerText = 'Şu Ana Kadar Alınan (€)';
       }
     }
 
