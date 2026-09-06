@@ -522,15 +522,15 @@
     <div id="viewDebts" style="display: none;">
       <div class="summary-grid">
         <div class="summary-card debt-net clickable" onclick="toggleMask('debtNet')">
-          <div class="summary-title">Net Borç / Alacak Durumu</div>
+          <div class="summary-title" id="lblDebtNetTitle">Net Borç / Alacak Durumu</div>
           <div class="summary-val val-rem masked" id="debtNetVal">••••••</div>
         </div>
         <div class="summary-card debt-give clickable" onclick="toggleMask('debtGive')">
-          <div class="summary-title">Borçlarım (Aldıklarım)</div>
+          <div class="summary-title" id="lblDebtGiveTitle">Borçlarım (Aldıklarım)</div>
           <div class="summary-val masked" id="debtGiveVal" style="color:var(--red);">••••••</div>
         </div>
         <div class="summary-card debt-get clickable" onclick="toggleMask('debtGet')">
-          <div class="summary-title">Alacaklarım (Verdiklerim)</div>
+          <div class="summary-title" id="lblDebtGetTitle">Alacaklarım (Verdiklerim)</div>
           <div class="summary-val masked" id="debtGetVal" style="color:var(--green);">••••••</div>
         </div>
       </div>
@@ -643,7 +643,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.1.5";
+    const CURRENT_VERSION = "2.1.6";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -866,6 +866,14 @@
 
     function renderDebtsDashboard(data) {
       if (!data || currentModule !== 'debts') return;
+      
+      const isArchive = document.getElementById('sheetSelect').value === 'archive';
+      
+      // Kart Başlıklarını Güncelle
+      document.getElementById('lblDebtNetTitle').innerText = isArchive ? "Kapanan Net Durum" : "Net Borç / Alacak Durumu";
+      document.getElementById('lblDebtGiveTitle').innerText = isArchive ? "Kapattığım Borçlar" : "Borçlarım (Aldıklarım)";
+      document.getElementById('lblDebtGetTitle').innerText = isArchive ? "Tahsil Ettiğim Alacaklar" : "Alacaklarım (Verdiklerim)";
+
       updateMaskedDisplay();
       renderDebtsList();
     }
@@ -986,7 +994,7 @@
           });
         }
 
-        // Arşivdeyse Kapanma Tarihi Satırı (closeDate alanından)
+        // Arşivdeyse Kapanma Tarihi Satırı
         let archiveCloseHtml = '';
         if (isArchive && item.closeDate) {
           archiveCloseHtml = `
@@ -999,17 +1007,18 @@
         }
 
         let subLabel = (activeDebtTab === 'debt') ? 'Ödenen' : 'Alınan';
+        let subText = isArchive ? `${item.date} • Kapanış: ${item.closeDate}` : `${item.date} • ${subLabel}: ${paid}`;
 
         const cardEl = document.createElement('div');
         cardEl.className = 'item-card';
         cardEl.innerHTML = `
           <div class="item-left">
             <div class="name">${item.person} <span style="font-size:10px; color:var(--text-dim)">▼</span></div>
-            <div class="sub">${item.date} • ${subLabel}: ${paid}</div>
+            <div class="sub">${subText}</div>
           </div>
           <div class="item-right" style="color: ${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">
             ${total}
-            <div class="sub-eur">Kalan: ${rem}</div>
+            <div class="sub-eur">${isArchive ? 'Kapandı' : 'Kalan: ' + rem}</div>
           </div>
         `;
 
@@ -1021,8 +1030,8 @@
           ${histHtml}
           ${archiveCloseHtml}
           <div class="acc-row" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); font-weight: bold;">
-            <span style="grid-column: span 2;">Kalan Tutar</span>
-            <span class="acc-amount" style="color:${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">${rem}</span>
+            <span style="grid-column: span 2;">${isArchive ? 'Kapanan Tutar' : 'Kalan Tutar'}</span>
+            <span class="acc-amount" style="color:${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">${isArchive ? total : rem}</span>
           </div>
         `;
 
