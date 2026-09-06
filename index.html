@@ -171,7 +171,7 @@
       text-align: center;
     }
 
-    /* Orijinal Dengeli Kart Izgaraları */
+    /* Kart Izgaraları */
     .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
     
     .summary-card { 
@@ -643,7 +643,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.1.8";
+    const CURRENT_VERSION = "2.1.9";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -869,9 +869,10 @@
       
       const isArchive = document.getElementById('sheetSelect').value === 'archive';
       
-      document.getElementById('lblDebtNetTitle').innerText = isArchive ? "NET KAPANAN DURUM" : "NET BORÇ / ALACAK DURUMU";
-      document.getElementById('lblDebtGiveTitle').innerText = isArchive ? "KAPATTIĞIM BORÇLAR" : "BORÇLARIM (ALDIKLARIM)";
-      document.getElementById('lblDebtGetTitle').innerText = isArchive ? "TAHSİL ETTİĞİM ALACAKLAR" : "ALACAKLARIM (VERDİKLERİM)";
+      // Arşivde sol ve sağ kart başlıkları birebir 2 satır olarak eşitlendi
+      document.getElementById('lblDebtNetTitle').innerHTML = isArchive ? "NET KAPANAN DURUM" : "NET BORÇ / ALACAK DURUMU";
+      document.getElementById('lblDebtGiveTitle').innerHTML = isArchive ? "KAPATTIĞIM<br>BORÇLAR" : "BORÇLARIM (ALDIKLARIM)";
+      document.getElementById('lblDebtGetTitle').innerHTML = isArchive ? "TAHSİL ETTİĞİM<br>ALACAKLAR" : "ALACAKLARIM (VERDİKLERİM)";
 
       updateMaskedDisplay();
       renderDebtsList();
