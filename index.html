@@ -245,32 +245,22 @@
       background: transparent;
       display: flex;
       flex-direction: column;
+      overflow: visible;
     }
-    .swipe-actions-wrapper {
+    .swipe-actions {
       position: absolute;
       right: 0;
       top: 0;
       height: 58px;
-      width: 100%;
-      pointer-events: none;
-      display: flex;
-      justify-content: flex-end;
-      z-index: 10;
-    }
-    .swipe-actions {
-      position: relative;
-      height: 100%;
       display: flex;
       align-items: stretch;
-      opacity: 0;
-      transition: opacity 0.15s ease;
+      z-index: 1;
       border-radius: 0 10px 10px 0;
       overflow: hidden;
-      pointer-events: auto;
+      pointer-events: none;
     }
-    .swipe-container.swiping .swipe-actions,
     .swipe-container.swiped .swipe-actions {
-      opacity: 1;
+      pointer-events: auto;
     }
 
     .swipe-btn {
@@ -308,9 +298,9 @@
       min-height: 58px;
       box-sizing: border-box;
       cursor: pointer;
+      touch-action: pan-y;
     }
-    .swipe-container.swiped .item-card,
-    .swipe-container.swiping .item-card {
+    .swipe-container.swiped .item-card {
       border-top-right-radius: 0;
       border-bottom-right-radius: 0;
     }
@@ -643,7 +633,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.2.0";
+    const CURRENT_VERSION = "2.2.1";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -834,14 +824,12 @@
         let sign = isIncome ? '+' : '-';
 
         const wrapper = document.createElement('div');
-        wrapper.className = canDelete ? 'swipe-container' : '';
+        wrapper.className = 'swipe-container';
         wrapper.id = `item-row-${item.rowIndex}`;
 
         let deleteAction = canDelete ? `
-          <div class="swipe-actions-wrapper">
-            <div class="swipe-actions" style="width: 75px;">
-              <button class="swipe-btn delete" onclick="deleteBudgetItem('${activeBudgetTab}', ${item.rowIndex})">Sil</button>
-            </div>
+          <div class="swipe-actions" style="width: 75px;">
+            <button class="swipe-btn delete" onclick="deleteBudgetItem('${activeBudgetTab}', ${item.rowIndex})">Sil</button>
           </div>
         ` : '';
 
@@ -947,20 +935,16 @@
         let swipeButtons = '';
         if (!isArchive) {
           swipeButtons = `
-            <div class="swipe-actions-wrapper">
-              <div class="swipe-actions" style="width: 225px;">
-                <button class="swipe-btn pay" onclick="openPaymentModal('${activeDebtTab}', ${item.rowIndex}, '${item.person}')">Ödeme</button>
-                <button class="swipe-btn close" onclick="handleDebtArchive('${activeDebtTab}', ${item.rowIndex})">Kapat</button>
-                <button class="swipe-btn delete" onclick="handleDebtDelete('${activeDebtTab}', ${item.rowIndex})">Sil</button>
-              </div>
+            <div class="swipe-actions" style="width: 225px;">
+              <button class="swipe-btn pay" onclick="openPaymentModal('${activeDebtTab}', ${item.rowIndex}, '${item.person}')">Ödeme</button>
+              <button class="swipe-btn close" onclick="handleDebtArchive('${activeDebtTab}', ${item.rowIndex})">Kapat</button>
+              <button class="swipe-btn delete" onclick="handleDebtDelete('${activeDebtTab}', ${item.rowIndex})">Sil</button>
             </div>
           `;
         } else {
           swipeButtons = `
-            <div class="swipe-actions-wrapper">
-              <div class="swipe-actions" style="width: 75px;">
-                <button class="swipe-btn delete" onclick="handleDebtDelete('${activeDebtTab}', ${item.rowIndex})">Sil</button>
-              </div>
+            <div class="swipe-actions" style="width: 75px;">
+              <button class="swipe-btn delete" onclick="handleDebtDelete('${activeDebtTab}', ${item.rowIndex})">Sil</button>
             </div>
           `;
         }
@@ -1085,6 +1069,9 @@
       }
     }
 
+    // ==========================================
+    // SAĞLAM SWIPE & AKORDİYON MANTIĞI
+    // ==========================================
     let currentlySwiped = null;
     let currentlySwipedContainer = null;
 
@@ -1099,7 +1086,7 @@
       card.addEventListener('touchstart', e => {
         if (currentlySwiped && currentlySwiped !== card) {
           currentlySwiped.style.transform = 'translateX(0px)';
-          if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped', 'swiping');
+          if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped');
           currentlySwiped = null; 
           currentlySwipedContainer = null;
         }
@@ -1118,9 +1105,9 @@
         let diffY = currentY - startY;
 
         if (!isHorizontal && !isVertical) {
-          if (Math.abs(diffX) > 8 && Math.abs(diffX) > Math.abs(diffY)) {
+          if (Math.abs(diffX) > 6 && Math.abs(diffX) > Math.abs(diffY)) {
             isHorizontal = true;
-          } else if (Math.abs(diffY) > 8) {
+          } else if (Math.abs(diffY) > 6) {
             isVertical = true;
           }
         }
@@ -1130,7 +1117,6 @@
           let maxDrag = isDebtActive ? -240 : -90;
           
           if (diffX < 0 && diffX > maxDrag) {
-            container.classList.add('swiping');
             card.style.transform = `translateX(${diffX}px)`;
           }
         }
@@ -1140,20 +1126,19 @@
         let diffX = currentX - startX;
         let diffY = currentY - startY;
 
-        // SAF DOKUNMA (TAP) ALGILANDIĞINDA
-        if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10) {
+        // DOKUNMA / TAP ALGILANDIĞINDA
+        if (Math.abs(diffX) < 8 && Math.abs(diffY) < 8) {
           if (currentlySwiped === card) {
             card.style.transform = 'translateX(0px)';
-            container.classList.remove('swiped', 'swiping');
+            container.classList.remove('swiped');
             currentlySwiped = null;
             currentlySwipedContainer = null;
           } else if (accordionId) {
             const acc = document.getElementById(accordionId);
             if (acc) {
               const isOpen = acc.classList.contains('open');
-              // Önce açık olan tüm akordiyonları kapat
+              // Diğer açık olanları kapat
               document.querySelectorAll('.accordion-body').forEach(el => el.classList.remove('open'));
-              // Tıklanan kapalıysa aç
               if (!isOpen) {
                 acc.classList.add('open');
               }
@@ -1162,20 +1147,24 @@
           return;
         }
 
-        // YATAY KAYDIRMA YAPILDIYSA
+        // SOLA KAYDIRMA ALGILANDIĞINDA
         if (isHorizontal) {
           let isDebtActive = (currentModule === 'debts' && activeDebtTab !== 'history' && document.getElementById('sheetSelect').value !== 'archive');
           let snapOffset = isDebtActive ? -225 : -75;
 
-          if (diffX < -40) {
+          if (diffX < -35) {
+            // Kaydırırken akordiyon açıksa kapat
+            if (accordionId) {
+              const acc = document.getElementById(accordionId);
+              if (acc) acc.classList.remove('open');
+            }
             card.style.transform = `translateX(${snapOffset}px)`;
             container.classList.add('swiped');
-            container.classList.remove('swiping');
             currentlySwiped = card;
             currentlySwipedContainer = container;
           } else {
             card.style.transform = 'translateX(0px)';
-            container.classList.remove('swiped', 'swiping');
+            container.classList.remove('swiped');
             if (currentlySwiped === card) {
               currentlySwiped = null;
               currentlySwipedContainer = null;
@@ -1188,7 +1177,7 @@
     function resetCurrentSwipe() {
       if (currentlySwiped) {
         currentlySwiped.style.transform = 'translateX(0px)';
-        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped', 'swiping');
+        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped');
         currentlySwiped = null;
         currentlySwipedContainer = null;
       }
