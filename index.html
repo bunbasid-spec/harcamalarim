@@ -331,7 +331,7 @@
       display: flex;
       justify-content: space-between;
       font-size: 12px;
-      padding: 4px 0;
+      padding: 5px 0;
       border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
     }
     .acc-row:last-child { border-bottom: none; }
@@ -636,7 +636,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.1.0";
+    const CURRENT_VERSION = "2.1.1";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -850,7 +850,7 @@
           </div>
         `;
 
-        if (canDelete) attachSwipeEvents(wrapper.querySelector('.item-card'), wrapper);
+        if (canDelete) attachSwipeEvents(wrapper.querySelector('.item-card'), wrapper, null);
         container.appendChild(wrapper);
       });
     }
@@ -888,7 +888,13 @@
         }
 
         history.forEach(item => {
-          const isIncome = item.note.includes("Geri Ödeme") || item.note.includes("Borç Alma");
+          let itemColor = 'var(--green)'; // Geri Ödemeler canlı yeşil
+          if (item.note.includes("Borç Alma")) {
+            itemColor = 'var(--red)';
+          } else if (item.note.includes("Borç Verme")) {
+            itemColor = 'var(--accent)';
+          }
+
           const div = document.createElement('div');
           div.className = 'item-card';
           div.style.marginBottom = '8px';
@@ -897,7 +903,7 @@
               <div class="name">${item.person}</div>
               <div class="sub">${item.date} • ${item.note}</div>
             </div>
-            <div class="item-right" style="color: ${item.note.includes("Borç Alma") ? 'var(--red)' : 'var(--accent)'}">
+            <div class="item-right" style="color: ${itemColor}">
               ${formatAmount(item.amount)}
             </div>
           `;
@@ -941,61 +947,66 @@
           `;
         }
 
-        // Akordiyon Satırları Oluştur
-        let histHtml = '';
+        // AKORDİYON İÇERİĞİ: EN ÜSTTE İLK BORÇ ALMA / VERME SATIRI
+        let initialLabel = (activeDebtTab === 'debt') ? 'Borç Alındı' : 'Borç Verildi';
+        let initialSign = (activeDebtTab === 'debt') ? '+' : '-';
+        let initialColor = (activeDebtTab === 'debt') ? 'var(--red)' : 'var(--green)';
+
+        let histHtml = `
+          <div class="acc-row">
+            <span class="acc-date">📅 ${item.date}</span>
+            <span class="acc-note">${initialLabel}</span>
+            <span class="acc-amount" style="color: ${initialColor}">${initialSign}${total}</span>
+          </div>
+        `;
+
         if (item.history && item.history.length > 0) {
-          item.history.forEach(h => {
+          // İlk kaydı hariç tutarak geri ödemeleri ekle
+          const paymentsOnly = item.history.filter(h => h.note.includes("Geri Ödeme"));
+          paymentsOnly.forEach(h => {
             histHtml += `
               <div class="acc-row">
                 <span class="acc-date">📅 ${h.date}</span>
                 <span class="acc-note">${h.note}</span>
-                <span class="acc-amount" style="color: ${h.note.includes('Borç') ? 'var(--red)' : 'var(--green)'}">${formatAmount(h.amount)}</span>
+                <span class="acc-amount" style="color: var(--green)">-${formatAmount(h.amount)}</span>
               </div>
             `;
           });
-        } else {
-          histHtml = `
-            <div class="acc-row">
-              <span class="acc-date">📅 ${item.date}</span>
-              <span class="acc-note">İlk Kayıt</span>
-              <span class="acc-amount" style="color:var(--accent)">${total}</span>
-            </div>
-          `;
         }
 
-        wrapper.innerHTML = `
-          ${swipeButtons}
-          <div class="item-card" onclick="toggleAccordion('acc-${item.rowIndex}')">
-            <div class="item-left">
-              <div class="name">${item.person} <span style="font-size:10px; color:var(--text-dim)">▼</span></div>
-              <div class="sub">${item.date} • ${item.statusOrDate || ''} (Ödenen: ${paid})</div>
-            </div>
-            <div class="item-right" style="color: ${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">
-              ${total}
-              <div class="sub-eur">Kalan: ${rem}</div>
-            </div>
+        const cardEl = document.createElement('div');
+        cardEl.className = 'item-card';
+        cardEl.innerHTML = `
+          <div class="item-left">
+            <div class="name">${item.person} <span style="font-size:10px; color:var(--text-dim)">▼</span></div>
+            <div class="sub">${item.date} • ${item.statusOrDate || ''} (Ödenen: ${paid})</div>
           </div>
-          <div class="accordion-body" id="acc-${item.rowIndex}">
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase;">İşlem Geçmişi</div>
-            ${histHtml}
-            <div class="acc-row" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); font-weight: bold;">
-              <span>Kalan Tutar</span>
-              <span style="color:${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">${rem}</span>
-            </div>
+          <div class="item-right" style="color: ${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">
+            ${total}
+            <div class="sub-eur">Kalan: ${rem}</div>
           </div>
         `;
 
-        attachSwipeEvents(wrapper.querySelector('.item-card'), wrapper);
+        const accBody = document.createElement('div');
+        accBody.className = 'accordion-body';
+        accBody.id = `acc-${item.rowIndex}`;
+        accBody.innerHTML = `
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase;">İşlem Geçmişi</div>
+          ${histHtml}
+          <div class="acc-row" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); font-weight: bold;">
+            <span>Kalan Tutar</span>
+            <span style="color:${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">${rem}</span>
+          </div>
+        `;
+
+        wrapper.innerHTML = swipeButtons;
+        wrapper.appendChild(cardEl);
+        wrapper.appendChild(accBody);
+
+        // Dokunma (Tap) ve Kaydırma (Swipe) Tam Ayrımı
+        attachSwipeEvents(cardEl, wrapper, `acc-${item.rowIndex}`);
         container.appendChild(wrapper);
       });
-    }
-
-    function toggleAccordion(id) {
-      if (currentlySwiped) return; // Kaydırılmışken akordiyon açılmasın
-      const acc = document.getElementById(id);
-      if (acc) {
-        acc.classList.toggle('open');
-      }
     }
 
     function toggleMask(key) {
@@ -1044,54 +1055,97 @@
       }
     }
 
+    // ==========================================
+    // GELİŞMİŞ SWIPE VE AKORDİYON TETİKLEYİCİ
+    // ==========================================
     let currentlySwiped = null;
     let currentlySwipedContainer = null;
 
-    function attachSwipeEvents(card, container) {
+    function attachSwipeEvents(card, container, accordionId) {
       let startX = 0;
+      let startY = 0;
       let currentX = 0;
-      let hasSwiped = false;
+      let currentY = 0;
+      let isHorizontal = false;
+      let isVertical = false;
 
       card.addEventListener('touchstart', e => {
         if (currentlySwiped && currentlySwiped !== card) {
           currentlySwiped.style.transform = 'translateX(0px)';
           if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped', 'swiping');
-          currentlySwiped = null; currentlySwipedContainer = null;
+          currentlySwiped = null; 
+          currentlySwipedContainer = null;
         }
         startX = e.touches[0].clientX;
-        hasSwiped = false;
+        startY = e.touches[0].clientY;
+        currentX = startX;
+        currentY = startY;
+        isHorizontal = false;
+        isVertical = false;
       }, { passive: true });
 
       card.addEventListener('touchmove', e => {
         currentX = e.touches[0].clientX;
-        let diff = currentX - startX;
-        let isDebtActive = (currentModule === 'debts' && activeDebtTab !== 'history' && document.getElementById('sheetSelect').value !== 'archive');
-        let maxDrag = isDebtActive ? -240 : -90;
-        
-        if (diff < -5) {
-          hasSwiped = true;
+        currentY = e.touches[0].clientY;
+        let diffX = currentX - startX;
+        let diffY = currentY - startY;
+
+        if (!isHorizontal && !isVertical) {
+          if (Math.abs(diffX) > 8 && Math.abs(diffX) > Math.abs(diffY)) {
+            isHorizontal = true;
+          } else if (Math.abs(diffY) > 8) {
+            isVertical = true;
+          }
         }
 
-        if (diff < 0 && diff > maxDrag) {
-          container.classList.add('swiping');
-          card.style.transform = `translateX(${diff}px)`;
+        if (isHorizontal) {
+          let isDebtActive = (currentModule === 'debts' && activeDebtTab !== 'history' && document.getElementById('sheetSelect').value !== 'archive');
+          let maxDrag = isDebtActive ? -240 : -90;
+          
+          if (diffX < 0 && diffX > maxDrag) {
+            container.classList.add('swiping');
+            card.style.transform = `translateX(${diffX}px)`;
+          }
         }
       }, { passive: true });
 
       card.addEventListener('touchend', () => {
-        let diff = currentX - startX;
-        let isDebtActive = (currentModule === 'debts' && activeDebtTab !== 'history' && document.getElementById('sheetSelect').value !== 'archive');
-        let snapOffset = isDebtActive ? -225 : -75;
-        
-        if (diff < -40) {
-          card.style.transform = `translateX(${snapOffset}px)`;
-          container.classList.add('swiped');
-          container.classList.remove('swiping');
-          currentlySwiped = card; currentlySwipedContainer = container;
-        } else {
-          card.style.transform = 'translateX(0px)';
-          container.classList.remove('swiped', 'swiping');
-          if (currentlySwiped === card) { currentlySwiped = null; currentlySwipedContainer = null; }
+        let diffX = currentX - startX;
+        let diffY = currentY - startY;
+
+        // EĞER KAYDIRMA YAPILMADIYSA (SAF DOKUNMA / TAP) -> AKORDİYONU AÇ
+        if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10) {
+          if (currentlySwiped === card) {
+            card.style.transform = 'translateX(0px)';
+            container.classList.remove('swiped', 'swiping');
+            currentlySwiped = null;
+            currentlySwipedContainer = null;
+          } else if (accordionId) {
+            const acc = document.getElementById(accordionId);
+            if (acc) acc.classList.toggle('open');
+          }
+          return;
+        }
+
+        // EĞER YATAY KAYDIRMA YAPILDIYSA -> BUTONLARI AÇ VEYA KAPAT
+        if (isHorizontal) {
+          let isDebtActive = (currentModule === 'debts' && activeDebtTab !== 'history' && document.getElementById('sheetSelect').value !== 'archive');
+          let snapOffset = isDebtActive ? -225 : -75;
+
+          if (diffX < -40) {
+            card.style.transform = `translateX(${snapOffset}px)`;
+            container.classList.add('swiped');
+            container.classList.remove('swiping');
+            currentlySwiped = card;
+            currentlySwipedContainer = container;
+          } else {
+            card.style.transform = 'translateX(0px)';
+            container.classList.remove('swiped', 'swiping');
+            if (currentlySwiped === card) {
+              currentlySwiped = null;
+              currentlySwipedContainer = null;
+            }
+          }
         }
       });
     }
