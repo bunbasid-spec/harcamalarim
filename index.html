@@ -121,7 +121,6 @@
       align-items: center;
     }
 
-    /* Sol Üst Modül Butonları */
     .module-switcher {
       display: flex;
       background: var(--card-bg);
@@ -158,7 +157,6 @@
       box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
     }
 
-    /* Sağ Üst Filtre Seçici */
     select.sheet-select { 
       width: 100%;
       height: 38px;
@@ -237,21 +235,22 @@
     
     .tab-btn#tab-debt-give.active { background: var(--red); color: #fff; box-shadow: 0 2px 8px rgba(244, 63, 94, 0.35); }
     .tab-btn#tab-debt-get.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); }
+    .tab-btn#tab-debt-history.active { background: var(--purple); color: #fff; box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35); }
 
     /* Kaydırma ve Eylem Butonları Düzeni */
     .swipe-container {
       position: relative;
       margin-bottom: 8px;
-      overflow: hidden;
       border-radius: 10px;
       background: transparent;
+      display: flex;
+      flex-direction: column;
     }
     .swipe-actions {
       position: absolute;
       right: 0;
       top: 0;
-      bottom: 0;
-      height: 100%;
+      height: 58px;
       display: flex;
       align-items: stretch;
       z-index: 1;
@@ -295,9 +294,11 @@
       justify-content: space-between; 
       align-items: center; 
       z-index: 2; 
-      transition: transform 0.2s ease-out; 
+      transition: transform 0.2s ease-out, border-radius 0.2s ease; 
       width: 100%; 
+      min-height: 58px;
       box-sizing: border-box;
+      cursor: pointer;
     }
     .swipe-container.swiped .item-card,
     .swipe-container.swiping .item-card {
@@ -309,6 +310,34 @@
     .item-left .sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
     .item-right { font-weight: 700; font-size: 15px; text-align: right; }
     .item-right .sub-eur { font-size: 11px; color: var(--text-dim); font-weight: 500; margin-top: 2px; }
+
+    /* Akordiyon Detay Paneli */
+    .accordion-body {
+      display: none;
+      background: #131d31;
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      padding: 12px 14px;
+      z-index: 2;
+    }
+    .accordion-body.open {
+      display: block;
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .acc-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 4px 0;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+    }
+    .acc-row:last-child { border-bottom: none; }
+    .acc-date { color: var(--text-dim); }
+    .acc-note { color: var(--text); }
+    .acc-amount { font-weight: 600; }
 
     .fab { 
       position: fixed; 
@@ -495,9 +524,11 @@
         </div>
       </div>
 
+      <!-- 3 Sekmeli Menü: Borçlarım | Alacaklarım | Geçmiş -->
       <div class="tabs">
         <button class="tab-btn active" id="tab-debt-give" onclick="switchDebtTab('debt')">Borçlarım</button>
         <button class="tab-btn" id="tab-debt-get" onclick="switchDebtTab('credit')">Alacaklarım</button>
+        <button class="tab-btn" id="tab-debt-history" onclick="switchDebtTab('history')">Geçmiş</button>
       </div>
     </div>
 
@@ -579,8 +610,33 @@
     </div>
   </div>
 
+  <!-- ÖDEME YAPMA MODALI -->
+  <div class="modal" id="modalPayment">
+    <div class="modal-content">
+      <h3 style="margin-bottom: 14px; font-size: 16px;" id="lblPaymentTitle">Ödeme Ekle</h3>
+
+      <input type="hidden" id="payDebtType">
+      <input type="hidden" id="payRowIndex">
+      <input type="hidden" id="payPersonName">
+
+      <div class="form-group">
+        <label>Ödeme Tarihi</label>
+        <input type="date" id="payDate">
+      </div>
+      <div class="form-group">
+        <label>Ödenen Tutar (€)</label>
+        <input type="text" id="payAmount" placeholder="örn: 200,00 €">
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-submit" onclick="submitDebtPayment()">Ödemeyi Kaydet</button>
+        <button type="button" class="btn-cancel" onclick="closeModal('modalPayment')">Vazgeç</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    const CURRENT_VERSION = "2.0.7";
+    const CURRENT_VERSION = "2.1.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -602,6 +658,7 @@
       checkForAppUpdates();
       document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
       document.getElementById('mDebtDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
       initPullToRefresh();
       fetchInitialData();
     };
@@ -807,7 +864,12 @@
     function switchDebtTab(tab) {
       activeDebtTab = tab;
       document.querySelectorAll('#viewDebts .tab-btn').forEach(btn => btn.classList.remove('active'));
-      const target = document.getElementById(tab === 'debt' ? 'tab-debt-give' : 'tab-debt-get');
+      
+      let targetId = 'tab-debt-give';
+      if (tab === 'credit') targetId = 'tab-debt-get';
+      if (tab === 'history') targetId = 'tab-debt-history';
+      
+      const target = document.getElementById(targetId);
       if (target) target.classList.add('active');
       renderDebtsList();
     }
@@ -817,6 +879,34 @@
       container.innerHTML = '';
       if (!debtsData || currentModule !== 'debts') return;
 
+      // 3. SEKME: ÖDEME GEÇMİŞİ LİSTESİ
+      if (activeDebtTab === 'history') {
+        const history = debtsData.history || [];
+        if (history.length === 0) {
+          container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-dim)">Ödeme geçmişi bulunamadı.</div>';
+          return;
+        }
+
+        history.forEach(item => {
+          const isIncome = item.note.includes("Geri Ödeme") || item.note.includes("Borç Alma");
+          const div = document.createElement('div');
+          div.className = 'item-card';
+          div.style.marginBottom = '8px';
+          div.innerHTML = `
+            <div class="item-left">
+              <div class="name">${item.person}</div>
+              <div class="sub">${item.date} • ${item.note}</div>
+            </div>
+            <div class="item-right" style="color: ${item.note.includes("Borç Alma") ? 'var(--red)' : 'var(--accent)'}">
+              ${formatAmount(item.amount)}
+            </div>
+          `;
+          container.appendChild(div);
+        });
+        return;
+      }
+
+      // 1. & 2. SEKME: BORÇLAR / ALACAKLAR (AKORDİYONLU)
       const isArchive = document.getElementById('sheetSelect').value === 'archive';
       let items = (activeDebtTab === 'debt') ? debtsData.debts : debtsData.credits;
 
@@ -838,7 +928,7 @@
         if (!isArchive) {
           swipeButtons = `
             <div class="swipe-actions" style="width: 225px;">
-              <button class="swipe-btn pay" onclick="handleDebtPayment('${activeDebtTab}', ${item.rowIndex})">Ödeme</button>
+              <button class="swipe-btn pay" onclick="openPaymentModal('${activeDebtTab}', ${item.rowIndex}, '${item.person}')">Ödeme</button>
               <button class="swipe-btn close" onclick="handleDebtArchive('${activeDebtTab}', ${item.rowIndex})">Kapat</button>
               <button class="swipe-btn delete" onclick="handleDebtDelete('${activeDebtTab}', ${item.rowIndex})">Sil</button>
             </div>
@@ -851,11 +941,33 @@
           `;
         }
 
+        // Akordiyon Satırları Oluştur
+        let histHtml = '';
+        if (item.history && item.history.length > 0) {
+          item.history.forEach(h => {
+            histHtml += `
+              <div class="acc-row">
+                <span class="acc-date">📅 ${h.date}</span>
+                <span class="acc-note">${h.note}</span>
+                <span class="acc-amount" style="color: ${h.note.includes('Borç') ? 'var(--red)' : 'var(--green)'}">${formatAmount(h.amount)}</span>
+              </div>
+            `;
+          });
+        } else {
+          histHtml = `
+            <div class="acc-row">
+              <span class="acc-date">📅 ${item.date}</span>
+              <span class="acc-note">İlk Kayıt</span>
+              <span class="acc-amount" style="color:var(--accent)">${total}</span>
+            </div>
+          `;
+        }
+
         wrapper.innerHTML = `
           ${swipeButtons}
-          <div class="item-card">
+          <div class="item-card" onclick="toggleAccordion('acc-${item.rowIndex}')">
             <div class="item-left">
-              <div class="name">${item.person}</div>
+              <div class="name">${item.person} <span style="font-size:10px; color:var(--text-dim)">▼</span></div>
               <div class="sub">${item.date} • ${item.statusOrDate || ''} (Ödenen: ${paid})</div>
             </div>
             <div class="item-right" style="color: ${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">
@@ -863,11 +975,27 @@
               <div class="sub-eur">Kalan: ${rem}</div>
             </div>
           </div>
+          <div class="accordion-body" id="acc-${item.rowIndex}">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase;">İşlem Geçmişi</div>
+            ${histHtml}
+            <div class="acc-row" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); font-weight: bold;">
+              <span>Kalan Tutar</span>
+              <span style="color:${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">${rem}</span>
+            </div>
+          </div>
         `;
 
         attachSwipeEvents(wrapper.querySelector('.item-card'), wrapper);
         container.appendChild(wrapper);
       });
+    }
+
+    function toggleAccordion(id) {
+      if (currentlySwiped) return; // Kaydırılmışken akordiyon açılmasın
+      const acc = document.getElementById(id);
+      if (acc) {
+        acc.classList.toggle('open');
+      }
     }
 
     function toggleMask(key) {
@@ -922,6 +1050,7 @@
     function attachSwipeEvents(card, container) {
       let startX = 0;
       let currentX = 0;
+      let hasSwiped = false;
 
       card.addEventListener('touchstart', e => {
         if (currentlySwiped && currentlySwiped !== card) {
@@ -930,14 +1059,19 @@
           currentlySwiped = null; currentlySwipedContainer = null;
         }
         startX = e.touches[0].clientX;
+        hasSwiped = false;
       }, { passive: true });
 
       card.addEventListener('touchmove', e => {
         currentX = e.touches[0].clientX;
         let diff = currentX - startX;
-        let isDebtActive = (currentModule === 'debts' && document.getElementById('sheetSelect').value !== 'archive');
+        let isDebtActive = (currentModule === 'debts' && activeDebtTab !== 'history' && document.getElementById('sheetSelect').value !== 'archive');
         let maxDrag = isDebtActive ? -240 : -90;
         
+        if (diff < -5) {
+          hasSwiped = true;
+        }
+
         if (diff < 0 && diff > maxDrag) {
           container.classList.add('swiping');
           card.style.transform = `translateX(${diff}px)`;
@@ -946,7 +1080,7 @@
 
       card.addEventListener('touchend', () => {
         let diff = currentX - startX;
-        let isDebtActive = (currentModule === 'debts' && document.getElementById('sheetSelect').value !== 'archive');
+        let isDebtActive = (currentModule === 'debts' && activeDebtTab !== 'history' && document.getElementById('sheetSelect').value !== 'archive');
         let snapOffset = isDebtActive ? -225 : -75;
         
         if (diff < -40) {
@@ -971,12 +1105,32 @@
       }
     }
 
-    async function handleDebtPayment(debtType, rowIndex) {
-      const pay = prompt("Eklemek istediğiniz ödeme tutarını girin (€):");
-      if (!pay) {
-        resetCurrentSwipe();
-        return;
+    function openPaymentModal(debtType, rowIndex, personName) {
+      resetCurrentSwipe();
+      document.getElementById('payDebtType').value = debtType;
+      document.getElementById('payRowIndex').value = rowIndex;
+      document.getElementById('payPersonName').value = personName;
+      document.getElementById('lblPaymentTitle').innerText = `${personName} İçin Ödeme Ekle`;
+      document.getElementById('payAmount').value = '';
+      document.getElementById('modalPayment').style.display = 'flex';
+    }
+
+    async function submitDebtPayment() {
+      const debtType = document.getElementById('payDebtType').value;
+      const rowIndex = document.getElementById('payRowIndex').value;
+      const personName = document.getElementById('payPersonName').value;
+      const rawDate = document.getElementById('payDate').value;
+      const amount = document.getElementById('payAmount').value;
+
+      if (!amount) return;
+
+      let dateFormatted = "";
+      if (rawDate) {
+        const p = rawDate.split("-");
+        dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
       }
+
+      closeModal('modalPayment');
 
       await fetch(API_URL, {
         method: 'POST',
@@ -984,7 +1138,9 @@
           action: 'updateDebtPayment',
           debtType: debtType,
           rowIndex: rowIndex,
-          amount: pay
+          amount: amount,
+          date: dateFormatted,
+          person: personName
         })
       });
       loadDebtsData();
