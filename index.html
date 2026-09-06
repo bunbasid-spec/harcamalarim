@@ -311,7 +311,7 @@
     .item-right { font-weight: 700; font-size: 15px; text-align: right; }
     .item-right .sub-eur { font-size: 11px; color: var(--text-dim); font-weight: 500; margin-top: 2px; }
 
-    /* Akordiyon Detay Paneli */
+    /* Akordiyon Detay Paneli (Sütunlar Hizalandı) */
     .accordion-body {
       display: none;
       background: #131d31;
@@ -328,16 +328,18 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 
     .acc-row {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 105px 1fr auto;
+      align-items: center;
+      gap: 6px;
       font-size: 12px;
       padding: 5px 0;
       border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
     }
     .acc-row:last-child { border-bottom: none; }
-    .acc-date { color: var(--text-dim); }
-    .acc-note { color: var(--text); }
-    .acc-amount { font-weight: 600; }
+    .acc-date { color: var(--text-dim); white-space: nowrap; }
+    .acc-note { color: var(--text); text-align: left; }
+    .acc-amount { font-weight: 600; text-align: right; white-space: nowrap; }
 
     .fab { 
       position: fixed; 
@@ -598,10 +600,6 @@
         <label>Şu Ana Kadar Ödenen (€)</label>
         <input type="text" id="mDebtPaid" placeholder="örn: 0,00 €">
       </div>
-      <div class="form-group">
-        <label>Durum / Not</label>
-        <input type="text" id="mDebtNote" placeholder="örn: Devam Ediyor, Elden">
-      </div>
 
       <div class="modal-actions">
         <button type="button" class="btn-submit" onclick="submitDebtEntry()">Kaydet</button>
@@ -636,7 +634,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.1.1";
+    const CURRENT_VERSION = "2.1.2";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -888,7 +886,7 @@
         }
 
         history.forEach(item => {
-          let itemColor = 'var(--green)'; // Geri Ödemeler canlı yeşil
+          let itemColor = 'var(--green)';
           if (item.note.includes("Borç Alma")) {
             itemColor = 'var(--red)';
           } else if (item.note.includes("Borç Verme")) {
@@ -947,28 +945,26 @@
           `;
         }
 
-        // AKORDİYON İÇERİĞİ: EN ÜSTTE İLK BORÇ ALMA / VERME SATIRI
+        // AKORDİYON İÇERİĞİ
         let initialLabel = (activeDebtTab === 'debt') ? 'Borç Alındı' : 'Borç Verildi';
-        let initialSign = (activeDebtTab === 'debt') ? '+' : '-';
         let initialColor = (activeDebtTab === 'debt') ? 'var(--red)' : 'var(--green)';
 
         let histHtml = `
           <div class="acc-row">
             <span class="acc-date">📅 ${item.date}</span>
             <span class="acc-note">${initialLabel}</span>
-            <span class="acc-amount" style="color: ${initialColor}">${initialSign}${total}</span>
+            <span class="acc-amount" style="color: ${initialColor}">${total}</span>
           </div>
         `;
 
         if (item.history && item.history.length > 0) {
-          // İlk kaydı hariç tutarak geri ödemeleri ekle
           const paymentsOnly = item.history.filter(h => h.note.includes("Geri Ödeme"));
           paymentsOnly.forEach(h => {
             histHtml += `
               <div class="acc-row">
                 <span class="acc-date">📅 ${h.date}</span>
-                <span class="acc-note">${h.note}</span>
-                <span class="acc-amount" style="color: var(--green)">-${formatAmount(h.amount)}</span>
+                <span class="acc-note">Geri Ödeme</span>
+                <span class="acc-amount" style="color: var(--green)">${formatAmount(h.amount)}</span>
               </div>
             `;
           });
@@ -979,7 +975,7 @@
         cardEl.innerHTML = `
           <div class="item-left">
             <div class="name">${item.person} <span style="font-size:10px; color:var(--text-dim)">▼</span></div>
-            <div class="sub">${item.date} • ${item.statusOrDate || ''} (Ödenen: ${paid})</div>
+            <div class="sub">${item.date} • Ödenen: ${paid}</div>
           </div>
           <div class="item-right" style="color: ${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">
             ${total}
@@ -994,8 +990,8 @@
           <div style="font-size: 11px; font-weight: 700; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase;">İşlem Geçmişi</div>
           ${histHtml}
           <div class="acc-row" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); font-weight: bold;">
-            <span>Kalan Tutar</span>
-            <span style="color:${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">${rem}</span>
+            <span style="grid-column: span 2;">Kalan Tutar</span>
+            <span class="acc-amount" style="color:${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">${rem}</span>
           </div>
         `;
 
@@ -1003,7 +999,6 @@
         wrapper.appendChild(cardEl);
         wrapper.appendChild(accBody);
 
-        // Dokunma (Tap) ve Kaydırma (Swipe) Tam Ayrımı
         attachSwipeEvents(cardEl, wrapper, `acc-${item.rowIndex}`);
         container.appendChild(wrapper);
       });
@@ -1055,9 +1050,6 @@
       }
     }
 
-    // ==========================================
-    // GELİŞMİŞ SWIPE VE AKORDİYON TETİKLEYİCİ
-    // ==========================================
     let currentlySwiped = null;
     let currentlySwipedContainer = null;
 
@@ -1113,7 +1105,6 @@
         let diffX = currentX - startX;
         let diffY = currentY - startY;
 
-        // EĞER KAYDIRMA YAPILMADIYSA (SAF DOKUNMA / TAP) -> AKORDİYONU AÇ
         if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10) {
           if (currentlySwiped === card) {
             card.style.transform = 'translateX(0px)';
@@ -1127,7 +1118,6 @@
           return;
         }
 
-        // EĞER YATAY KAYDIRMA YAPILDIYSA -> BUTONLARI AÇ VEYA KAPAT
         if (isHorizontal) {
           let isDebtActive = (currentModule === 'debts' && activeDebtTab !== 'history' && document.getElementById('sheetSelect').value !== 'archive');
           let snapOffset = isDebtActive ? -225 : -75;
@@ -1430,15 +1420,13 @@
         person: document.getElementById('mDebtPerson').value,
         date: dateFormatted,
         amount: document.getElementById('mDebtAmount').value,
-        paid: document.getElementById('mDebtPaid').value,
-        note: document.getElementById('mDebtNote').value
+        paid: document.getElementById('mDebtPaid').value
       };
 
       closeModal('modalDebt');
       document.getElementById('mDebtPerson').value = '';
       document.getElementById('mDebtAmount').value = '';
       document.getElementById('mDebtPaid').value = '';
-      document.getElementById('mDebtNote').value = '';
 
       await fetch(API_URL, {
         method: 'POST',
