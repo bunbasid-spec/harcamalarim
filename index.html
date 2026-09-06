@@ -179,6 +179,9 @@
       padding: 14px 16px; 
       border-radius: 12px; 
       border-left: 4px solid transparent; 
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
     
     .summary-card.rem { grid-column: span 2; border-left-color: var(--primary-blue); }
@@ -194,7 +197,7 @@
     .summary-card.clickable { cursor: pointer; }
     .summary-card.clickable:active { opacity: 0.8; transform: scale(0.98); transition: transform 0.1s; }
     
-    .summary-title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+    .summary-title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; line-height: 1.3; min-height: 28px; display: flex; align-items: flex-end; }
     .summary-val { font-size: 20px; font-weight: 700; margin-top: 4px; letter-spacing: 0.5px; }
     
     .val-rem { font-size: 24px; }
@@ -643,7 +646,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.1.6";
+    const CURRENT_VERSION = "2.1.7";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -869,10 +872,10 @@
       
       const isArchive = document.getElementById('sheetSelect').value === 'archive';
       
-      // Kart Başlıklarını Güncelle
-      document.getElementById('lblDebtNetTitle').innerText = isArchive ? "Kapanan Net Durum" : "Net Borç / Alacak Durumu";
-      document.getElementById('lblDebtGiveTitle').innerText = isArchive ? "Kapattığım Borçlar" : "Borçlarım (Aldıklarım)";
-      document.getElementById('lblDebtGetTitle').innerText = isArchive ? "Tahsil Ettiğim Alacaklar" : "Alacaklarım (Verdiklerim)";
+      // Dinamik ve İki Satırlı Başlık Güncellemesi
+      document.getElementById('lblDebtNetTitle').innerHTML = isArchive ? "NET KAPANAN DURUM" : "NET BORÇ / ALACAK DURUMU";
+      document.getElementById('lblDebtGiveTitle').innerHTML = isArchive ? "KAPATTIĞIM<br>BORÇLAR" : "BORÇLARIM (ALDIKLARIM)";
+      document.getElementById('lblDebtGetTitle').innerHTML = isArchive ? "TAHSİL ETTİĞİM<br>ALACAKLAR" : "ALACAKLARIM (VERDİKLERİM)";
 
       updateMaskedDisplay();
       renderDebtsList();
