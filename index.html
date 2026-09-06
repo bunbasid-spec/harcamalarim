@@ -860,7 +860,7 @@
       const isArchive = document.getElementById('sheetSelect').value === 'archive';
       
       document.getElementById('lblDebtNetTitle').innerText = isArchive ? "NET KAPANAN DURUM" : "NET BORÇ / ALACAK DURUMU";
-      document.getElementById('lblDebtGiveTitle').innerText = isArchive ? "KAPATTIĞIM<br>BORÇLAR" : "BORÇLARIM (ALDIKLARIM)";
+      document.getElementById('lblDebtGiveTitle').innerHTML = isArchive ? "KAPATTIĞIM<br>BORÇLAR" : "BORÇLARIM (ALDIKLARIM)";
       document.getElementById('lblDebtGetTitle').innerText = isArchive ? "TAHSİL ETTİĞİM ALACAKLAR" : "ALACAKLARIM (VERDİKLERİM)";
 
       updateMaskedDisplay();
