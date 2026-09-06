@@ -171,7 +171,7 @@
       text-align: center;
     }
 
-    /* Kart Izgaraları */
+    /* Orijinal Dengeli Kart Izgaraları */
     .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
     
     .summary-card { 
@@ -179,9 +179,6 @@
       padding: 14px 16px; 
       border-radius: 12px; 
       border-left: 4px solid transparent; 
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
     }
     
     .summary-card.rem { grid-column: span 2; border-left-color: var(--primary-blue); }
@@ -197,7 +194,7 @@
     .summary-card.clickable { cursor: pointer; }
     .summary-card.clickable:active { opacity: 0.8; transform: scale(0.98); transition: transform 0.1s; }
     
-    .summary-title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; line-height: 1.3; min-height: 28px; display: flex; align-items: flex-end; }
+    .summary-title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
     .summary-val { font-size: 20px; font-weight: 700; margin-top: 4px; letter-spacing: 0.5px; }
     
     .val-rem { font-size: 24px; }
@@ -646,7 +643,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.1.7";
+    const CURRENT_VERSION = "2.1.8";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -872,10 +869,9 @@
       
       const isArchive = document.getElementById('sheetSelect').value === 'archive';
       
-      // Dinamik ve İki Satırlı Başlık Güncellemesi
-      document.getElementById('lblDebtNetTitle').innerHTML = isArchive ? "NET KAPANAN DURUM" : "NET BORÇ / ALACAK DURUMU";
-      document.getElementById('lblDebtGiveTitle').innerHTML = isArchive ? "KAPATTIĞIM<br>BORÇLAR" : "BORÇLARIM (ALDIKLARIM)";
-      document.getElementById('lblDebtGetTitle').innerHTML = isArchive ? "TAHSİL ETTİĞİM<br>ALACAKLAR" : "ALACAKLARIM (VERDİKLERİM)";
+      document.getElementById('lblDebtNetTitle').innerText = isArchive ? "NET KAPANAN DURUM" : "NET BORÇ / ALACAK DURUMU";
+      document.getElementById('lblDebtGiveTitle').innerText = isArchive ? "KAPATTIĞIM BORÇLAR" : "BORÇLARIM (ALDIKLARIM)";
+      document.getElementById('lblDebtGetTitle').innerText = isArchive ? "TAHSİL ETTİĞİM ALACAKLAR" : "ALACAKLARIM (VERDİKLERİM)";
 
       updateMaskedDisplay();
       renderDebtsList();
@@ -899,7 +895,6 @@
       container.innerHTML = '';
       if (!debtsData || currentModule !== 'debts') return;
 
-      // 3. SEKME: ÖDEME GEÇMİŞİ LİSTESİ
       if (activeDebtTab === 'history') {
         const history = debtsData.history || [];
         if (history.length === 0) {
@@ -932,7 +927,6 @@
         return;
       }
 
-      // 1. & 2. SEKME: BORÇLAR / ALACAKLAR (AKORDİYONLU)
       const isArchive = document.getElementById('sheetSelect').value === 'archive';
       let items = (activeDebtTab === 'debt') ? debtsData.debts : debtsData.credits;
 
@@ -971,7 +965,6 @@
           `;
         }
 
-        // AKORDİYON İÇERİĞİ
         let initialLabel = (activeDebtTab === 'debt') ? 'Borç Alındı' : 'Borç Verildi';
         let initialColor = (activeDebtTab === 'debt') ? 'var(--red)' : 'var(--green)';
         let paymentColor = (activeDebtTab === 'debt') ? 'var(--green)' : 'var(--red)';
@@ -997,7 +990,6 @@
           });
         }
 
-        // Arşivdeyse Kapanma Tarihi Satırı
         let archiveCloseHtml = '';
         if (isArchive && item.closeDate) {
           archiveCloseHtml = `
