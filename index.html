@@ -580,7 +580,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.0.6";
+    const CURRENT_VERSION = "2.0.7";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -962,9 +962,21 @@
       });
     }
 
+    function resetCurrentSwipe() {
+      if (currentlySwiped) {
+        currentlySwiped.style.transform = 'translateX(0px)';
+        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped', 'swiping');
+        currentlySwiped = null;
+        currentlySwipedContainer = null;
+      }
+    }
+
     async function handleDebtPayment(debtType, rowIndex) {
       const pay = prompt("Eklemek istediğiniz ödeme tutarını girin (€):");
-      if (!pay) return;
+      if (!pay) {
+        resetCurrentSwipe();
+        return;
+      }
 
       await fetch(API_URL, {
         method: 'POST',
@@ -979,7 +991,10 @@
     }
 
     async function handleDebtArchive(debtType, rowIndex) {
-      if (!confirm("Bu borç/alacak kapandı olarak arşive taşınsın mı?")) return;
+      if (!confirm("Bu borç/alacak kapandı olarak arşive taşınsın mı?")) {
+        resetCurrentSwipe();
+        return;
+      }
 
       const row = document.getElementById(`debt-row-${rowIndex}`);
       if (row) row.remove();
@@ -996,7 +1011,10 @@
     }
 
     async function handleDebtDelete(debtType, rowIndex) {
-      if (!confirm("Bu kaydı tamamen silmek istediğinize emin misiniz?")) return;
+      if (!confirm("Bu borç/alacak kaydını tamamen silmek istediğinize emin misiniz?")) {
+        resetCurrentSwipe();
+        return;
+      }
       const isArchive = document.getElementById('sheetSelect').value === 'archive';
 
       const row = document.getElementById(`debt-row-${rowIndex}`);
@@ -1015,6 +1033,11 @@
     }
 
     async function deleteBudgetItem(type, rowIndex) {
+      if (!confirm("Bu harcama/gelir kaydını silmek istediğinize emin misiniz?")) {
+        resetCurrentSwipe();
+        return;
+      }
+
       const sheet = document.getElementById('sheetSelect').value;
       const row = document.getElementById(`item-row-${rowIndex}`);
       if (row) row.remove();
