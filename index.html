@@ -636,7 +636,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.2.5";
+    const CURRENT_VERSION = "2.2.6";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -860,9 +860,9 @@
       
       const isArchive = document.getElementById('sheetSelect').value === 'archive';
       
-      document.getElementById('lblDebtNetTitle').innerText = isArchive ? "NET KAPANAN DURUM" : "NET BORÇ / ALACAK DURUMU";
+      document.getElementById('lblDebtNetTitle').innerHTML = isArchive ? "NET KAPANAN DURUM" : "NET BORÇ / ALACAK DURUMU";
       document.getElementById('lblDebtGiveTitle').innerHTML = isArchive ? "KAPATTIĞIM<br>BORÇLAR" : "BORÇLARIM (ALDIKLARIM)";
-      document.getElementById('lblDebtGetTitle').innerText = isArchive ? "TAHSİL ETTİĞİM<br>ALACAKLAR" : "ALACAKLARIM (VERDİKLERİM)";
+      document.getElementById('lblDebtGetTitle').innerHTML = isArchive ? "TAHSİL ETTİĞİM<br>ALACAKLAR" : "ALACAKLARIM (VERDİKLERİM)";
 
       updateMaskedDisplay();
       renderDebtsList();
@@ -895,6 +895,7 @@
       container.innerHTML = '';
       if (!debtsData || currentModule !== 'debts') return;
 
+      // 3. SEKME: GEÇMİŞ LİSTESİ
       if (activeDebtTab === 'history') {
         const history = [...(debtsData.history || [])].sort((a, b) => {
           return parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
@@ -914,7 +915,7 @@
           } else if (item.note.includes("Borç Verme")) {
             itemColor = 'var(--accent)';
           } else if (item.note.includes("Geri Ödeme")) {
-            canUndo = true;
+            canUndo = true; // Sadece geri ödemeler kaydırılıp iptal edilebilir
           }
 
           const wrapper = document.createElement('div');
@@ -929,7 +930,7 @@
 
           wrapper.innerHTML = `
             ${undoAction}
-            <div class="item-card" style="margin-bottom: 0;">
+            <div class="item-card">
               <div class="item-left">
                 <div class="name">${item.person}</div>
                 <div class="sub">${item.date} • ${item.note}</div>
@@ -946,6 +947,7 @@
         return;
       }
 
+      // 1. & 2. SEKME: BORÇLAR / ALACAKLAR
       const isArchive = document.getElementById('sheetSelect').value === 'archive';
       let items = (activeDebtTab === 'debt') ? debtsData.debts : debtsData.credits;
 
@@ -1220,7 +1222,7 @@
     function resetCurrentSwipe() {
       if (currentlySwiped) {
         currentlySwiped.style.transform = 'translateX(0px)';
-        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped', 'swiping');
+        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped');
         currentlySwiped = null;
         currentlySwipedContainer = null;
       }
