@@ -287,7 +287,6 @@
     .swipe-btn.pay { background: var(--orange); width: 75px; }
     .swipe-btn.close { background: var(--primary-blue); width: 75px; }
     .swipe-btn.delete { background: var(--red); width: 75px; }
-    .swipe-btn.undo { background: var(--purple); width: 75px; }
 
     .item-card { 
       position: relative; 
@@ -636,7 +635,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.2.4";
+    const CURRENT_VERSION = "2.2.2";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -827,7 +826,7 @@
         let sign = isIncome ? '+' : '-';
 
         const wrapper = document.createElement('div');
-        wrapper.className = canDelete ? 'swipe-container' : '';
+        wrapper.className = 'swipe-container';
         wrapper.id = `item-row-${item.rowIndex}`;
 
         let deleteAction = canDelete ? `
@@ -881,25 +880,13 @@
       renderDebtsList();
     }
 
-    function parseDateToTimestamp(dateStr) {
-      if (!dateStr) return 0;
-      const parts = dateStr.toString().trim().split(".");
-      if (parts.length === 3) {
-        return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
-      }
-      return 0;
-    }
-
     function renderDebtsList() {
       const container = document.getElementById('listContainer');
       container.innerHTML = '';
       if (!debtsData || currentModule !== 'debts') return;
 
       if (activeDebtTab === 'history') {
-        const history = [...(debtsData.history || [])].sort((a, b) => {
-          return parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
-        });
-
+        const history = debtsData.history || [];
         if (history.length === 0) {
           container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-dim)">Ödeme geçmişi bulunamadı.</div>';
           return;
@@ -907,41 +894,25 @@
 
         history.forEach(item => {
           let itemColor = 'var(--green)';
-          let canUndo = false;
-
           if (item.note.includes("Borç Alma")) {
             itemColor = 'var(--red)';
           } else if (item.note.includes("Borç Verme")) {
             itemColor = 'var(--accent)';
-          } else if (item.note.includes("Geri Ödeme")) {
-            canUndo = true; // Sadece geri ödemeler kaydırılıp geri alınabilir
           }
 
-          const wrapper = document.createElement('div');
-          wrapper.className = canUndo ? 'swipe-container' : '';
-          wrapper.id = `history-row-${item.rowIndex}`;
-
-          let undoAction = canUndo ? `
-            <div class="swipe-actions" style="width: 75px;">
-              <button class="swipe-btn undo" onclick="undoHistoryEntry(${item.rowIndex})">Geri Al</button>
+          const div = document.createElement('div');
+          div.className = 'item-card';
+          div.style.marginBottom = '8px';
+          div.innerHTML = `
+            <div class="item-left">
+              <div class="name">${item.person}</div>
+              <div class="sub">${item.date} • ${item.note}</div>
             </div>
-          ` : '';
-
-          wrapper.innerHTML = `
-            ${undoAction}
-            <div class="item-card" style="margin-bottom: 0;">
-              <div class="item-left">
-                <div class="name">${item.person}</div>
-                <div class="sub">${item.date} • ${item.note}</div>
-              </div>
-              <div class="item-right" style="color: ${itemColor}">
-                ${formatAmount(item.amount)}
-              </div>
+            <div class="item-right" style="color: ${itemColor}">
+              ${formatAmount(item.amount)}
             </div>
           `;
-
-          if (canUndo) attachSwipeEvents(wrapper.querySelector('.item-card'), wrapper, null);
-          container.appendChild(wrapper);
+          container.appendChild(div);
         });
         return;
       }
@@ -1016,25 +987,8 @@
           `;
         }
 
-        let subText = "";
-        let rightMainDisplay = "";
-        let rightSubDisplay = "";
-
-        if (isArchive) {
-          subText = `${item.date} • Kapanış: ${item.closeDate}`;
-          rightMainDisplay = total;
-          rightSubDisplay = "Kapandı";
-        } else {
-          if (activeDebtTab === 'debt') {
-            subText = `${item.date} • Alınan: ${total}`;
-            rightMainDisplay = rem;
-            rightSubDisplay = `Ödenen: ${paid}`;
-          } else {
-            subText = `${item.date} • Verilen: ${total}`;
-            rightMainDisplay = rem;
-            rightSubDisplay = `Alınan: ${paid}`;
-          }
-        }
+        let subLabel = (activeDebtTab === 'debt') ? 'Ödenen' : 'Alınan';
+        let subText = isArchive ? `${item.date} • Kapanış: ${item.closeDate}` : `${item.date} • ${subLabel}: ${paid}`;
 
         const cardEl = document.createElement('div');
         cardEl.className = 'item-card';
@@ -1044,8 +998,8 @@
             <div class="sub">${subText}</div>
           </div>
           <div class="item-right" style="color: ${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">
-            ${rightMainDisplay}
-            <div class="sub-eur">${rightSubDisplay}</div>
+            ${total}
+            <div class="sub-eur">${isArchive ? 'Kapandı' : 'Kalan: ' + rem}</div>
           </div>
         `;
 
@@ -1172,6 +1126,7 @@
         let diffX = currentX - startX;
         let diffY = currentY - startY;
 
+        // DOKUNMA / TAP
         if (Math.abs(diffX) < 8 && Math.abs(diffY) < 8) {
           if (currentlySwiped === card) {
             card.style.transform = 'translateX(0px)';
@@ -1191,6 +1146,7 @@
           return;
         }
 
+        // SOLA KAYDIRMA
         if (isHorizontal) {
           let isDebtActive = (currentModule === 'debts' && activeDebtTab !== 'history' && document.getElementById('sheetSelect').value !== 'archive');
           let snapOffset = isDebtActive ? -225 : -75;
@@ -1279,25 +1235,6 @@
           amount: amount,
           date: dateFormatted,
           person: personName
-        })
-      });
-      loadDebtsData();
-    }
-
-    async function undoHistoryEntry(rowIndex) {
-      if (!confirm("Bu ödeme işlemini geri almak (silmek) istediğinize emin misiniz?")) {
-        resetCurrentSwipe();
-        return;
-      }
-
-      const row = document.getElementById(`history-row-${rowIndex}`);
-      if (row) row.remove();
-
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'deleteHistoryEntry',
-          rowIndex: rowIndex
         })
       });
       loadDebtsData();
