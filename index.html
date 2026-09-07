@@ -111,7 +111,6 @@
       100% { transform: translateX(-50%) rotate(360deg); }
     }
 
-    /* Üst Başlık Grid Düzeni */
     .header { 
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -171,7 +170,6 @@
       text-align: center;
     }
 
-    /* Kart Izgaraları */
     .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
     
     .summary-card { 
@@ -204,7 +202,6 @@
     .val-inc { color: var(--text); }
     .masked { letter-spacing: 3px; color: var(--text-dim) !important; font-size: 18px; }
 
-    /* Sekmeler */
     .tabs { 
       display: flex; 
       background: var(--card-bg); 
@@ -237,7 +234,6 @@
     .tab-btn#tab-debt-get.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); }
     .tab-btn#tab-debt-history.active { background: var(--purple); color: #fff; box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35); }
 
-    /* Kaydırma ve Eylem Butonları Düzeni */
     .swipe-container {
       position: relative;
       margin-bottom: 8px;
@@ -287,7 +283,7 @@
     .swipe-btn.pay { background: var(--orange); width: 75px; }
     .swipe-btn.close { background: var(--primary-blue); width: 75px; }
     .swipe-btn.delete { background: var(--red); width: 75px; }
-    .swipe-btn.undo { background: var(--purple); width: 75px; }
+    .swipe-btn.undo { background: var(--orange); width: 75px; }
 
     .item-card { 
       position: relative; 
@@ -317,7 +313,6 @@
     .item-right { font-weight: 700; font-size: 15px; text-align: right; }
     .item-right .sub-eur { font-size: 11px; color: var(--text-dim); font-weight: 500; margin-top: 2px; }
 
-    /* Akordiyon Detay Paneli */
     .accordion-body {
       display: none;
       background: #131d31;
@@ -532,7 +527,6 @@
         </div>
       </div>
 
-      <!-- 3 Sekmeli Menü: Borçlarım | Alacaklarım | Geçmiş -->
       <div class="tabs">
         <button class="tab-btn active" id="tab-debt-give" onclick="switchDebtTab('debt')">Borçlarım</button>
         <button class="tab-btn" id="tab-debt-get" onclick="switchDebtTab('credit')">Alacaklarım</button>
@@ -636,7 +630,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.2.6";
+    const CURRENT_VERSION = "2.2.7";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -915,11 +909,11 @@
           } else if (item.note.includes("Borç Verme")) {
             itemColor = 'var(--accent)';
           } else if (item.note.includes("Geri Ödeme")) {
-            canUndo = true; // Sadece geri ödemeler kaydırılıp iptal edilebilir
+            canUndo = true;
           }
 
           const wrapper = document.createElement('div');
-          wrapper.className = canUndo ? 'swipe-container' : '';
+          wrapper.className = 'swipe-container';
           wrapper.id = `history-row-${item.rowIndex}`;
 
           let undoAction = canUndo ? `
@@ -928,20 +922,24 @@
             </div>
           ` : '';
 
-          wrapper.innerHTML = `
-            ${undoAction}
-            <div class="item-card">
-              <div class="item-left">
-                <div class="name">${item.person}</div>
-                <div class="sub">${item.date} • ${item.note}</div>
-              </div>
-              <div class="item-right" style="color: ${itemColor}">
-                ${formatAmount(item.amount)}
-              </div>
+          const cardEl = document.createElement('div');
+          cardEl.className = 'item-card';
+          cardEl.innerHTML = `
+            <div class="item-left">
+              <div class="name">${item.person}</div>
+              <div class="sub">${item.date} • ${item.note}</div>
+            </div>
+            <div class="item-right" style="color: ${itemColor}">
+              ${formatAmount(item.amount)}
             </div>
           `;
 
-          if (canUndo) attachSwipeEvents(wrapper.querySelector('.item-card'), wrapper, null);
+          wrapper.innerHTML = undoAction;
+          wrapper.appendChild(cardEl);
+
+          if (canUndo) {
+            attachSwipeEvents(cardEl, wrapper, null);
+          }
           container.appendChild(wrapper);
         });
         return;
