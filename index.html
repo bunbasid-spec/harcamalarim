@@ -630,7 +630,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.2.8";
+    const CURRENT_VERSION = "2.2.9";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -884,14 +884,13 @@
       return 0;
     }
 
-    // İki tarih arasındaki veya bugüne kadarki süreyi "X ay Y gün" formatında hesaplar
     function calculateDurationText(startDateStr, endDateStr) {
       if (!startDateStr) return "";
       const sParts = startDateStr.toString().trim().split(".");
       if (sParts.length !== 3) return "";
       
       let start = new Date(parseInt(sParts[2]), parseInt(sParts[1]) - 1, parseInt(sParts[0]));
-      let end = new Date(); // Aktifler için bugün
+      let end = new Date();
 
       if (endDateStr) {
         const eParts = endDateStr.toString().trim().split(".");
@@ -931,7 +930,7 @@
       container.innerHTML = '';
       if (!debtsData || currentModule !== 'debts') return;
 
-      // 3. SEKME: GEÇMİŞ LİSTESİ (En yeni işlem en üstte)
+      // 3. SEKME: GEÇMİŞ LİSTESİ (Aralıklar ve Kapsayıcılar Tam Eşitlendi)
       if (activeDebtTab === 'history') {
         const history = [...(debtsData.history || [])].sort((a, b) => {
           return parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
@@ -955,7 +954,7 @@
           }
 
           const wrapper = document.createElement('div');
-          wrapper.className = canUndo ? 'swipe-container' : '';
+          wrapper.className = 'swipe-container';
           wrapper.id = `history-row-${item.rowIndex}`;
 
           let undoAction = canUndo ? `
@@ -996,7 +995,6 @@
         return;
       }
 
-      // Tarih Sıralaması: Aktiflerde Alınma Tarihine göre, Arşivde Kapanma Tarihine göre en yeni en üstte
       let items = [...rawItems].sort((a, b) => {
         if (isArchive) {
           return parseDateToTimestamp(b.closeDate || b.date) - parseDateToTimestamp(a.closeDate || a.date);
@@ -1087,7 +1085,6 @@
           }
         }
 
-        // Süre hesaplama: Aktifte bugüne kadar, Arşivde kapanışa kadar
         let durationText = isArchive 
           ? calculateDurationText(item.date, item.closeDate)
           : calculateDurationText(item.date, null);
