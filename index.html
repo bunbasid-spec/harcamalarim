@@ -451,7 +451,7 @@
     }
     .form-group input:focus { border-color: var(--accent); }
 
-    /* COMBOBOX STİLLERİ (WINDOWS TARZI OK VE AÇILIR LİSTE) */
+    /* COMBOBOX STİLLERİ (3 SATIR SINIRLI, YUKARI/AŞAĞI AÇILIR) */
     .combobox-container {
       position: relative;
       width: 100%;
@@ -481,20 +481,30 @@
     .combobox-dropdown {
       display: none;
       position: absolute;
-      top: calc(100% + 4px);
       left: 0;
       right: 0;
       background: #131d31;
       border: 1px solid var(--border);
       border-radius: 8px;
-      max-height: 180px;
+      max-height: 135px; /* Maksimum 3-3.5 satır */
       overflow-y: auto;
       z-index: 1050;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+      -webkit-overflow-scrolling: touch;
     }
     .combobox-dropdown.open {
       display: block;
       animation: fadeIn 0.15s ease;
+    }
+    /* Aşağı açılma (varsayılan) */
+    .combobox-dropdown.open-down {
+      top: calc(100% + 4px);
+      bottom: auto;
+    }
+    /* Yukarı açılma (ekranın altındakiler için) */
+    .combobox-dropdown.open-up {
+      bottom: calc(100% + 4px);
+      top: auto;
     }
     .combobox-item {
       padding: 10px 14px;
@@ -640,17 +650,17 @@
         <div class="combobox-container">
           <input type="text" id="mDesc" class="combobox-input" placeholder="örn: Ev Sahibi / Kira" autocomplete="off" oninput="filterCombobox('desc')">
           <div class="combobox-arrow" onclick="toggleCombobox('desc', event)">▼</div>
-          <div class="combobox-dropdown" id="descDropdown"></div>
+          <div class="combobox-dropdown open-down" id="descDropdown"></div>
         </div>
       </div>
 
-      <!-- HESAP / ÖDEME TÜRÜ COMBOBOX -->
+      <!-- HESAP / ÖDEME TÜRÜ COMBOBOX (Aşağı Taşmayı Önlemek İçin Yukarı Açılır) -->
       <div class="form-group" id="grpCard">
         <label>Hesap / Ödeme Türü</label>
         <div class="combobox-container">
           <input type="text" id="mAccount" class="combobox-input" placeholder="örn: Sparkasse, Nakit" autocomplete="off" oninput="filterCombobox('account')">
           <div class="combobox-arrow" onclick="toggleCombobox('account', event)">▼</div>
-          <div class="combobox-dropdown" id="accountDropdown"></div>
+          <div class="combobox-dropdown open-up" id="accountDropdown"></div>
         </div>
       </div>
 
@@ -739,7 +749,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.3.4";
+    const CURRENT_VERSION = "2.3.5";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1515,7 +1525,7 @@
     function resetCurrentSwipe() {
       if (currentlySwiped) {
         currentlySwiped.style.transform = 'translateX(0px)';
-        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped', 'swiping');
+        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped');
         currentlySwiped = null;
         currentlySwipedContainer = null;
       }
@@ -1736,11 +1746,23 @@
     function closeModal(id) {
       closeAllComboboxes();
       document.getElementById(id).style.display = 'none';
+
+      // Modal kapandığında giriş alanlarını temizle
+      if (id === 'modalBudget') {
+        document.getElementById('mAmount').value = '';
+        document.getElementById('mDesc').value = '';
+        document.getElementById('mAccount').value = '';
+      }
     }
 
     function setModalType(type) {
       modalSelectedType = type;
       closeAllComboboxes();
+
+      // Sekme değiştiğinde önceki sekmeden kalan metinleri temizle
+      document.getElementById('mDesc').value = '';
+      document.getElementById('mAccount').value = '';
+
       document.querySelectorAll('#modalBudget .type-btn').forEach(b => b.classList.remove('active'));
       const lblAmount = document.getElementById('lblAmount');
       const lblDesc = document.getElementById('lblDesc');
@@ -1803,9 +1825,6 @@
       };
 
       closeModal('modalBudget');
-      document.getElementById('mAmount').value = '';
-      document.getElementById('mDesc').value = '';
-      document.getElementById('mAccount').value = '';
 
       await fetch(API_URL, {
         method: 'POST',
