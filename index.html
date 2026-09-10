@@ -383,6 +383,8 @@
       padding-bottom: max(25px, env(safe-area-inset-bottom)); 
       border-top: 1px solid var(--border); 
       box-sizing: border-box;
+      max-height: 90vh;
+      overflow-y: auto;
     }
     
     .type-switcher {
@@ -418,6 +420,7 @@
       margin-bottom: 12px; 
       width: 100%; 
       box-sizing: border-box;
+      position: relative;
     }
     .form-group label { 
       display: block; 
@@ -447,6 +450,67 @@
       line-height: normal;
     }
     .form-group input:focus { border-color: var(--accent); }
+
+    /* COMBOBOX STİLLERİ (WINDOWS TARZI OK VE AÇILIR LİSTE) */
+    .combobox-container {
+      position: relative;
+      width: 100%;
+    }
+    .combobox-input {
+      padding-right: 40px !important;
+    }
+    .combobox-arrow {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-dim);
+      font-size: 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+    .combobox-arrow:active {
+      color: var(--accent);
+      transform: scale(0.9);
+    }
+    .combobox-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: #131d31;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      max-height: 180px;
+      overflow-y: auto;
+      z-index: 1050;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    }
+    .combobox-dropdown.open {
+      display: block;
+      animation: fadeIn 0.15s ease;
+    }
+    .combobox-item {
+      padding: 10px 14px;
+      font-size: 14px;
+      color: var(--text);
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .combobox-item:last-child {
+      border-bottom: none;
+    }
+    .combobox-item:active, .combobox-item.highlighted {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+      font-weight: 600;
+    }
 
     .modal-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
     .btn-submit { 
@@ -550,7 +614,7 @@
 
   <button class="fab" onclick="handleFabClick()"><span>+</span></button>
 
-  <!-- BÜTÇE EKLEME MODALI (AYARLAR TABLOSUNDAN DİNAMİK DATALIST) -->
+  <!-- BÜTÇE EKLEME MODALI (COMBOBOX'LI) -->
   <div class="modal" id="modalBudget">
     <div class="modal-content">
       <h3 style="margin-bottom: 14px; font-size: 16px;">Kayıt Ekle</h3>
@@ -569,15 +633,25 @@
         <label id="lblAmount">Tutar (€)</label>
         <input type="text" id="mAmount" placeholder="örn: 50,00 €">
       </div>
+      
+      <!-- KİME / AÇIKLAMA COMBOBOX -->
       <div class="form-group" id="lblDescGroup">
         <label id="lblDesc">Kime / Açıklama</label>
-        <input type="text" id="mDesc" list="descSuggestions" placeholder="örn: Ev Sahibi / Kira">
-        <datalist id="descSuggestions"></datalist>
+        <div class="combobox-container">
+          <input type="text" id="mDesc" class="combobox-input" placeholder="örn: Ev Sahibi / Kira" autocomplete="off" oninput="filterCombobox('desc')">
+          <div class="combobox-arrow" onclick="toggleCombobox('desc', event)">▼</div>
+          <div class="combobox-dropdown" id="descDropdown"></div>
+        </div>
       </div>
+
+      <!-- HESAP / ÖDEME TÜRÜ COMBOBOX -->
       <div class="form-group" id="grpCard">
         <label>Hesap / Ödeme Türü</label>
-        <input type="text" id="mAccount" list="accountSuggestions" placeholder="örn: Sparkasse, Nakit">
-        <datalist id="accountSuggestions"></datalist>
+        <div class="combobox-container">
+          <input type="text" id="mAccount" class="combobox-input" placeholder="örn: Sparkasse, Nakit" autocomplete="off" oninput="filterCombobox('account')">
+          <div class="combobox-arrow" onclick="toggleCombobox('account', event)">▼</div>
+          <div class="combobox-dropdown" id="accountDropdown"></div>
+        </div>
       </div>
 
       <div class="modal-actions">
@@ -665,7 +739,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.3.2";
+    const CURRENT_VERSION = "2.3.4";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -691,6 +765,7 @@
       document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
       initPullToRefresh();
       initCardLimitLongPress();
+      initComboboxGlobalClick();
       fetchInitialData();
     };
 
@@ -714,7 +789,6 @@
           populateBudgetSheets(data.sheets, data.activeSheet);
           if (data.settings) {
             settingsData = data.settings;
-            updateDatalistOptions(modalSelectedType);
           }
           if (data.dashboard) {
             currentData = data.dashboard;
@@ -731,21 +805,78 @@
       }
     }
 
-    function updateDatalistOptions(type) {
-      const descList = document.getElementById('descSuggestions');
-      const accountList = document.getElementById('accountSuggestions');
-      if (!descList || !accountList) return;
-
-      if (type === 'manual') {
-        descList.innerHTML = (settingsData.manualKime || []).map(val => `<option value="${val}">`).join('');
-        accountList.innerHTML = (settingsData.manualHesap || []).map(val => `<option value="${val}">`).join('');
-      } else if (type === 'income') {
-        descList.innerHTML = (settingsData.gelirNereden || []).map(val => `<option value="${val}">`).join('');
-        accountList.innerHTML = '';
-      } else if (type === 'tr') {
-        descList.innerHTML = (settingsData.trNereye || []).map(val => `<option value="${val}">`).join('');
-        accountList.innerHTML = '';
+    // ==========================================
+    // COMBOBOX (AÇILIR KUTU & CANLI FİLTRELEME)
+    // ==========================================
+    function getActiveComboboxList(type) {
+      if (type === 'desc') {
+        if (modalSelectedType === 'manual') return settingsData.manualKime || [];
+        if (modalSelectedType === 'income') return settingsData.gelirNereden || [];
+        if (modalSelectedType === 'tr') return settingsData.trNereye || [];
+      } else if (type === 'account') {
+        return settingsData.manualHesap || [];
       }
+      return [];
+    }
+
+    function toggleCombobox(type, event) {
+      if (event) event.stopPropagation();
+      const dropdown = document.getElementById(type === 'desc' ? 'descDropdown' : 'accountDropdown');
+      const input = document.getElementById(type === 'desc' ? 'mDesc' : 'mAccount');
+      const isOpen = dropdown.classList.contains('open');
+
+      closeAllComboboxes();
+      if (!isOpen) {
+        populateDropdownItems(type, input.value.trim());
+        dropdown.classList.add('open');
+      }
+    }
+
+    function filterCombobox(type) {
+      const dropdown = document.getElementById(type === 'desc' ? 'descDropdown' : 'accountDropdown');
+      const input = document.getElementById(type === 'desc' ? 'mDesc' : 'mAccount');
+      const filterText = input.value.trim().toLowerCase();
+
+      populateDropdownItems(type, filterText);
+      dropdown.classList.add('open');
+    }
+
+    function populateDropdownItems(type, filterText = "") {
+      const dropdown = document.getElementById(type === 'desc' ? 'descDropdown' : 'accountDropdown');
+      const rawList = getActiveComboboxList(type);
+      dropdown.innerHTML = '';
+
+      const filtered = rawList.filter(item => item.toLowerCase().includes(filterText.toLowerCase()));
+
+      if (filtered.length === 0) {
+        dropdown.innerHTML = '<div style="padding:10px 14px; font-size:12px; color:var(--text-dim);">Eşleşen kayıt bulunamadı</div>';
+        return;
+      }
+
+      filtered.forEach(text => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'combobox-item';
+        itemEl.innerText = text;
+        itemEl.onclick = (e) => {
+          e.stopPropagation();
+          const input = document.getElementById(type === 'desc' ? 'mDesc' : 'mAccount');
+          input.value = text;
+          dropdown.classList.remove('open');
+        };
+        dropdown.appendChild(itemEl);
+      });
+    }
+
+    function closeAllComboboxes() {
+      document.querySelectorAll('.combobox-dropdown').forEach(d => d.classList.remove('open'));
+    }
+
+    function initComboboxGlobalClick() {
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.combobox-container')) {
+          closeAllComboboxes();
+        }
+      });
     }
 
     function initCardLimitLongPress() {
@@ -1384,7 +1515,7 @@
     function resetCurrentSwipe() {
       if (currentlySwiped) {
         currentlySwiped.style.transform = 'translateX(0px)';
-        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped');
+        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped', 'swiping');
         currentlySwiped = null;
         currentlySwipedContainer = null;
       }
@@ -1594,6 +1725,7 @@
     }
 
     function handleFabClick() {
+      closeAllComboboxes();
       if (currentModule === 'budget') {
         document.getElementById('modalBudget').style.display = 'flex';
       } else {
@@ -1602,11 +1734,13 @@
     }
 
     function closeModal(id) {
+      closeAllComboboxes();
       document.getElementById(id).style.display = 'none';
     }
 
     function setModalType(type) {
       modalSelectedType = type;
+      closeAllComboboxes();
       document.querySelectorAll('#modalBudget .type-btn').forEach(b => b.classList.remove('active'));
       const lblAmount = document.getElementById('lblAmount');
       const lblDesc = document.getElementById('lblDesc');
@@ -1619,7 +1753,7 @@
         lblDesc.innerText = 'Nereden / Açıklama';
         lblAmount.innerText = 'Tutar (€)';
         mAmount.placeholder = 'örn: 500,00 €';
-        mDesc.placeholder = 'örn: Maaş, Prim vb.';
+        mDesc.placeholder = 'örn: Maaş, Kindergeld';
         grpCard.style.display = 'none';
       } else if (type === 'tr') {
         document.getElementById('btnTypeTR').classList.add('active');
@@ -1636,8 +1770,6 @@
         mDesc.placeholder = 'örn: Ev Sahibi / Kira';
         grpCard.style.display = 'block';
       }
-
-      updateDatalistOptions(type);
     }
 
     function setDebtModalType(type) {
