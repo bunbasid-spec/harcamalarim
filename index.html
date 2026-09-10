@@ -234,7 +234,6 @@
     .tab-btn#tab-debt-get.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); }
     .tab-btn#tab-debt-history.active { background: var(--purple); color: #fff; box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35); }
 
-    /* TÜM LİSTE SATIRLARI İÇİN STANDART VE EŞİT BOŞLUK */
     .row-wrapper {
       position: relative;
       margin-bottom: 8px !important;
@@ -496,7 +495,6 @@
           <div class="summary-title">Kalan Bakiye</div>
           <div class="summary-val val-rem masked" id="remVal">••••••</div>
         </div>
-        <!-- Kart Harcaması (Long-press 500ms ile hedef limit düzenleme) -->
         <div class="summary-card card-exp" id="cardExpSummaryCard">
           <div class="summary-title">Kart Harcaması</div>
           <div class="summary-val val-card" id="cardVal">...</div>
@@ -552,7 +550,7 @@
 
   <button class="fab" onclick="handleFabClick()"><span>+</span></button>
 
-  <!-- BÜTÇE EKLEME MODALI -->
+  <!-- BÜTÇE EKLEME MODALI (AYARLAR TABLOSUNDAN DİNAMİK DATALIST) -->
   <div class="modal" id="modalBudget">
     <div class="modal-content">
       <h3 style="margin-bottom: 14px; font-size: 16px;">Kayıt Ekle</h3>
@@ -573,11 +571,13 @@
       </div>
       <div class="form-group" id="lblDescGroup">
         <label id="lblDesc">Kime / Açıklama</label>
-        <input type="text" id="mDesc" placeholder="örn: Ev Sahibi / Kira">
+        <input type="text" id="mDesc" list="descSuggestions" placeholder="örn: Ev Sahibi / Kira">
+        <datalist id="descSuggestions"></datalist>
       </div>
       <div class="form-group" id="grpCard">
         <label>Hesap / Ödeme Türü</label>
-        <input type="text" id="mAccount" placeholder="örn: Sparkasse, Nakit">
+        <input type="text" id="mAccount" list="accountSuggestions" placeholder="örn: Sparkasse, Nakit">
+        <datalist id="accountSuggestions"></datalist>
       </div>
 
       <div class="modal-actions">
@@ -665,12 +665,13 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.3.0";
+    const CURRENT_VERSION = "2.3.2";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
     let currentData = null;
     let debtsData = null;
+    let settingsData = { manualKime: [], manualHesap: [], gelirNereden: [], trNereye: [] };
     
     let activeBudgetTab = 'card';
     let activeDebtTab = 'debt';
@@ -711,6 +712,10 @@
         const data = await res.json();
         if (data && data.sheets) {
           populateBudgetSheets(data.sheets, data.activeSheet);
+          if (data.settings) {
+            settingsData = data.settings;
+            updateDatalistOptions(modalSelectedType);
+          }
           if (data.dashboard) {
             currentData = data.dashboard;
             memoryCache[data.activeSheet || "Mevcut Ay"] = data.dashboard;
@@ -726,14 +731,28 @@
       }
     }
 
-    // KART HARCAMASI 500MS UZUN BASMA (LONG-PRESS)
+    function updateDatalistOptions(type) {
+      const descList = document.getElementById('descSuggestions');
+      const accountList = document.getElementById('accountSuggestions');
+      if (!descList || !accountList) return;
+
+      if (type === 'manual') {
+        descList.innerHTML = (settingsData.manualKime || []).map(val => `<option value="${val}">`).join('');
+        accountList.innerHTML = (settingsData.manualHesap || []).map(val => `<option value="${val}">`).join('');
+      } else if (type === 'income') {
+        descList.innerHTML = (settingsData.gelirNereden || []).map(val => `<option value="${val}">`).join('');
+        accountList.innerHTML = '';
+      } else if (type === 'tr') {
+        descList.innerHTML = (settingsData.trNereye || []).map(val => `<option value="${val}">`).join('');
+        accountList.innerHTML = '';
+      }
+    }
+
     function initCardLimitLongPress() {
       const card = document.getElementById('cardExpSummaryCard');
       let pressTimer = null;
-      let isMoved = false;
 
-      function startPress(e) {
-        isMoved = false;
+      function startPress() {
         pressTimer = setTimeout(() => {
           openCardLimitModal();
         }, 500);
@@ -748,7 +767,7 @@
 
       card.addEventListener('touchstart', startPress, { passive: true });
       card.addEventListener('touchend', cancelPress);
-      card.addEventListener('touchmove', () => { isMoved = true; cancelPress(); }, { passive: true });
+      card.addEventListener('touchmove', cancelPress, { passive: true });
 
       card.addEventListener('mousedown', startPress);
       card.addEventListener('mouseup', cancelPress);
@@ -1023,7 +1042,6 @@
       container.innerHTML = '';
       if (!debtsData || currentModule !== 'debts') return;
 
-      // 3. SEKME: GEÇMİŞ LİSTESİ
       if (activeDebtTab === 'history') {
         const history = [...(debtsData.history || [])].sort((a, b) => {
           return parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
@@ -1077,7 +1095,6 @@
         return;
       }
 
-      // 1. & 2. SEKME: BORÇLAR / ALACAKLAR
       const isArchive = document.getElementById('sheetSelect').value === 'archive';
       let rawItems = (activeDebtTab === 'debt') ? (debtsData.debts || []) : (debtsData.credits || []);
 
@@ -1367,7 +1384,7 @@
     function resetCurrentSwipe() {
       if (currentlySwiped) {
         currentlySwiped.style.transform = 'translateX(0px)';
-        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped', 'swiping');
+        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped');
         currentlySwiped = null;
         currentlySwipedContainer = null;
       }
@@ -1619,6 +1636,8 @@
         mDesc.placeholder = 'örn: Ev Sahibi / Kira';
         grpCard.style.display = 'block';
       }
+
+      updateDatalistOptions(type);
     }
 
     function setDebtModalType(type) {
