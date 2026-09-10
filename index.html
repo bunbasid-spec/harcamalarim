@@ -180,7 +180,7 @@
     }
     
     .summary-card.rem { grid-column: span 2; border-left-color: var(--primary-blue); }
-    .summary-card.card-exp { border-left-color: var(--accent); }
+    .summary-card.card-exp { border-left-color: var(--accent); cursor: pointer; }
     .summary-card.manual-exp { border-left-color: var(--orange); }
     .summary-card.tr-exp { border-left-color: var(--purple); }
     .summary-card.income { border-left-color: var(--green); }
@@ -234,14 +234,26 @@
     .tab-btn#tab-debt-get.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); }
     .tab-btn#tab-debt-history.active { background: var(--purple); color: #fff; box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35); }
 
-    .swipe-container {
+    /* TÜM LİSTE SATIRLARI İÇİN STANDART VE EŞİT BOŞLUK */
+    .row-wrapper {
       position: relative;
-      margin-bottom: 8px;
+      margin-bottom: 8px !important;
       border-radius: 10px;
       background: transparent;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      box-sizing: border-box;
+    }
+    .swipe-container {
+      position: relative;
+      margin-bottom: 8px !important;
+      border-radius: 10px;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-sizing: border-box;
     }
     .swipe-actions {
       position: absolute;
@@ -484,7 +496,8 @@
           <div class="summary-title">Kalan Bakiye</div>
           <div class="summary-val val-rem masked" id="remVal">••••••</div>
         </div>
-        <div class="summary-card card-exp">
+        <!-- Kart Harcaması (Long-press 500ms ile hedef limit düzenleme) -->
+        <div class="summary-card card-exp" id="cardExpSummaryCard">
           <div class="summary-title">Kart Harcaması</div>
           <div class="summary-val val-card" id="cardVal">...</div>
         </div>
@@ -574,6 +587,28 @@
     </div>
   </div>
 
+  <!-- KART LİMİTİ DÜZENLEME MODALI (LONG-PRESS) -->
+  <div class="modal" id="modalCardLimit">
+    <div class="modal-content">
+      <h3 style="margin-bottom: 14px; font-size: 16px;">Kart Harcama Limiti</h3>
+      
+      <div class="form-group">
+        <label>Mevcut Hedef Limit (F1)</label>
+        <input type="text" id="lblCurrentCardLimit" readonly style="color: var(--accent); font-weight: bold; background: rgba(56, 189, 248, 0.08); border-color: var(--accent);">
+      </div>
+
+      <div class="form-group">
+        <label>Yeni Kart Harcama Limiti (€)</label>
+        <input type="text" id="mNewCardLimit" placeholder="örn: 1.500,00 €">
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-submit" onclick="submitCardLimit()">Kaydet</button>
+        <button type="button" class="btn-cancel" onclick="closeModal('modalCardLimit')">Vazgeç</button>
+      </div>
+    </div>
+  </div>
+
   <!-- BORÇ EKLEME MODALI -->
   <div class="modal" id="modalDebt">
     <div class="modal-content">
@@ -630,7 +665,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.2.9";
+    const CURRENT_VERSION = "2.3.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -654,6 +689,7 @@
       document.getElementById('mDebtDate').value = new Date().toISOString().split('T')[0];
       document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
       initPullToRefresh();
+      initCardLimitLongPress();
       fetchInitialData();
     };
 
@@ -688,6 +724,61 @@
       } finally {
         resetPullIndicator();
       }
+    }
+
+    // KART HARCAMASI 500MS UZUN BASMA (LONG-PRESS)
+    function initCardLimitLongPress() {
+      const card = document.getElementById('cardExpSummaryCard');
+      let pressTimer = null;
+      let isMoved = false;
+
+      function startPress(e) {
+        isMoved = false;
+        pressTimer = setTimeout(() => {
+          openCardLimitModal();
+        }, 500);
+      }
+
+      function cancelPress() {
+        if (pressTimer) {
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+      }
+
+      card.addEventListener('touchstart', startPress, { passive: true });
+      card.addEventListener('touchend', cancelPress);
+      card.addEventListener('touchmove', () => { isMoved = true; cancelPress(); }, { passive: true });
+
+      card.addEventListener('mousedown', startPress);
+      card.addEventListener('mouseup', cancelPress);
+      card.addEventListener('mouseleave', cancelPress);
+    }
+
+    function openCardLimitModal() {
+      const currentLimit = currentData && currentData.cardLimit ? currentData.cardLimit : "€0,00";
+      document.getElementById('lblCurrentCardLimit').value = currentLimit;
+      document.getElementById('mNewCardLimit').value = '';
+      document.getElementById('modalCardLimit').style.display = 'flex';
+    }
+
+    async function submitCardLimit() {
+      const newLimit = document.getElementById('mNewCardLimit').value;
+      if (!newLimit) return;
+
+      const sheet = document.getElementById('sheetSelect').value || "Mevcut Ay";
+      closeModal('modalCardLimit');
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'updateCardLimit',
+          sheet: sheet,
+          limit: newLimit
+        })
+      });
+      delete memoryCache[sheet];
+      onFilterChange();
     }
 
     function switchModule(mod) {
@@ -821,7 +912,7 @@
         let sign = isIncome ? '+' : '-';
 
         const wrapper = document.createElement('div');
-        wrapper.className = canDelete ? 'swipe-container' : '';
+        wrapper.className = canDelete ? 'swipe-container' : 'row-wrapper';
         wrapper.id = `item-row-${item.rowIndex}`;
 
         let deleteAction = canDelete ? `
@@ -830,21 +921,23 @@
           </div>
         ` : '';
 
-        wrapper.innerHTML = `
-          ${deleteAction}
-          <div class="item-card">
-            <div class="item-left">
-              <div class="name">${item.merchant || 'Açıklamasız'}</div>
-              <div class="sub">${subText}</div>
-            </div>
-            <div class="item-right" style="color: ${itemColor}">
-              ${sign}${formattedAmt}
-              ${eurSub}
-            </div>
+        const cardEl = document.createElement('div');
+        cardEl.className = 'item-card';
+        cardEl.innerHTML = `
+          <div class="item-left">
+            <div class="name">${item.merchant || 'Açıklamasız'}</div>
+            <div class="sub">${subText}</div>
+          </div>
+          <div class="item-right" style="color: ${itemColor}">
+            ${sign}${formattedAmt}
+            ${eurSub}
           </div>
         `;
 
-        if (canDelete) attachSwipeEvents(wrapper.querySelector('.item-card'), wrapper, null);
+        if (canDelete) wrapper.innerHTML = deleteAction;
+        wrapper.appendChild(cardEl);
+
+        if (canDelete) attachSwipeEvents(cardEl, wrapper, null);
         container.appendChild(wrapper);
       });
     }
@@ -930,7 +1023,7 @@
       container.innerHTML = '';
       if (!debtsData || currentModule !== 'debts') return;
 
-      // 3. SEKME: GEÇMİŞ LİSTESİ (Aralıklar ve Kapsayıcılar Tam Eşitlendi)
+      // 3. SEKME: GEÇMİŞ LİSTESİ
       if (activeDebtTab === 'history') {
         const history = [...(debtsData.history || [])].sort((a, b) => {
           return parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
@@ -954,7 +1047,7 @@
           }
 
           const wrapper = document.createElement('div');
-          wrapper.className = 'swipe-container';
+          wrapper.className = canUndo ? 'swipe-container' : 'row-wrapper';
           wrapper.id = `history-row-${item.rowIndex}`;
 
           let undoAction = canUndo ? `
@@ -975,12 +1068,10 @@
             </div>
           `;
 
-          wrapper.innerHTML = undoAction;
+          if (canUndo) wrapper.innerHTML = undoAction;
           wrapper.appendChild(cardEl);
 
-          if (canUndo) {
-            attachSwipeEvents(cardEl, wrapper, null);
-          }
+          if (canUndo) attachSwipeEvents(cardEl, wrapper, null);
           container.appendChild(wrapper);
         });
         return;
