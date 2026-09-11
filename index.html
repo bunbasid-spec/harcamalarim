@@ -295,7 +295,7 @@
     .swipe-btn.pay { background: var(--orange); width: 75px; }
     .swipe-btn.close { background: var(--primary-blue); width: 75px; }
     .swipe-btn.delete { background: var(--red); width: 75px; }
-    .swipe-btn.undo { background: var(--orange); width: 75px; }
+    .swipe-btn.undo { background: var(--red); width: 75px; } /* Kırmızı Renk Güncellemesi */
 
     .item-card { 
       position: relative; 
@@ -748,7 +748,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.4.0";
+    const CURRENT_VERSION = "2.4.1";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1230,7 +1230,6 @@
       container.innerHTML = '';
       if (!debtsData || currentModule !== 'debts') return;
 
-      // GEÇMİŞ LİSTESİ: DÜZENLE VE SİL BUTONLARI EKLENDİ
       if (activeDebtTab === 'history') {
         const history = [...(debtsData.history || [])].sort((a, b) => {
           return parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
