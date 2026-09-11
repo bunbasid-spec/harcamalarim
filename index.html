@@ -721,7 +721,7 @@
     </div>
   </div>
 
-  <!-- ÖDEME / TAHSİLAT YAPMA MODALI -->
+  <!-- ÖDEME / TAHSİLAT & GEÇMİŞ DÜZENLEME MODALI -->
   <div class="modal" id="modalPayment">
     <div class="modal-content">
       <h3 style="margin-bottom: 14px; font-size: 16px;" id="lblPaymentTitle">Ödeme Ekle</h3>
@@ -729,6 +729,7 @@
       <input type="hidden" id="payDebtType">
       <input type="hidden" id="payRowIndex">
       <input type="hidden" id="payPersonName">
+      <input type="hidden" id="payIsHistoryEdit" value="false">
 
       <div class="form-group">
         <label id="lblPaymentDate">Ödeme Tarihi</label>
@@ -747,7 +748,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.3.9";
+    const CURRENT_VERSION = "2.4.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1229,6 +1230,7 @@
       container.innerHTML = '';
       if (!debtsData || currentModule !== 'debts') return;
 
+      // GEÇMİŞ LİSTESİ: DÜZENLE VE SİL BUTONLARI EKLENDİ
       if (activeDebtTab === 'history') {
         const history = [...(debtsData.history || [])].sort((a, b) => {
           return parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
@@ -1241,25 +1243,30 @@
 
         history.forEach(item => {
           let itemColor = 'var(--green)';
-          let canUndo = false;
+          let canManage = false;
 
           if (item.note.includes("Borç Alma")) {
             itemColor = 'var(--red)';
           } else if (item.note.includes("Borç Verme")) {
             itemColor = 'var(--accent)';
           } else if (item.note.includes("Geri Ödeme")) {
-            canUndo = true;
+            canManage = true;
           }
 
           const wrapper = document.createElement('div');
-          wrapper.className = canUndo ? 'swipe-container' : 'row-wrapper';
+          wrapper.className = canManage ? 'swipe-container' : 'row-wrapper';
           wrapper.id = `history-row-${item.rowIndex}`;
 
-          let undoAction = canUndo ? `
-            <div class="swipe-actions" style="width: 75px;">
-              <button class="swipe-btn undo" onclick="undoHistoryEntry(${item.rowIndex})">Geri Al</button>
-            </div>
-          ` : '';
+          let actionsHtml = '';
+          if (canManage) {
+            const histJson = JSON.stringify(item).replace(/"/g, '&quot;');
+            actionsHtml = `
+              <div class="swipe-actions" style="width: 150px;">
+                <button class="swipe-btn edit" onclick="openEditHistoryModal(${histJson})">Düzenle</button>
+                <button class="swipe-btn undo" onclick="undoHistoryEntry(${item.rowIndex})">Geri Al</button>
+              </div>
+            `;
+          }
 
           const cardEl = document.createElement('div');
           cardEl.className = 'item-card';
@@ -1273,10 +1280,10 @@
             </div>
           `;
 
-          if (canUndo) wrapper.innerHTML = undoAction;
+          if (canManage) wrapper.innerHTML = actionsHtml;
           wrapper.appendChild(cardEl);
 
-          if (canUndo) attachSwipeEvents(cardEl, wrapper, null);
+          if (canManage) attachSwipeEvents(cardEl, wrapper, null);
           container.appendChild(wrapper);
         });
         return;
@@ -1420,6 +1427,23 @@
         attachSwipeEvents(cardEl, wrapper, `acc-${item.rowIndex}`);
         container.appendChild(wrapper);
       });
+    }
+
+    function openEditHistoryModal(histItem) {
+      resetCurrentSwipe();
+      document.getElementById('payDebtType').value = 'history';
+      document.getElementById('payRowIndex').value = histItem.rowIndex;
+      document.getElementById('payPersonName').value = histItem.person;
+      document.getElementById('payIsHistoryEdit').value = 'true';
+
+      document.getElementById('lblPaymentTitle').innerText = `${histItem.person} İçin Ödemeyi Düzenle`;
+      document.getElementById('lblPaymentDate').innerText = 'Ödeme Tarihi';
+      document.getElementById('lblPaymentAmount').innerText = 'Tutar (€)';
+      document.getElementById('btnPaymentSubmit').innerText = 'Güncelle';
+
+      document.getElementById('payDate').value = parseFormattedDateToInput(histItem.date);
+      document.getElementById('payAmount').value = formatAmountForInput(histItem.amount);
+      document.getElementById('modalPayment').style.display = 'flex';
     }
 
     function toggleMask(key) {
@@ -1572,7 +1596,7 @@
     function resetCurrentSwipe() {
       if (currentlySwiped) {
         currentlySwiped.style.transform = 'translateX(0px)';
-        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped', 'swiping');
+        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped');
         currentlySwiped = null;
         currentlySwipedContainer = null;
       }
@@ -1583,6 +1607,7 @@
       document.getElementById('payDebtType').value = debtType;
       document.getElementById('payRowIndex').value = rowIndex;
       document.getElementById('payPersonName').value = personName;
+      document.getElementById('payIsHistoryEdit').value = 'false';
 
       const lblTitle = document.getElementById('lblPaymentTitle');
       const lblDate = document.getElementById('lblPaymentDate');
@@ -1601,6 +1626,7 @@
         btnSubmit.innerText = 'Tahsilatı Kaydet';
       }
 
+      document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
       document.getElementById('payAmount').value = '';
       document.getElementById('modalPayment').style.display = 'flex';
     }
@@ -1611,6 +1637,7 @@
       const personName = document.getElementById('payPersonName').value;
       const rawDate = document.getElementById('payDate').value;
       const amount = document.getElementById('payAmount').value;
+      const isHistoryEdit = document.getElementById('payIsHistoryEdit').value === 'true';
 
       if (!amount) return;
 
@@ -1622,17 +1649,29 @@
 
       closeModal('modalPayment');
 
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'updateDebtPayment',
-          debtType: debtType,
-          rowIndex: rowIndex,
-          amount: amount,
-          date: dateFormatted,
-          person: personName
-        })
-      });
+      if (isHistoryEdit) {
+        await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'editHistoryEntry',
+            rowIndex: rowIndex,
+            amount: amount,
+            date: dateFormatted
+          })
+        });
+      } else {
+        await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'updateDebtPayment',
+            debtType: debtType,
+            rowIndex: rowIndex,
+            amount: amount,
+            date: dateFormatted,
+            person: personName
+          })
+        });
+      }
       loadDebtsData();
     }
 
@@ -1865,9 +1904,6 @@
       }
     }
 
-    // ==========================================
-    // ANINDA GÜNCELLEME SAĞLAYAN SUBMIT FONKSİYONU
-    // ==========================================
     async function submitBudgetEntry() {
       const type = modalSelectedType;
       const rawDate = document.getElementById('mDate').value;
@@ -1889,11 +1925,8 @@
       const sheet = document.getElementById('sheetSelect').value || "Mevcut Ay";
 
       closeModal('modalBudget');
-
-      // Önbelleği anında sil
       delete memoryCache[sheet];
 
-      // Sunucuya gönder ve işlemin tamamlanmasını kesinlikle bekle
       await fetch(API_URL, {
         method: 'POST',
         body: JSON.stringify({
@@ -1905,7 +1938,6 @@
         })
       });
 
-      // Güncel tablo verisini anında yeniden çek
       onFilterChange();
     }
 
