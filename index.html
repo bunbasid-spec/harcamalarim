@@ -451,7 +451,6 @@
     }
     .form-group input:focus { border-color: var(--accent); }
 
-    /* COMBOBOX STİLLERİ (3 SATIR SINIRLI, YUKARI/AŞAĞI AÇILIR) */
     .combobox-container {
       position: relative;
       width: 100%;
@@ -486,7 +485,7 @@
       background: #131d31;
       border: 1px solid var(--border);
       border-radius: 8px;
-      max-height: 135px; /* Maksimum 3-3.5 satır */
+      max-height: 135px;
       overflow-y: auto;
       z-index: 1050;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
@@ -496,12 +495,10 @@
       display: block;
       animation: fadeIn 0.15s ease;
     }
-    /* Aşağı açılma (varsayılan) */
     .combobox-dropdown.open-down {
       top: calc(100% + 4px);
       bottom: auto;
     }
-    /* Yukarı açılma (ekranın altındakiler için) */
     .combobox-dropdown.open-up {
       bottom: calc(100% + 4px);
       top: auto;
@@ -654,7 +651,7 @@
         </div>
       </div>
 
-      <!-- HESAP / ÖDEME TÜRÜ COMBOBOX (Aşağı Taşmayı Önlemek İçin Yukarı Açılır) -->
+      <!-- HESAP / ÖDEME TÜRÜ COMBOBOX -->
       <div class="form-group" id="grpCard">
         <label>Hesap / Ödeme Türü</label>
         <div class="combobox-container">
@@ -749,7 +746,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.3.5";
+    const CURRENT_VERSION = "2.3.6";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -815,9 +812,6 @@
       }
     }
 
-    // ==========================================
-    // COMBOBOX (AÇILIR KUTU & CANLI FİLTRELEME)
-    // ==========================================
     function getActiveComboboxList(type) {
       if (type === 'desc') {
         if (modalSelectedType === 'manual') return settingsData.manualKime || [];
@@ -1039,6 +1033,16 @@
       renderBudgetList();
     }
 
+    function parseDateToTimestamp(dateStr) {
+      if (!dateStr) return 0;
+      const parts = dateStr.toString().trim().split(".");
+      if (parts.length === 3) {
+        return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
+      }
+      return 0;
+    }
+
+    // BÜTÇE LİSTESİ: TÜM SEKMELER TARİHE GÖRE (EN YENİ EN ÜSTTE) SIRALANIR
     function renderBudgetList() {
       const container = document.getElementById('listContainer');
       container.innerHTML = '';
@@ -1047,19 +1051,24 @@
       const select = document.getElementById('sheetSelect');
       const isCurrentMonth = (select && select.value === "Mevcut Ay");
 
-      let items = [];
+      let rawItems = [];
       let isIncome = false;
       let canDelete = isCurrentMonth && (activeBudgetTab === 'manual' || activeBudgetTab === 'income' || activeBudgetTab === 'tr');
 
-      if (activeBudgetTab === 'card') items = currentData.cardItems || [];
-      else if (activeBudgetTab === 'manual') items = currentData.manualItems || [];
-      else if (activeBudgetTab === 'tr') items = currentData.trItems || [];
-      else if (activeBudgetTab === 'income') { items = currentData.incomeItems || []; isIncome = true; }
+      if (activeBudgetTab === 'card') rawItems = currentData.cardItems || [];
+      else if (activeBudgetTab === 'manual') rawItems = currentData.manualItems || [];
+      else if (activeBudgetTab === 'tr') rawItems = currentData.trItems || [];
+      else if (activeBudgetTab === 'income') { rawItems = currentData.incomeItems || []; isIncome = true; }
 
-      if (!items || items.length === 0) {
+      if (!rawItems || rawItems.length === 0) {
         container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-dim)">Kayıt bulunamadı.</div>';
         return;
       }
+
+      // En yeni tarih en üstte olacak şekilde sıralama
+      let items = [...rawItems].sort((a, b) => {
+        return parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
+      });
 
       items.forEach(item => {
         const formattedAmt = formatAmount(item.amount);
@@ -1126,15 +1135,6 @@
       const target = document.getElementById(targetId);
       if (target) target.classList.add('active');
       renderDebtsList();
-    }
-
-    function parseDateToTimestamp(dateStr) {
-      if (!dateStr) return 0;
-      const parts = dateStr.toString().trim().split(".");
-      if (parts.length === 3) {
-        return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
-      }
-      return 0;
     }
 
     function calculateDurationText(startDateStr, endDateStr) {
@@ -1525,7 +1525,7 @@
     function resetCurrentSwipe() {
       if (currentlySwiped) {
         currentlySwiped.style.transform = 'translateX(0px)';
-        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped');
+        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped', 'swiping');
         currentlySwiped = null;
         currentlySwipedContainer = null;
       }
@@ -1747,7 +1747,6 @@
       closeAllComboboxes();
       document.getElementById(id).style.display = 'none';
 
-      // Modal kapandığında giriş alanlarını temizle
       if (id === 'modalBudget') {
         document.getElementById('mAmount').value = '';
         document.getElementById('mDesc').value = '';
@@ -1759,7 +1758,6 @@
       modalSelectedType = type;
       closeAllComboboxes();
 
-      // Sekme değiştiğinde önceki sekmeden kalan metinleri temizle
       document.getElementById('mDesc').value = '';
       document.getElementById('mAccount').value = '';
 
