@@ -291,6 +291,7 @@
       margin: 0;
       box-sizing: border-box;
     }
+    .swipe-btn.edit { background: var(--primary-blue); width: 75px; }
     .swipe-btn.pay { background: var(--orange); width: 75px; }
     .swipe-btn.close { background: var(--primary-blue); width: 75px; }
     .swipe-btn.delete { background: var(--red); width: 75px; }
@@ -621,12 +622,12 @@
 
   <button class="fab" onclick="handleFabClick()"><span>+</span></button>
 
-  <!-- BÜTÇE EKLEME MODALI (COMBOBOX'LI) -->
+  <!-- BÜTÇE EKLEME & DÜZENLEME MODALI -->
   <div class="modal" id="modalBudget">
     <div class="modal-content">
-      <h3 style="margin-bottom: 14px; font-size: 16px;">Kayıt Ekle</h3>
+      <h3 style="margin-bottom: 14px; font-size: 16px;" id="lblModalBudgetTitle">Kayıt Ekle</h3>
       
-      <div class="type-switcher">
+      <div class="type-switcher" id="budgetTypeSwitcher">
         <button type="button" class="type-btn active" id="btnTypeManual" onclick="setModalType('manual')">Diğer</button>
         <button type="button" class="type-btn" id="btnTypeTR" onclick="setModalType('tr')">TR (₺)</button>
         <button type="button" class="type-btn" id="btnTypeIncome" onclick="setModalType('income')">Gelir</button>
@@ -662,7 +663,7 @@
       </div>
 
       <div class="modal-actions">
-        <button type="button" class="btn-submit" onclick="submitBudgetEntry()">Kaydet</button>
+        <button type="button" class="btn-submit" id="btnBudgetSubmit" onclick="submitBudgetEntry()">Kaydet</button>
         <button type="button" class="btn-cancel" onclick="closeModal('modalBudget')">Kapat</button>
       </div>
     </div>
@@ -746,7 +747,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.3.6";
+    const CURRENT_VERSION = "2.3.7";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -758,6 +759,7 @@
     let activeDebtTab = 'debt';
     let modalSelectedType = 'manual';
     let modalDebtSelectedType = 'debt';
+    let editingBudgetRowIndex = null;
     let memoryCache = {};
     
     let maskedState = {
@@ -1042,7 +1044,15 @@
       return 0;
     }
 
-    // BÜTÇE LİSTESİ: TÜM SEKMELER TARİHE GÖRE (EN YENİ EN ÜSTTE) SIRALANIR
+    function parseFormattedDateToInput(dateStr) {
+      if (!dateStr) return new Date().toISOString().split('T')[0];
+      const parts = dateStr.toString().trim().split(".");
+      if (parts.length === 3) {
+        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      }
+      return dateStr;
+    }
+
     function renderBudgetList() {
       const container = document.getElementById('listContainer');
       container.innerHTML = '';
@@ -1053,7 +1063,7 @@
 
       let rawItems = [];
       let isIncome = false;
-      let canDelete = isCurrentMonth && (activeBudgetTab === 'manual' || activeBudgetTab === 'income' || activeBudgetTab === 'tr');
+      let canManage = isCurrentMonth && (activeBudgetTab === 'manual' || activeBudgetTab === 'income' || activeBudgetTab === 'tr');
 
       if (activeBudgetTab === 'card') rawItems = currentData.cardItems || [];
       else if (activeBudgetTab === 'manual') rawItems = currentData.manualItems || [];
@@ -1065,7 +1075,6 @@
         return;
       }
 
-      // En yeni tarih en üstte olacak şekilde sıralama
       let items = [...rawItems].sort((a, b) => {
         return parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
       });
@@ -1081,14 +1090,19 @@
         let sign = isIncome ? '+' : '-';
 
         const wrapper = document.createElement('div');
-        wrapper.className = canDelete ? 'swipe-container' : 'row-wrapper';
+        wrapper.className = canManage ? 'swipe-container' : 'row-wrapper';
         wrapper.id = `item-row-${item.rowIndex}`;
 
-        let deleteAction = canDelete ? `
-          <div class="swipe-actions" style="width: 75px;">
-            <button class="swipe-btn delete" onclick="deleteBudgetItem('${activeBudgetTab}', ${item.rowIndex})">Sil</button>
-          </div>
-        ` : '';
+        let swipeActions = '';
+        if (canManage) {
+          const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
+          swipeActions = `
+            <div class="swipe-actions" style="width: 150px;">
+              <button class="swipe-btn edit" onclick="openEditBudgetModal('${activeBudgetTab}', ${itemJson})">Düzenle</button>
+              <button class="swipe-btn delete" onclick="deleteBudgetItem('${activeBudgetTab}', ${item.rowIndex})">Sil</button>
+            </div>
+          `;
+        }
 
         const cardEl = document.createElement('div');
         cardEl.className = 'item-card';
@@ -1103,12 +1117,33 @@
           </div>
         `;
 
-        if (canDelete) wrapper.innerHTML = deleteAction;
+        if (canManage) wrapper.innerHTML = swipeActions;
         wrapper.appendChild(cardEl);
 
-        if (canDelete) attachSwipeEvents(cardEl, wrapper, null);
+        if (canManage) attachSwipeEvents(cardEl, wrapper, null);
         container.appendChild(wrapper);
       });
+    }
+
+    function openEditBudgetModal(type, item) {
+      resetCurrentSwipe();
+      editingBudgetRowIndex = item.rowIndex;
+      modalSelectedType = type;
+
+      document.getElementById('lblModalBudgetTitle').innerText = 'Kaydı Düzenle';
+      document.getElementById('btnBudgetSubmit').innerText = 'Güncelle';
+      document.getElementById('budgetTypeSwitcher').style.display = 'none';
+
+      setModalType(type, false);
+
+      document.getElementById('mDate').value = parseFormattedDateToInput(item.date);
+      
+      let cleanAmt = (item.amount || "").toString().replace("€", "").replace("₺", "").trim();
+      document.getElementById('mAmount').value = cleanAmt;
+      document.getElementById('mDesc').value = item.merchant || "";
+      document.getElementById('mAccount').value = item.card || "";
+
+      document.getElementById('modalBudget').style.display = 'flex';
     }
 
     function renderDebtsDashboard(data) {
@@ -1463,8 +1498,9 @@
         }
 
         if (isHorizontal) {
-          let isDebtActive = (currentModule === 'debts' && activeDebtTab !== 'history' && document.getElementById('sheetSelect').value !== 'archive');
-          let maxDrag = isDebtActive ? -240 : -90;
+          const actionsEl = container.querySelector('.swipe-actions');
+          const maxSnap = actionsEl ? actionsEl.offsetWidth : 75;
+          const maxDrag = -(maxSnap + 25);
           
           if (diffX < 0 && diffX > maxDrag) {
             container.classList.add('swiping');
@@ -1497,8 +1533,8 @@
         }
 
         if (isHorizontal) {
-          let isDebtActive = (currentModule === 'debts' && activeDebtTab !== 'history' && document.getElementById('sheetSelect').value !== 'archive');
-          let snapOffset = isDebtActive ? -225 : -75;
+          const actionsEl = container.querySelector('.swipe-actions');
+          const snapOffset = actionsEl ? -actionsEl.offsetWidth : -75;
 
           if (diffX < -35) {
             if (accordionId) {
@@ -1525,7 +1561,7 @@
     function resetCurrentSwipe() {
       if (currentlySwiped) {
         currentlySwiped.style.transform = 'translateX(0px)';
-        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped', 'swiping');
+        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped');
         currentlySwiped = null;
         currentlySwipedContainer = null;
       }
@@ -1736,9 +1772,18 @@
 
     function handleFabClick() {
       closeAllComboboxes();
+      editingBudgetRowIndex = null;
       if (currentModule === 'budget') {
+        document.getElementById('lblModalBudgetTitle').innerText = 'Kayıt Ekle';
+        document.getElementById('btnBudgetSubmit').innerText = 'Kaydet';
+        document.getElementById('budgetTypeSwitcher').style.display = 'flex';
+        document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('mAmount').value = '';
+        document.getElementById('mDesc').value = '';
+        document.getElementById('mAccount').value = '';
         document.getElementById('modalBudget').style.display = 'flex';
       } else {
+        document.getElementById('mDebtDate').value = new Date().toISOString().split('T')[0];
         document.getElementById('modalDebt').style.display = 'flex';
       }
     }
@@ -1746,6 +1791,7 @@
     function closeModal(id) {
       closeAllComboboxes();
       document.getElementById(id).style.display = 'none';
+      editingBudgetRowIndex = null;
 
       if (id === 'modalBudget') {
         document.getElementById('mAmount').value = '';
@@ -1754,12 +1800,14 @@
       }
     }
 
-    function setModalType(type) {
+    function setModalType(type, clearInputs = true) {
       modalSelectedType = type;
       closeAllComboboxes();
 
-      document.getElementById('mDesc').value = '';
-      document.getElementById('mAccount').value = '';
+      if (clearInputs) {
+        document.getElementById('mDesc').value = '';
+        document.getElementById('mAccount').value = '';
+      }
 
       document.querySelectorAll('#modalBudget .type-btn').forEach(b => b.classList.remove('active'));
       const lblAmount = document.getElementById('lblAmount');
@@ -1822,17 +1870,23 @@
         card: document.getElementById('mAccount').value
       };
 
+      const isEdit = (editingBudgetRowIndex !== null);
+      const targetRowIndex = editingBudgetRowIndex;
+      const sheet = document.getElementById('sheetSelect').value;
+
       closeModal('modalBudget');
 
       await fetch(API_URL, {
         method: 'POST',
         body: JSON.stringify({
-          action: 'addEntry',
-          sheet: document.getElementById('sheetSelect').value,
+          action: isEdit ? 'editEntry' : 'addEntry',
+          sheet: sheet,
           type: type,
+          rowIndex: targetRowIndex,
           payload: payload
         })
       });
+      delete memoryCache[sheet];
       onFilterChange();
     }
 
