@@ -231,7 +231,7 @@
     .tab-btn#tab-income.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); }
     
     .tab-btn#tab-debt-give.active { background: var(--red); color: #fff; box-shadow: 0 2px 8px rgba(244, 63, 94, 0.35); }
-    .tab-btn#tab-debt-get.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); }
+    .tab-btn#tab-debt-get.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35); }
     .tab-btn#tab-debt-history.active { background: var(--purple); color: #fff; box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35); }
 
     .row-wrapper {
@@ -747,7 +747,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.3.7";
+    const CURRENT_VERSION = "2.3.8";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1053,6 +1053,20 @@
       return dateStr;
     }
 
+    // DÜZENLEME KUTUSUNA AKTARILIRKEN NOKTA VE SEMBOLLERİ TEMİZLEME
+    function formatAmountForInput(amtStr) {
+      if (!amtStr) return "";
+      let str = amtStr.toString().replace("€", "").replace("₺", "").trim();
+      if (str.includes(".") && str.includes(",")) {
+        if (str.lastIndexOf(",") > str.lastIndexOf(".")) {
+          str = str.replace(/\./g, ""); // 5.567,00 -> 5567,00
+        } else {
+          str = str.replace(/,/g, "");
+        }
+      }
+      return str;
+    }
+
     function renderBudgetList() {
       const container = document.getElementById('listContainer');
       container.innerHTML = '';
@@ -1137,9 +1151,7 @@
       setModalType(type, false);
 
       document.getElementById('mDate').value = parseFormattedDateToInput(item.date);
-      
-      let cleanAmt = (item.amount || "").toString().replace("€", "").replace("₺", "").trim();
-      document.getElementById('mAmount').value = cleanAmt;
+      document.getElementById('mAmount').value = formatAmountForInput(item.amount);
       document.getElementById('mDesc').value = item.merchant || "";
       document.getElementById('mAccount').value = item.card || "";
 
