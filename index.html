@@ -623,7 +623,7 @@
 
   <button class="fab" onclick="handleFabClick()"><span>+</span></button>
 
-  <!-- BÜTÇE EKLEME & DÜZENLEME MODALI (KART DAHİL 4 SEÇENEKLİ) -->
+  <!-- BÜTÇE EKLEME & DÜZENLEME MODALI -->
   <div class="modal" id="modalBudget">
     <div class="modal-content">
       <h3 style="margin-bottom: 14px; font-size: 16px;" id="lblModalBudgetTitle">Kayıt Ekle</h3>
@@ -644,9 +644,9 @@
         <input type="text" id="mAmount" placeholder="örn: 50,00 €">
       </div>
       
-      <!-- SATICI / KİME / AÇIKLAMA COMBOBOX -->
+      <!-- SATICI / KİME / AÇIKLAMA -->
       <div class="form-group" id="lblDescGroup">
-        <label id="lblDesc">Satıcı / Açıklama</label>
+        <label id="lblDesc">Satıcı</label>
         <div class="combobox-container">
           <input type="text" id="mDesc" class="combobox-input" placeholder="örn: Rewe, Amazon" autocomplete="off" oninput="filterCombobox('desc')">
           <div class="combobox-arrow" id="arrowDesc" onclick="toggleCombobox('desc', event)">▼</div>
@@ -750,7 +750,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.4.2";
+    const CURRENT_VERSION = "2.4.3";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -833,6 +833,8 @@
 
     function toggleCombobox(type, event) {
       if (event) event.stopPropagation();
+      if (modalSelectedType === 'card' && type === 'desc') return; // Kart satıcısı serbest metin
+
       const dropdown = document.getElementById(type === 'desc' ? 'descDropdown' : 'accountDropdown');
       const input = document.getElementById(type === 'desc' ? 'mDesc' : 'mAccount');
       const isOpen = dropdown.classList.contains('open');
@@ -845,6 +847,11 @@
     }
 
     function filterCombobox(type) {
+      if (modalSelectedType === 'card' && type === 'desc') {
+        closeAllComboboxes();
+        return; // Kart sekmesindeki Satıcı kutusunda dropdown tamamen kapalı
+      }
+
       const dropdown = document.getElementById(type === 'desc' ? 'descDropdown' : 'accountDropdown');
       const input = document.getElementById(type === 'desc' ? 'mDesc' : 'mAccount');
       const filterText = input.value.trim().toLowerCase();
@@ -1082,7 +1089,7 @@
 
       let rawItems = [];
       let isIncome = false;
-      let canManage = isCurrentMonth; // TÜM SEKMELERDE (KART DAHİL) YÖNETİM AÇIK
+      let canManage = isCurrentMonth;
 
       if (activeBudgetTab === 'card') rawItems = currentData.cardItems || [];
       else if (activeBudgetTab === 'manual') rawItems = currentData.manualItems || [];
@@ -1094,7 +1101,6 @@
         return;
       }
 
-      // Tarih sırasına göre en güncel en üstte
       let items = [...rawItems].sort((a, b) => {
         return parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
       });
@@ -1882,7 +1888,7 @@
         mDesc.placeholder = 'örn: Rewe, Amazon';
         grpCard.style.display = 'block';
         lblAccountTitle.innerText = 'Kart';
-        arrowDesc.style.display = 'none'; // Satıcı serbest metin kutusu
+        arrowDesc.style.display = 'none';
       } else if (type === 'manual') {
         document.getElementById('btnTypeManual').classList.add('active');
         lblDesc.innerText = 'Kime / Açıklama';
