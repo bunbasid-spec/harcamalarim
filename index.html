@@ -374,6 +374,31 @@
     }
     .fab span { display: block; font-size: 40px; font-weight: 400; line-height: 1; margin-top: -3px; }
     .fab:active { transform: scale(0.92); opacity: 0.9; }
+
+    /* LONG-PRESS İLE FIRLAYAN GEÇEN AYDAN AKTAR BUTONU */
+    .fab-mini-action {
+      position: fixed;
+      bottom: 105px;
+      right: 22px;
+      background: var(--purple);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 20px;
+      border: none;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+      font-size: 13px;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      z-index: 60;
+      cursor: pointer;
+      animation: popUp 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes popUp {
+      from { transform: translateY(20px) scale(0.6); opacity: 0; }
+      to { transform: translateY(0px) scale(1); opacity: 1; }
+    }
     
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); align-items: flex-end; z-index: 999; }
     .modal-content { 
@@ -544,6 +569,36 @@
       font-size: 15px; 
       cursor: pointer; 
     }
+
+    /* ŞABLON LİSTESİ STİLLERİ */
+    .template-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    .template-item input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--purple);
+      margin-right: 10px;
+      cursor: pointer;
+    }
+    .template-tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-right: 6px;
+    }
+    .tag-manual { background: rgba(245, 158, 11, 0.2); color: var(--orange); }
+    .tag-tr { background: rgba(168, 85, 247, 0.2); color: var(--purple); }
+    .tag-income { background: rgba(16, 185, 129, 0.2); color: var(--green); }
   </style>
 </head>
 <body>
@@ -621,7 +676,12 @@
     <div id="listContainer"></div>
   </div>
 
-  <button class="fab" onclick="handleFabClick()"><span>+</span></button>
+  <!-- GEÇEN AYDAN AKTAR EYLEM BUTONU (LONG-PRESS İLE ÇIKAR) -->
+  <button id="btnLastMonthAction" class="fab-mini-action" onclick="openLastMonthTemplateModal()">
+    📋 Geçen Aydan Aktar
+  </button>
+
+  <button class="fab" id="mainFab" onclick="handleFabClick()"><span>+</span></button>
 
   <!-- BÜTÇE EKLEME & DÜZENLEME MODALI -->
   <div class="modal" id="modalBudget">
@@ -667,6 +727,23 @@
       <div class="modal-actions">
         <button type="button" class="btn-submit" id="btnBudgetSubmit" onclick="submitBudgetEntry()">Kaydet</button>
         <button type="button" class="btn-cancel" onclick="closeModal('modalBudget')">Kapat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GEÇEN AYDAN AKTARMA MODALI -->
+  <div class="modal" id="modalLastMonth">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="font-size: 16px;" id="lblLastMonthTitle">Geçen Aydan Aktar</h3>
+        <button type="button" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;" onclick="toggleAllTemplateCheckboxes()">Tümünü Seç / Kaldır</button>
+      </div>
+
+      <div id="templateItemsContainer" style="max-height: 50vh; overflow-y: auto; margin-bottom: 14px;"></div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-submit" style="background: var(--purple); color: #fff;" onclick="submitLastMonthImport()">Seçilenleri Yeni Aya Ekle</button>
+        <button type="button" class="btn-cancel" onclick="closeModal('modalLastMonth')">Vazgeç</button>
       </div>
     </div>
   </div>
@@ -750,13 +827,14 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.4.3";
+    const CURRENT_VERSION = "2.4.4";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
     let currentData = null;
     let debtsData = null;
     let settingsData = { manualKime: [], manualHesap: [], gelirNereden: [], trNereye: [], cardList: [] };
+    let loadedTemplateItems = [];
     
     let activeBudgetTab = 'card';
     let activeDebtTab = 'debt';
@@ -777,6 +855,7 @@
       document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
       initPullToRefresh();
       initCardLimitLongPress();
+      initFabLongPress();
       initComboboxGlobalClick();
       fetchInitialData();
     };
@@ -833,7 +912,7 @@
 
     function toggleCombobox(type, event) {
       if (event) event.stopPropagation();
-      if (modalSelectedType === 'card' && type === 'desc') return; // Kart satıcısı serbest metin
+      if (modalSelectedType === 'card' && type === 'desc') return;
 
       const dropdown = document.getElementById(type === 'desc' ? 'descDropdown' : 'accountDropdown');
       const input = document.getElementById(type === 'desc' ? 'mDesc' : 'mAccount');
@@ -849,7 +928,7 @@
     function filterCombobox(type) {
       if (modalSelectedType === 'card' && type === 'desc') {
         closeAllComboboxes();
-        return; // Kart sekmesindeki Satıcı kutusunda dropdown tamamen kapalı
+        return;
       }
 
       const dropdown = document.getElementById(type === 'desc' ? 'descDropdown' : 'accountDropdown');
@@ -895,7 +974,158 @@
         if (!e.target.closest('.combobox-container')) {
           closeAllComboboxes();
         }
+        if (!e.target.closest('#mainFab') && !e.target.closest('#btnLastMonthAction')) {
+          hideFabAction();
+        }
       });
+    }
+
+    // FAB 1000MS LONG-PRESS DİNLEYİCİSİ
+    let fabTimer = null;
+    let isFabLongPressTriggered = false;
+
+    function initFabLongPress() {
+      const fab = document.getElementById('mainFab');
+
+      function startFabPress() {
+        isFabLongPressTriggered = false;
+        fabTimer = setTimeout(() => {
+          isFabLongPressTriggered = true;
+          showFabAction();
+        }, 1000);
+      }
+
+      function cancelFabPress() {
+        if (fabTimer) {
+          clearTimeout(fabTimer);
+          fabTimer = null;
+        }
+      }
+
+      fab.addEventListener('touchstart', startFabPress, { passive: true });
+      fab.addEventListener('touchend', cancelFabPress);
+      fab.addEventListener('touchmove', cancelFabPress, { passive: true });
+
+      fab.addEventListener('mousedown', startFabPress);
+      fab.addEventListener('mouseup', cancelFabPress);
+      fab.addEventListener('mouseleave', cancelFabPress);
+    }
+
+    function showFabAction() {
+      const btn = document.getElementById('btnLastMonthAction');
+      btn.style.display = 'flex';
+      if (navigator.vibrate) navigator.vibrate(50);
+    }
+
+    function hideFabAction() {
+      document.getElementById('btnLastMonthAction').style.display = 'none';
+    }
+
+    function handleFabClick() {
+      if (isFabLongPressTriggered) {
+        isFabLongPressTriggered = false;
+        return;
+      }
+      hideFabAction();
+      closeAllComboboxes();
+      editingBudgetRowIndex = null;
+      if (currentModule === 'budget') {
+        document.getElementById('lblModalBudgetTitle').innerText = 'Kayıt Ekle';
+        document.getElementById('btnBudgetSubmit').innerText = 'Kaydet';
+        document.getElementById('budgetTypeSwitcher').style.display = 'flex';
+        document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('mAmount').value = '';
+        document.getElementById('mDesc').value = '';
+        document.getElementById('mAccount').value = '';
+        setModalType(activeBudgetTab || 'card');
+        document.getElementById('modalBudget').style.display = 'flex';
+      } else {
+        document.getElementById('mDebtDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('modalDebt').style.display = 'flex';
+      }
+    }
+
+    async function openLastMonthTemplateModal() {
+      hideFabAction();
+      const container = document.getElementById('templateItemsContainer');
+      container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-dim);">Geçen ayın kayıtları yükleniyor...</div>';
+      document.getElementById('modalLastMonth').style.display = 'flex';
+
+      try {
+        const res = await fetch(`${API_URL}?action=getLastMonthTemplate`);
+        const data = await res.json();
+        
+        if (data && data.items && data.items.length > 0) {
+          loadedTemplateItems = data.items;
+          document.getElementById('lblLastMonthTitle').innerText = `${data.lastMonthName || 'Geçen Ay'} Kayıtları`;
+          renderTemplateItems(data.items);
+        } else {
+          container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-dim);">Aktarılacak geçen ay kaydı bulunamadı.</div>';
+        }
+      } catch (e) {
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--red);">Veriler yüklenemedi.</div>';
+      }
+    }
+
+    function renderTemplateItems(items) {
+      const container = document.getElementById('templateItemsContainer');
+      container.innerHTML = '';
+
+      items.forEach((item, idx) => {
+        let tagClass = `tag-${item.type}`;
+        let subInfo = item.date;
+        if (item.card) subInfo += ` • ${item.card}`;
+
+        const rowEl = document.createElement('label');
+        rowEl.className = 'template-item';
+        rowEl.innerHTML = `
+          <div style="display:flex; align-items:center;">
+            <input type="checkbox" class="chk-template" data-idx="${idx}" checked>
+            <div>
+              <div style="font-weight:600; font-size:13px;">
+                <span class="template-tag ${tagClass}">${item.typeName}</span>
+                ${item.merchant || 'Açıklamasız'}
+              </div>
+              <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">${subInfo}</div>
+            </div>
+          </div>
+          <div style="font-weight:700; font-size:14px;">${formatAmount(item.amount)}</div>
+        `;
+        container.appendChild(rowEl);
+      });
+    }
+
+    function toggleAllTemplateCheckboxes() {
+      const checkboxes = document.querySelectorAll('.chk-template');
+      const allChecked = Array.from(checkboxes).every(c => c.checked);
+      checkboxes.forEach(c => c.checked = !allChecked);
+    }
+
+    async function submitLastMonthImport() {
+      const checkboxes = document.querySelectorAll('.chk-template:checked');
+      if (checkboxes.length === 0) {
+        alert("Lütfen aktarmak için en az bir kayıt seçin.");
+        return;
+      }
+
+      const selectedItems = Array.from(checkboxes).map(c => {
+        let idx = parseInt(c.getAttribute('data-idx'));
+        return loadedTemplateItems[idx];
+      });
+
+      closeModal('modalLastMonth');
+      const sheet = "Mevcut Ay";
+      delete memoryCache[sheet];
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'importLastMonthItems',
+          items: selectedItems
+        })
+      });
+
+      onFilterChange();
     }
 
     function initCardLimitLongPress() {
@@ -1829,25 +2059,6 @@
       pullIndicator.style.opacity = '0';
       pullIndicator.style.transform = 'translateX(-50%) scale(0)';
       pullIndicator.innerHTML = '↓';
-    }
-
-    function handleFabClick() {
-      closeAllComboboxes();
-      editingBudgetRowIndex = null;
-      if (currentModule === 'budget') {
-        document.getElementById('lblModalBudgetTitle').innerText = 'Kayıt Ekle';
-        document.getElementById('btnBudgetSubmit').innerText = 'Kaydet';
-        document.getElementById('budgetTypeSwitcher').style.display = 'flex';
-        document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
-        document.getElementById('mAmount').value = '';
-        document.getElementById('mDesc').value = '';
-        document.getElementById('mAccount').value = '';
-        setModalType(activeBudgetTab || 'card');
-        document.getElementById('modalBudget').style.display = 'flex';
-      } else {
-        document.getElementById('mDebtDate').value = new Date().toISOString().split('T')[0];
-        document.getElementById('modalDebt').style.display = 'flex';
-      }
     }
 
     function closeModal(id) {
