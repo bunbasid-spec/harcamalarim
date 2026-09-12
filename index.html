@@ -295,7 +295,7 @@
     .swipe-btn.pay { background: var(--orange); width: 75px; }
     .swipe-btn.close { background: var(--primary-blue); width: 75px; }
     .swipe-btn.delete { background: var(--red); width: 75px; }
-    .swipe-btn.undo { background: var(--red); width: 75px; } /* Kırmızı Renk Güncellemesi */
+    .swipe-btn.undo { background: var(--red); width: 75px; }
 
     .item-card { 
       position: relative; 
@@ -390,7 +390,7 @@
     
     .type-switcher {
       display: flex;
-      gap: 6px;
+      gap: 5px;
       margin-bottom: 14px;
       background: var(--bg);
       padding: 4px;
@@ -399,17 +399,18 @@
     }
     .type-btn {
       flex: 1;
-      padding: 10px 0;
+      padding: 9px 0;
       border: none;
       background: transparent;
       color: var(--text-dim);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       border-radius: 7px;
       cursor: pointer;
       transition: all 0.2s ease;
     }
     
+    .type-btn#btnTypeCard.active { background: var(--accent); color: #0f172a; }
     .type-btn#btnTypeManual.active { background: var(--orange); color: #0f172a; }
     .type-btn#btnTypeTR.active { background: var(--purple); color: #ffffff; }
     .type-btn#btnTypeIncome.active { background: var(--green); color: #0f172a; }
@@ -622,13 +623,14 @@
 
   <button class="fab" onclick="handleFabClick()"><span>+</span></button>
 
-  <!-- BÜTÇE EKLEME & DÜZENLEME MODALI -->
+  <!-- BÜTÇE EKLEME & DÜZENLEME MODALI (KART DAHİL 4 SEÇENEKLİ) -->
   <div class="modal" id="modalBudget">
     <div class="modal-content">
       <h3 style="margin-bottom: 14px; font-size: 16px;" id="lblModalBudgetTitle">Kayıt Ekle</h3>
       
       <div class="type-switcher" id="budgetTypeSwitcher">
-        <button type="button" class="type-btn active" id="btnTypeManual" onclick="setModalType('manual')">Diğer</button>
+        <button type="button" class="type-btn active" id="btnTypeCard" onclick="setModalType('card')">Kart</button>
+        <button type="button" class="type-btn" id="btnTypeManual" onclick="setModalType('manual')">Diğer</button>
         <button type="button" class="type-btn" id="btnTypeTR" onclick="setModalType('tr')">TR (₺)</button>
         <button type="button" class="type-btn" id="btnTypeIncome" onclick="setModalType('income')">Gelir</button>
       </div>
@@ -642,21 +644,21 @@
         <input type="text" id="mAmount" placeholder="örn: 50,00 €">
       </div>
       
-      <!-- KİME / AÇIKLAMA COMBOBOX -->
+      <!-- SATICI / KİME / AÇIKLAMA COMBOBOX -->
       <div class="form-group" id="lblDescGroup">
-        <label id="lblDesc">Kime / Açıklama</label>
+        <label id="lblDesc">Satıcı / Açıklama</label>
         <div class="combobox-container">
-          <input type="text" id="mDesc" class="combobox-input" placeholder="örn: Ev Sahibi / Kira" autocomplete="off" oninput="filterCombobox('desc')">
-          <div class="combobox-arrow" onclick="toggleCombobox('desc', event)">▼</div>
+          <input type="text" id="mDesc" class="combobox-input" placeholder="örn: Rewe, Amazon" autocomplete="off" oninput="filterCombobox('desc')">
+          <div class="combobox-arrow" id="arrowDesc" onclick="toggleCombobox('desc', event)">▼</div>
           <div class="combobox-dropdown open-down" id="descDropdown"></div>
         </div>
       </div>
 
-      <!-- HESAP / ÖDEME TÜRÜ COMBOBOX -->
+      <!-- KART / HESAP COMBOBOX -->
       <div class="form-group" id="grpCard">
-        <label>Hesap / Ödeme Türü</label>
+        <label id="lblAccountTitle">Kart</label>
         <div class="combobox-container">
-          <input type="text" id="mAccount" class="combobox-input" placeholder="örn: Sparkasse, Nakit" autocomplete="off" oninput="filterCombobox('account')">
+          <input type="text" id="mAccount" class="combobox-input" placeholder="örn: Visa, Sparkasse" autocomplete="off" oninput="filterCombobox('account')">
           <div class="combobox-arrow" onclick="toggleCombobox('account', event)">▼</div>
           <div class="combobox-dropdown open-up" id="accountDropdown"></div>
         </div>
@@ -748,17 +750,17 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.4.1";
+    const CURRENT_VERSION = "2.4.2";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
     let currentData = null;
     let debtsData = null;
-    let settingsData = { manualKime: [], manualHesap: [], gelirNereden: [], trNereye: [] };
+    let settingsData = { manualKime: [], manualHesap: [], gelirNereden: [], trNereye: [], cardList: [] };
     
     let activeBudgetTab = 'card';
     let activeDebtTab = 'debt';
-    let modalSelectedType = 'manual';
+    let modalSelectedType = 'card';
     let modalDebtSelectedType = 'debt';
     let editingBudgetRowIndex = null;
     let memoryCache = {};
@@ -820,8 +822,11 @@
         if (modalSelectedType === 'manual') return settingsData.manualKime || [];
         if (modalSelectedType === 'income') return settingsData.gelirNereden || [];
         if (modalSelectedType === 'tr') return settingsData.trNereye || [];
+        return [];
       } else if (type === 'account') {
-        return settingsData.manualHesap || [];
+        if (modalSelectedType === 'card') return settingsData.cardList || [];
+        if (modalSelectedType === 'manual') return settingsData.manualHesap || [];
+        return [];
       }
       return [];
     }
@@ -1077,7 +1082,7 @@
 
       let rawItems = [];
       let isIncome = false;
-      let canManage = isCurrentMonth && (activeBudgetTab === 'manual' || activeBudgetTab === 'income' || activeBudgetTab === 'tr');
+      let canManage = isCurrentMonth; // TÜM SEKMELERDE (KART DAHİL) YÖNETİM AÇIK
 
       if (activeBudgetTab === 'card') rawItems = currentData.cardItems || [];
       else if (activeBudgetTab === 'manual') rawItems = currentData.manualItems || [];
@@ -1089,6 +1094,7 @@
         return;
       }
 
+      // Tarih sırasına göre en güncel en üstte
       let items = [...rawItems].sort((a, b) => {
         return parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
       });
@@ -1830,6 +1836,7 @@
         document.getElementById('mAmount').value = '';
         document.getElementById('mDesc').value = '';
         document.getElementById('mAccount').value = '';
+        setModalType(activeBudgetTab || 'card');
         document.getElementById('modalBudget').style.display = 'flex';
       } else {
         document.getElementById('mDebtDate').value = new Date().toISOString().split('T')[0];
@@ -1864,14 +1871,27 @@
       const grpCard = document.getElementById('grpCard');
       const mDesc = document.getElementById('mDesc');
       const mAmount = document.getElementById('mAmount');
+      const lblAccountTitle = document.getElementById('lblAccountTitle');
+      const arrowDesc = document.getElementById('arrowDesc');
 
-      if (type === 'income') {
-        document.getElementById('btnTypeIncome').classList.add('active');
-        lblDesc.innerText = 'Nereden / Açıklama';
+      if (type === 'card') {
+        document.getElementById('btnTypeCard').classList.add('active');
+        lblDesc.innerText = 'Satıcı';
         lblAmount.innerText = 'Tutar (€)';
-        mAmount.placeholder = 'örn: 500,00 €';
-        mDesc.placeholder = 'örn: Maaş, Kindergeld';
-        grpCard.style.display = 'none';
+        mAmount.placeholder = 'örn: 25,50 €';
+        mDesc.placeholder = 'örn: Rewe, Amazon';
+        grpCard.style.display = 'block';
+        lblAccountTitle.innerText = 'Kart';
+        arrowDesc.style.display = 'none'; // Satıcı serbest metin kutusu
+      } else if (type === 'manual') {
+        document.getElementById('btnTypeManual').classList.add('active');
+        lblDesc.innerText = 'Kime / Açıklama';
+        lblAmount.innerText = 'Tutar (€)';
+        mAmount.placeholder = 'örn: 50,00 €';
+        mDesc.placeholder = 'örn: Ev Sahibi / Kira';
+        grpCard.style.display = 'block';
+        lblAccountTitle.innerText = 'Hesap / Ödeme Türü';
+        arrowDesc.style.display = 'flex';
       } else if (type === 'tr') {
         document.getElementById('btnTypeTR').classList.add('active');
         lblDesc.innerText = 'Nereye / Açıklama';
@@ -1879,13 +1899,15 @@
         mAmount.placeholder = 'örn: 500,00 ₺';
         mDesc.placeholder = 'örn: Spotify, Enpara';
         grpCard.style.display = 'none';
-      } else {
-        document.getElementById('btnTypeManual').classList.add('active');
-        lblDesc.innerText = 'Kime / Açıklama';
+        arrowDesc.style.display = 'flex';
+      } else if (type === 'income') {
+        document.getElementById('btnTypeIncome').classList.add('active');
+        lblDesc.innerText = 'Nereden / Açıklama';
         lblAmount.innerText = 'Tutar (€)';
-        mAmount.placeholder = 'örn: 50,00 €';
-        mDesc.placeholder = 'örn: Ev Sahibi / Kira';
-        grpCard.style.display = 'block';
+        mAmount.placeholder = 'örn: 500,00 €';
+        mDesc.placeholder = 'örn: Maaş, Kindergeld';
+        grpCard.style.display = 'none';
+        arrowDesc.style.display = 'flex';
       }
     }
 
