@@ -375,7 +375,6 @@
     .fab span { display: block; font-size: 40px; font-weight: 400; line-height: 1; margin-top: -3px; }
     .fab:active { transform: scale(0.92); opacity: 0.9; }
 
-    /* LONG-PRESS İLE FIRLAYAN GEÇEN AYDAN AKTAR BUTONU */
     .fab-mini-action {
       position: fixed;
       bottom: 105px;
@@ -570,7 +569,6 @@
       cursor: pointer; 
     }
 
-    /* ŞABLON LİSTESİ STİLLERİ */
     .template-item {
       display: flex;
       align-items: center;
@@ -676,7 +674,6 @@
     <div id="listContainer"></div>
   </div>
 
-  <!-- GEÇEN AYDAN AKTAR EYLEM BUTONU (LONG-PRESS İLE ÇIKAR) -->
   <button id="btnLastMonthAction" class="fab-mini-action" onclick="openLastMonthTemplateModal()">
     📋 Geçen Aydan Aktar
   </button>
@@ -704,7 +701,6 @@
         <input type="text" id="mAmount" placeholder="örn: 50,00 €">
       </div>
       
-      <!-- SATICI / KİME / AÇIKLAMA -->
       <div class="form-group" id="lblDescGroup">
         <label id="lblDesc">Satıcı</label>
         <div class="combobox-container">
@@ -714,7 +710,6 @@
         </div>
       </div>
 
-      <!-- KART / HESAP COMBOBOX -->
       <div class="form-group" id="grpCard">
         <label id="lblAccountTitle">Kart</label>
         <div class="combobox-container">
@@ -748,7 +743,7 @@
     </div>
   </div>
 
-  <!-- KART LİMİTİ DÜZENLEME MODALI (LONG-PRESS) -->
+  <!-- KART LİMİTİ DÜZENLEME MODALI -->
   <div class="modal" id="modalCardLimit">
     <div class="modal-content">
       <h3 style="margin-bottom: 14px; font-size: 16px;">Kart Harcama Limiti</h3>
@@ -827,7 +822,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.4.4";
+    const CURRENT_VERSION = "2.5.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -849,16 +844,44 @@
     };
 
     window.onload = function() {
-      checkForAppUpdates();
+      // 1. Önce yerel hafızadan (Cache) 0 milisaniyede ekrana bas
+      restoreCachedData();
+
       document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
       document.getElementById('mDebtDate').value = new Date().toISOString().split('T')[0];
       document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
+      
       initPullToRefresh();
       initCardLimitLongPress();
       initFabLongPress();
       initComboboxGlobalClick();
+
+      // 2. Arka planda sunucudan sessizce en güncel veriyi çek
       fetchInitialData();
+      prefetchDebts();
+      checkForAppUpdates();
     };
+
+    // YEREL HAFIZADAN ANINDA YÜKLEME (0ms AÇILIŞ)
+    function restoreCachedData() {
+      try {
+        const cachedInitial = localStorage.getItem('cache_initial_data');
+        if (cachedInitial) {
+          const parsed = JSON.parse(cachedInitial);
+          if (parsed.sheets) populateBudgetSheets(parsed.sheets, parsed.activeSheet);
+          if (parsed.settings) settingsData = parsed.settings;
+          if (parsed.dashboard) {
+            currentData = parsed.dashboard;
+            memoryCache[parsed.activeSheet || "Mevcut Ay"] = parsed.dashboard;
+            renderDashboard(parsed.dashboard);
+          }
+        }
+        const cachedDebts = localStorage.getItem('cache_debts_active');
+        if (cachedDebts) {
+          debtsData = JSON.parse(cachedDebts);
+        }
+      } catch (e) {}
+    }
 
     async function checkForAppUpdates() {
       try {
@@ -877,6 +900,7 @@
         const res = await fetch(`${API_URL}?action=getInitialData`);
         const data = await res.json();
         if (data && data.sheets) {
+          localStorage.setItem('cache_initial_data', JSON.stringify(data));
           populateBudgetSheets(data.sheets, data.activeSheet);
           if (data.settings) {
             settingsData = data.settings;
@@ -894,6 +918,17 @@
       } finally {
         resetPullIndicator();
       }
+    }
+
+    async function prefetchDebts() {
+      try {
+        const res = await fetch(`${API_URL}?action=getDebtsData&archive=false`);
+        const data = await res.json();
+        if (data) {
+          debtsData = data;
+          localStorage.setItem('cache_debts_active', JSON.stringify(data));
+        }
+      } catch (e) {}
     }
 
     function getActiveComboboxList(type) {
@@ -980,7 +1015,6 @@
       });
     }
 
-    // FAB 1000MS LONG-PRESS DİNLEYİCİSİ
     let fabTimer = null;
     let isFabLongPressTriggered = false;
 
@@ -1196,6 +1230,9 @@
           <option value="active" selected>Aktif Borçlar</option>
           <option value="archive">Arşiv</option>
         `;
+        if (debtsData) {
+          renderDebtsDashboard(debtsData);
+        }
         loadDebtsData();
       }
     }
@@ -1205,18 +1242,18 @@
         const sheet = document.getElementById('sheetSelect').value;
         if (!sheet) return;
 
+        // 1. Varsa eskiyi hemen göster (bekletme)
         if (memoryCache[sheet]) {
           renderDashboard(memoryCache[sheet]);
-        } else {
-          document.getElementById('cardVal').innerText = "...";
         }
 
+        // 2. E-tablolardaki güncellemeyi almak için arkadan canlı çek
         fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(sheet)}`)
           .then(res => res.json())
           .then(data => {
             if (data) {
-              memoryCache[sheet] = data;
-              renderDashboard(data);
+              memoryCache[sheet] = data; // Yeni veriyi hafızaya al
+              renderDashboard(data);      // Ekranı güncelle
             }
           })
           .catch(err => console.error("Ay verisi alınamadı:", err))
@@ -1231,8 +1268,11 @@
       try {
         const res = await fetch(`${API_URL}?action=getDebtsData&archive=${isArchive}`);
         const data = await res.json();
-        debtsData = data;
-        renderDebtsDashboard(data);
+        if (data) {
+          debtsData = data;
+          if (!isArchive) localStorage.setItem('cache_debts_active', JSON.stringify(data));
+          renderDebtsDashboard(data);
+        }
       } catch (e) {
         console.error("Borç verisi alınamadı:", e);
       } finally {
