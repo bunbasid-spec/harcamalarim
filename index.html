@@ -307,7 +307,7 @@
       justify-content: space-between; 
       align-items: center; 
       z-index: 2; 
-      transition: transform 0.2s ease-out, border-radius 0.2s ease; 
+      transition: transform 0.2s ease-out, border-radius 0.2s ease, background 0.2s ease; 
       width: 100%; 
       min-height: 58px;
       box-sizing: border-box;
@@ -320,10 +320,10 @@
       border-bottom-right-radius: 0;
     }
 
-    /* TARİHSİZ / BEKLEYEN KAYIT STİLİ */
+    /* TARİHSİZ / BEKLEYEN KAYIT STİLİ (DÜZ ÇİZGİ, DAHA AÇIK İÇ DOLGU) */
     .item-card.pending-card {
-      border: 1px dashed var(--orange) !important;
-      background: rgba(245, 158, 11, 0.05);
+      background: #27354d !important;
+      border: 1px solid #3d4d68 !important;
     }
     .badge-pending {
       display: inline-block;
@@ -838,7 +838,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.6.0";
+    const CURRENT_VERSION = "2.6.1";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1332,7 +1332,7 @@
     }
 
     function parseDateToTimestamp(dateStr) {
-      if (!dateStr || dateStr.trim() === "") return Number.MAX_SAFE_INTEGER; // Tarihsizler en üstte
+      if (!dateStr || dateStr.trim() === "") return Number.MAX_SAFE_INTEGER;
       const parts = dateStr.toString().trim().split(".");
       if (parts.length === 3) {
         return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
@@ -1384,7 +1384,6 @@
         return;
       }
 
-      // Sıralama: Tarihsizler en üstte, kalanlar en yeniden en eskiye
       let items = [...rawItems].sort((a, b) => {
         let isPendingA = (!a.date || a.date.trim() === "");
         let isPendingB = (!b.date || b.date.trim() === "");
