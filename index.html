@@ -320,6 +320,22 @@
       border-bottom-right-radius: 0;
     }
 
+    /* TARİHSİZ / BEKLEYEN KAYIT STİLİ */
+    .item-card.pending-card {
+      border: 1px dashed var(--orange) !important;
+      background: rgba(245, 158, 11, 0.05);
+    }
+    .badge-pending {
+      display: inline-block;
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--orange);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-right: 4px;
+    }
+
     .item-left .name { font-weight: 600; font-size: 14px; }
     .item-left .sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
     .item-right { font-weight: 700; font-size: 15px; text-align: right; }
@@ -693,7 +709,7 @@
       </div>
 
       <div class="form-group">
-        <label>Tarih</label>
+        <label id="lblDateTitle">Tarih</label>
         <input type="date" id="mDate">
       </div>
       <div class="form-group">
@@ -822,7 +838,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.5.0";
+    const CURRENT_VERSION = "2.6.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -844,7 +860,6 @@
     };
 
     window.onload = function() {
-      // 1. Önce yerel hafızadan (Cache) 0 milisaniyede ekrana bas
       restoreCachedData();
 
       document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
@@ -856,13 +871,11 @@
       initFabLongPress();
       initComboboxGlobalClick();
 
-      // 2. Arka planda sunucudan sessizce en güncel veriyi çek
       fetchInitialData();
       prefetchDebts();
       checkForAppUpdates();
     };
 
-    // YEREL HAFIZADAN ANINDA YÜKLEME (0ms AÇILIŞ)
     function restoreCachedData() {
       try {
         const cachedInitial = localStorage.getItem('cache_initial_data');
@@ -1067,7 +1080,7 @@
         document.getElementById('lblModalBudgetTitle').innerText = 'Kayıt Ekle';
         document.getElementById('btnBudgetSubmit').innerText = 'Kaydet';
         document.getElementById('budgetTypeSwitcher').style.display = 'flex';
-        document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('mDate').value = (activeBudgetTab === 'card') ? new Date().toISOString().split('T')[0] : '';
         document.getElementById('mAmount').value = '';
         document.getElementById('mDesc').value = '';
         document.getElementById('mAccount').value = '';
@@ -1107,7 +1120,7 @@
 
       items.forEach((item, idx) => {
         let tagClass = `tag-${item.type}`;
-        let subInfo = item.date;
+        let subInfo = item.date ? item.date : '<span style="color:var(--orange);">⏳ Bekliyor</span>';
         if (item.card) subInfo += ` • ${item.card}`;
 
         const rowEl = document.createElement('label');
@@ -1242,18 +1255,18 @@
         const sheet = document.getElementById('sheetSelect').value;
         if (!sheet) return;
 
-        // 1. Varsa eskiyi hemen göster (bekletme)
         if (memoryCache[sheet]) {
           renderDashboard(memoryCache[sheet]);
+        } else {
+          document.getElementById('cardVal').innerText = "...";
         }
 
-        // 2. E-tablolardaki güncellemeyi almak için arkadan canlı çek
         fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(sheet)}`)
           .then(res => res.json())
           .then(data => {
             if (data) {
-              memoryCache[sheet] = data; // Yeni veriyi hafızaya al
-              renderDashboard(data);      // Ekranı güncelle
+              memoryCache[sheet] = data;
+              renderDashboard(data);
             }
           })
           .catch(err => console.error("Ay verisi alınamadı:", err))
@@ -1319,7 +1332,7 @@
     }
 
     function parseDateToTimestamp(dateStr) {
-      if (!dateStr) return 0;
+      if (!dateStr || dateStr.trim() === "") return Number.MAX_SAFE_INTEGER; // Tarihsizler en üstte
       const parts = dateStr.toString().trim().split(".");
       if (parts.length === 3) {
         return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
@@ -1328,7 +1341,7 @@
     }
 
     function parseFormattedDateToInput(dateStr) {
-      if (!dateStr) return new Date().toISOString().split('T')[0];
+      if (!dateStr) return "";
       const parts = dateStr.toString().trim().split(".");
       if (parts.length === 3) {
         return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
@@ -1371,13 +1384,27 @@
         return;
       }
 
+      // Sıralama: Tarihsizler en üstte, kalanlar en yeniden en eskiye
       let items = [...rawItems].sort((a, b) => {
+        let isPendingA = (!a.date || a.date.trim() === "");
+        let isPendingB = (!b.date || b.date.trim() === "");
+
+        if (isPendingA && !isPendingB) return -1;
+        if (!isPendingA && isPendingB) return 1;
         return parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
       });
 
       items.forEach(item => {
         const formattedAmt = formatAmount(item.amount);
-        let subText = item.date;
+        const isPending = (!item.date || item.date.trim() === "");
+
+        let subText = "";
+        if (isPending) {
+          subText = `<span class="badge-pending">⏳ Bekliyor</span>`;
+        } else {
+          subText = item.date;
+        }
+
         if (item.card) subText += ` • ${item.card}`;
         if (activeBudgetTab === 'tr' && item.rate) subText += ` • Kur: ${item.rate}`;
 
@@ -1401,7 +1428,7 @@
         }
 
         const cardEl = document.createElement('div');
-        cardEl.className = 'item-card';
+        cardEl.className = 'item-card' + (isPending ? ' pending-card' : '');
         cardEl.innerHTML = `
           <div class="item-left">
             <div class="name">${item.merchant || 'Açıklamasız'}</div>
@@ -2130,9 +2157,11 @@
       const mAmount = document.getElementById('mAmount');
       const lblAccountTitle = document.getElementById('lblAccountTitle');
       const arrowDesc = document.getElementById('arrowDesc');
+      const lblDateTitle = document.getElementById('lblDateTitle');
 
       if (type === 'card') {
         document.getElementById('btnTypeCard').classList.add('active');
+        lblDateTitle.innerText = 'Tarih';
         lblDesc.innerText = 'Satıcı';
         lblAmount.innerText = 'Tutar (€)';
         mAmount.placeholder = 'örn: 25,50 €';
@@ -2142,6 +2171,7 @@
         arrowDesc.style.display = 'none';
       } else if (type === 'manual') {
         document.getElementById('btnTypeManual').classList.add('active');
+        lblDateTitle.innerText = 'Tarih (İsteğe Bağlı / Boş = Bekliyor)';
         lblDesc.innerText = 'Kime / Açıklama';
         lblAmount.innerText = 'Tutar (€)';
         mAmount.placeholder = 'örn: 50,00 €';
@@ -2151,6 +2181,7 @@
         arrowDesc.style.display = 'flex';
       } else if (type === 'tr') {
         document.getElementById('btnTypeTR').classList.add('active');
+        lblDateTitle.innerText = 'Tarih (İsteğe Bağlı / Boş = Bekliyor)';
         lblDesc.innerText = 'Nereye / Açıklama';
         lblAmount.innerText = 'Tutar (₺)';
         mAmount.placeholder = 'örn: 500,00 ₺';
@@ -2159,6 +2190,7 @@
         arrowDesc.style.display = 'flex';
       } else if (type === 'income') {
         document.getElementById('btnTypeIncome').classList.add('active');
+        lblDateTitle.innerText = 'Tarih (İsteğe Bağlı / Boş = Bekliyor)';
         lblDesc.innerText = 'Nereden / Açıklama';
         lblAmount.innerText = 'Tutar (€)';
         mAmount.placeholder = 'örn: 500,00 €';
