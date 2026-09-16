@@ -180,7 +180,8 @@
     }
     
     .summary-card.rem { grid-column: span 2; border-left-color: var(--primary-blue); }
-    .summary-card.card-exp { border-left-color: var(--accent); cursor: pointer; }
+    .summary-card.card-exp { border-left-color: var(--accent); cursor: pointer; transition: transform 0.1s, opacity 0.1s; }
+    .summary-card.card-exp:active { transform: scale(0.98); opacity: 0.85; }
     .summary-card.manual-exp { border-left-color: var(--orange); }
     .summary-card.tr-exp { border-left-color: var(--purple); }
     .summary-card.income { border-left-color: var(--green); }
@@ -323,7 +324,7 @@
     /* TARİHSİZ / BEKLEYEN KAYIT STİLİ (DÜZ ÇİZGİ, DAHA KOYU İÇ DOLGU) */
     .item-card.pending-card {
       background: #141d2b !important;
-      border: 1px solid #233044 !important;
+      border: 1px solid var(--border) !important;
     }
     .badge-pending {
       display: inline-block;
@@ -838,7 +839,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.6.2";
+    const CURRENT_VERSION = "2.6.3";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -853,6 +854,7 @@
     let modalDebtSelectedType = 'debt';
     let editingBudgetRowIndex = null;
     let memoryCache = {};
+    let cardTempTimeout = null;
     
     let maskedState = {
       rem: true, manual: true, tr: true, inc: true,
@@ -1178,9 +1180,12 @@
     function initCardLimitLongPress() {
       const card = document.getElementById('cardExpSummaryCard');
       let pressTimer = null;
+      let isLongPress = false;
 
       function startPress() {
+        isLongPress = false;
         pressTimer = setTimeout(() => {
+          isLongPress = true;
           openCardLimitModal();
         }, 500);
       }
@@ -1199,6 +1204,33 @@
       card.addEventListener('mousedown', startPress);
       card.addEventListener('mouseup', cancelPress);
       card.addEventListener('mouseleave', cancelPress);
+
+      // TIKLAMA İLE 3 SANİYELİK KALAN KART LİMİTİ GÖSTERİMİ
+      card.addEventListener('click', () => {
+        if (isLongPress) return;
+        if (!currentData) return;
+
+        const valEl = document.getElementById('cardVal');
+        if (cardTempTimeout) {
+          clearTimeout(cardTempTimeout);
+        }
+
+        const limitNum = parseAmountToNum(currentData.cardLimit);
+        const spentNum = parseAmountToNum(currentData.cardTotal);
+        const remNum = limitNum - spentNum;
+
+        const remStr = remNum.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const limitClean = (currentData.cardLimit || "€0,00").toString().replace("€", "").trim();
+
+        valEl.innerText = `€${remStr} (€${limitClean})`;
+        valEl.style.color = remNum < 0 ? "var(--red)" : "var(--accent)";
+
+        cardTempTimeout = setTimeout(() => {
+          valEl.innerText = currentData.cardTotal;
+          valEl.style.color = "var(--text)";
+          cardTempTimeout = null;
+        }, 3000);
+      });
     }
 
     function openCardLimitModal() {
@@ -1360,6 +1392,23 @@
         }
       }
       return str;
+    }
+
+    function parseAmountToNum(amt) {
+      if (typeof amt === "number") return amt;
+      if (!amt) return 0;
+      let str = amt.toString().replace("€", "").replace("₺", "").trim();
+      if (str.includes(".") && str.includes(",")) {
+        if (str.lastIndexOf(",") > str.lastIndexOf(".")) {
+          str = str.replace(/\./g, "").replace(",", ".");
+        } else {
+          str = str.replace(/,/g, "");
+        }
+      } else if (str.includes(",")) {
+        str = str.replace(",", ".");
+      }
+      let num = parseFloat(str);
+      return isNaN(num) ? 0 : num;
     }
 
     function renderBudgetList() {
