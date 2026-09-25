@@ -275,10 +275,10 @@
       font-size: 12px;
     }
     
-    /* ARAMA TOPLAM TUTAR ROZETİ */
+    /* ARAMA TOPLAM VE ADET ROZETİ */
     .search-sum-badge {
       display: none;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       color: var(--accent);
       background: rgba(56, 189, 248, 0.12);
@@ -749,7 +749,7 @@
         <div class="search-bar-inline" id="budgetSearchBar">
           <span style="font-size:14px; opacity:0.8;">🔍</span>
           <input type="text" id="liveSearchInputBudget" placeholder="Harcamalarda ara (satıcı, kart, tutar)..." autocomplete="off" oninput="handleSearchInput('budget')">
-          <span class="search-sum-badge" id="budgetSearchSumBadge">€0,00</span>
+          <span class="search-sum-badge" id="budgetSearchSumBadge">( 0 ) €0,00</span>
           <button type="button" class="search-clear-btn" onclick="closeSearchMode('budget')">✕</button>
         </div>
       </div>
@@ -783,7 +783,7 @@
         <div class="search-bar-inline" id="debtsSearchBar">
           <span style="font-size:14px; opacity:0.8;">🔍</span>
           <input type="text" id="liveSearchInputDebts" placeholder="Kişi, tutar veya not ara..." autocomplete="off" oninput="handleSearchInput('debts')">
-          <span class="search-sum-badge" id="debtsSearchSumBadge">€0,00</span>
+          <span class="search-sum-badge" id="debtsSearchSumBadge">( 0 ) €0,00</span>
           <button type="button" class="search-clear-btn" onclick="closeSearchMode('debts')">✕</button>
         </div>
       </div>
@@ -944,7 +944,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.7.1";
+    const CURRENT_VERSION = "2.7.2";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1609,18 +1609,16 @@
       else if (activeBudgetTab === 'tr') rawItems = currentData.trItems || [];
       else if (activeBudgetTab === 'income') { rawItems = currentData.incomeItems || []; isIncome = true; }
 
-      // Canlı Arama Filtrelemesi ve Toplam Hesaplama
+      // Canlı Arama Filtrelemesi, Adet ve Toplam Hesaplama
       if (isSearchActiveBudget && searchQueryBudget) {
         rawItems = rawItems.filter(item => {
           let str = `${item.merchant || ''} ${item.card || ''} ${item.amount || ''} ${item.date || ''}`.toLowerCase();
           return str.includes(searchQueryBudget);
         });
 
-        // Arama Sonuçlarının Toplamını Hesapla
         let totalSum = 0;
         rawItems.forEach(item => {
           if (activeBudgetTab === 'tr') {
-            // TR sekmesinde Euro karşılığını topla
             totalSum += parseAmountToNum(item.eurAmount || 0);
           } else {
             totalSum += parseAmountToNum(item.amount || 0);
@@ -1628,7 +1626,7 @@
         });
 
         let formattedTotal = "€" + totalSum.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        badge.innerText = formattedTotal;
+        badge.innerText = `( ${rawItems.length} ) ${formattedTotal}`;
         badge.style.display = "inline-block";
       } else {
         badge.style.display = "none";
@@ -1797,7 +1795,7 @@
       if (activeDebtTab === 'history') {
         let history = [...(debtsData.history || [])];
 
-        // Borçlar Geçmişi Canlı Arama
+        // Borçlar Geçmişi Canlı Arama, Adet ve Toplam
         if (isSearchActiveDebts && searchQueryDebts) {
           history = history.filter(item => {
             let str = `${item.person || ''} ${item.note || ''} ${item.amount || ''} ${item.date || ''}`.toLowerCase();
@@ -1806,7 +1804,7 @@
 
           let totalSum = 0;
           history.forEach(item => { totalSum += parseAmountToNum(item.amount || 0); });
-          badge.innerText = "€" + totalSum.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          badge.innerText = `( ${history.length} ) €` + totalSum.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
           badge.style.display = "inline-block";
         } else {
           badge.style.display = "none";
@@ -1870,7 +1868,7 @@
       const isArchive = document.getElementById('sheetSelect').value === 'archive';
       let rawItems = (activeDebtTab === 'debt') ? (debtsData.debts || []) : (debtsData.credits || []);
 
-      // Borçlar / Alacaklar Canlı Arama
+      // Borçlar / Alacaklar Canlı Arama, Adet ve Toplam
       if (isSearchActiveDebts && searchQueryDebts) {
         rawItems = rawItems.filter(item => {
           let str = `${item.person || ''} ${item.totalAmount || ''} ${item.remainingAmount || ''} ${item.date || ''}`.toLowerCase();
@@ -1881,7 +1879,7 @@
         rawItems.forEach(item => {
           totalSum += parseAmountToNum(isArchive ? item.totalAmount : item.remainingAmount);
         });
-        badge.innerText = "€" + totalSum.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        badge.innerText = `( ${rawItems.length} ) €` + totalSum.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         badge.style.display = "inline-block";
       } else {
         badge.style.display = "none";
