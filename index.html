@@ -275,7 +275,7 @@
       font-size: 12px;
     }
     
-    /* ARAMA TOPLAM VE ADET ROZETİ */
+    /* ARAMA TOPLAM TUTAR VE ADET ROZETİ */
     .search-sum-badge {
       display: none;
       font-size: 11px;
@@ -749,7 +749,7 @@
         <div class="search-bar-inline" id="budgetSearchBar">
           <span style="font-size:14px; opacity:0.8;">🔍</span>
           <input type="text" id="liveSearchInputBudget" placeholder="Harcamalarda ara (satıcı, kart, tutar)..." autocomplete="off" oninput="handleSearchInput('budget')">
-          <span class="search-sum-badge" id="budgetSearchSumBadge">( 0 ) €0,00</span>
+          <span class="search-sum-badge" id="budgetSearchSumBadge">(0) €0,00</span>
           <button type="button" class="search-clear-btn" onclick="closeSearchMode('budget')">✕</button>
         </div>
       </div>
@@ -783,7 +783,7 @@
         <div class="search-bar-inline" id="debtsSearchBar">
           <span style="font-size:14px; opacity:0.8;">🔍</span>
           <input type="text" id="liveSearchInputDebts" placeholder="Kişi, tutar veya not ara..." autocomplete="off" oninput="handleSearchInput('debts')">
-          <span class="search-sum-badge" id="debtsSearchSumBadge">( 0 ) €0,00</span>
+          <span class="search-sum-badge" id="debtsSearchSumBadge">(0) €0,00</span>
           <button type="button" class="search-clear-btn" onclick="closeSearchMode('debts')">✕</button>
         </div>
       </div>
@@ -1609,7 +1609,7 @@
       else if (activeBudgetTab === 'tr') rawItems = currentData.trItems || [];
       else if (activeBudgetTab === 'income') { rawItems = currentData.incomeItems || []; isIncome = true; }
 
-      // Canlı Arama Filtrelemesi, Adet ve Toplam Hesaplama
+      // Canlı Arama Filtrelemesi ve Adet + Toplam Hesaplama
       if (isSearchActiveBudget && searchQueryBudget) {
         rawItems = rawItems.filter(item => {
           let str = `${item.merchant || ''} ${item.card || ''} ${item.amount || ''} ${item.date || ''}`.toLowerCase();
@@ -1625,8 +1625,9 @@
           }
         });
 
+        let count = rawItems.length;
         let formattedTotal = "€" + totalSum.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        badge.innerText = `( ${rawItems.length} ) ${formattedTotal}`;
+        badge.innerText = `(${count}) ${formattedTotal}`;
         badge.style.display = "inline-block";
       } else {
         badge.style.display = "none";
@@ -1795,7 +1796,7 @@
       if (activeDebtTab === 'history') {
         let history = [...(debtsData.history || [])];
 
-        // Borçlar Geçmişi Canlı Arama, Adet ve Toplam
+        // Borçlar Geçmişi Canlı Arama
         if (isSearchActiveDebts && searchQueryDebts) {
           history = history.filter(item => {
             let str = `${item.person || ''} ${item.note || ''} ${item.amount || ''} ${item.date || ''}`.toLowerCase();
@@ -1804,7 +1805,9 @@
 
           let totalSum = 0;
           history.forEach(item => { totalSum += parseAmountToNum(item.amount || 0); });
-          badge.innerText = `( ${history.length} ) €` + totalSum.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          let count = history.length;
+          let formattedTotal = "€" + totalSum.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          badge.innerText = `(${count}) ${formattedTotal}`;
           badge.style.display = "inline-block";
         } else {
           badge.style.display = "none";
@@ -1868,7 +1871,7 @@
       const isArchive = document.getElementById('sheetSelect').value === 'archive';
       let rawItems = (activeDebtTab === 'debt') ? (debtsData.debts || []) : (debtsData.credits || []);
 
-      // Borçlar / Alacaklar Canlı Arama, Adet ve Toplam
+      // Borçlar / Alacaklar Canlı Arama
       if (isSearchActiveDebts && searchQueryDebts) {
         rawItems = rawItems.filter(item => {
           let str = `${item.person || ''} ${item.totalAmount || ''} ${item.remainingAmount || ''} ${item.date || ''}`.toLowerCase();
@@ -1879,7 +1882,9 @@
         rawItems.forEach(item => {
           totalSum += parseAmountToNum(isArchive ? item.totalAmount : item.remainingAmount);
         });
-        badge.innerText = `( ${rawItems.length} ) €` + totalSum.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        let count = rawItems.length;
+        let formattedTotal = "€" + totalSum.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        badge.innerText = `(${count}) ${formattedTotal}`;
         badge.style.display = "inline-block";
       } else {
         badge.style.display = "none";
