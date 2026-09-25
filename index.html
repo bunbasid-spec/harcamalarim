@@ -203,14 +203,23 @@
     .val-inc { color: var(--text); }
     .masked { letter-spacing: 3px; color: var(--text-dim) !important; font-size: 18px; }
 
+    /* SEKME & ARAMA ÇUBUĞU ALANI */
+    .tabs-bar-wrapper {
+      position: relative;
+      margin-bottom: 16px;
+      min-height: 42px;
+    }
+
     .tabs { 
       display: flex; 
       background: var(--card-bg); 
       border: 1px solid var(--border); 
       border-radius: 10px; 
       padding: 4px; 
-      margin-bottom: 16px; 
       gap: 4px;
+      height: 42px;
+      box-sizing: border-box;
+      align-items: center;
     }
     .tab-btn { 
       flex: 1; 
@@ -234,6 +243,54 @@
     .tab-btn#tab-debt-give.active { background: var(--red); color: #fff; box-shadow: 0 2px 8px rgba(244, 63, 94, 0.35); }
     .tab-btn#tab-debt-get.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); }
     .tab-btn#tab-debt-history.active { background: var(--purple); color: #fff; box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35); }
+
+    /* CANLI ARAMA ÇUBUĞU (SEKMELERİN YERİNE DÖNÜŞEN KUTU) */
+    .search-bar-inline {
+      display: none;
+      align-items: center;
+      background: var(--card-bg);
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 0 10px;
+      height: 42px;
+      box-sizing: border-box;
+      gap: 8px;
+      animation: fadeIn 0.2s ease;
+    }
+    .search-bar-inline.active {
+      display: flex;
+    }
+    .search-bar-inline input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .search-bar-inline input::placeholder {
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    .search-clear-btn {
+      background: rgba(255,255,255,0.08);
+      border: none;
+      color: var(--text-dim);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .search-clear-btn:active {
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+    }
 
     .row-wrapper {
       position: relative;
@@ -321,7 +378,7 @@
       border-bottom-right-radius: 0;
     }
 
-    /* TARİHSİZ / BEKLEYEN KAYIT STİLİ (DÜZ ÇİZGİ, DAHA KOYU İÇ DOLGU) */
+    /* TARİHSİZ / BEKLEYEN KAYIT STİLİ */
     .item-card.pending-card {
       background: #141d2b !important;
       border: 1px solid var(--border) !important;
@@ -392,11 +449,10 @@
     .fab span { display: block; font-size: 40px; font-weight: 400; line-height: 1; margin-top: -3px; }
     .fab:active { transform: scale(0.92); opacity: 0.9; }
 
+    /* BASILI TUTUNCA AÇILAN 2 BUTONLU MENÜ */
     .fab-mini-action {
       position: fixed;
-      bottom: 105px;
       right: 22px;
-      background: var(--purple);
       color: #fff;
       padding: 10px 14px;
       border-radius: 20px;
@@ -410,6 +466,15 @@
       z-index: 60;
       cursor: pointer;
       animation: popUp 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    #btnLastMonthAction {
+      bottom: 105px;
+      background: var(--purple);
+    }
+    #btnToggleSearchAction {
+      bottom: 155px;
+      background: var(--accent);
+      color: #0f172a;
     }
     @keyframes popUp {
       from { transform: translateY(20px) scale(0.6); opacity: 0; }
@@ -656,11 +721,20 @@
         </div>
       </div>
 
-      <div class="tabs">
-        <button class="tab-btn active" id="tab-card" onclick="switchBudgetTab('card')">Kart</button>
-        <button class="tab-btn" id="tab-manual" onclick="switchBudgetTab('manual')">Diğer</button>
-        <button class="tab-btn" id="tab-tr" onclick="switchBudgetTab('tr')">TR</button>
-        <button class="tab-btn" id="tab-income" onclick="switchBudgetTab('income')">Gelir</button>
+      <!-- DÖNÜŞÜMLÜ SEKME / ARAMA ALANI -->
+      <div class="tabs-bar-wrapper">
+        <div class="tabs" id="budgetTabsRow">
+          <button class="tab-btn active" id="tab-card" onclick="switchBudgetTab('card')">Kart</button>
+          <button class="tab-btn" id="tab-manual" onclick="switchBudgetTab('manual')">Diğer</button>
+          <button class="tab-btn" id="tab-tr" onclick="switchBudgetTab('tr')">TR</button>
+          <button class="tab-btn" id="tab-income" onclick="switchBudgetTab('income')">Gelir</button>
+        </div>
+
+        <div class="search-bar-inline" id="budgetSearchBar">
+          <span style="font-size:14px; opacity:0.8;">🔍</span>
+          <input type="text" id="liveSearchInputBudget" placeholder="Harcamalarda ara (satıcı, kart, tutar)..." autocomplete="off" oninput="handleSearchInput('budget')">
+          <button type="button" class="search-clear-btn" onclick="closeSearchMode('budget')">✕</button>
+        </div>
       </div>
     </div>
 
@@ -681,16 +755,29 @@
         </div>
       </div>
 
-      <div class="tabs">
-        <button class="tab-btn active" id="tab-debt-give" onclick="switchDebtTab('debt')">Borçlarım</button>
-        <button class="tab-btn" id="tab-debt-get" onclick="switchDebtTab('credit')">Alacaklarım</button>
-        <button class="tab-btn" id="tab-debt-history" onclick="switchDebtTab('history')">Geçmiş</button>
+      <!-- DÖNÜŞÜMLÜ SEKME / ARAMA ALANI (BORÇLAR) -->
+      <div class="tabs-bar-wrapper">
+        <div class="tabs" id="debtsTabsRow">
+          <button class="tab-btn active" id="tab-debt-give" onclick="switchDebtTab('debt')">Borçlarım</button>
+          <button class="tab-btn" id="tab-debt-get" onclick="switchDebtTab('credit')">Alacaklarım</button>
+          <button class="tab-btn" id="tab-debt-history" onclick="switchDebtTab('history')">Geçmiş</button>
+        </div>
+
+        <div class="search-bar-inline" id="debtsSearchBar">
+          <span style="font-size:14px; opacity:0.8;">🔍</span>
+          <input type="text" id="liveSearchInputDebts" placeholder="Kişi, tutar veya not ara..." autocomplete="off" oninput="handleSearchInput('debts')">
+          <button type="button" class="search-clear-btn" onclick="closeSearchMode('debts')">✕</button>
+        </div>
       </div>
     </div>
 
     <div id="listContainer"></div>
   </div>
 
+  <!-- BASILI TUTUNCA ÇIKAN AKSİYON BUTONLARI -->
+  <button id="btnToggleSearchAction" class="fab-mini-action" onclick="toggleSearchFromFab()">
+    🔍 Harcamalarda Ara
+  </button>
   <button id="btnLastMonthAction" class="fab-mini-action" onclick="openLastMonthTemplateModal()">
     📋 Geçen Aydan Aktar
   </button>
@@ -839,7 +926,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.6.3";
+    const CURRENT_VERSION = "2.7.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -855,6 +942,12 @@
     let editingBudgetRowIndex = null;
     let memoryCache = {};
     let cardTempTimeout = null;
+
+    // Arama Durum Değişkenleri
+    let isSearchActiveBudget = false;
+    let isSearchActiveDebts = false;
+    let searchQueryBudget = "";
+    let searchQueryDebts = "";
     
     let maskedState = {
       rem: true, manual: true, tr: true, inc: true,
@@ -1024,7 +1117,7 @@
         if (!e.target.closest('.combobox-container')) {
           closeAllComboboxes();
         }
-        if (!e.target.closest('#mainFab') && !e.target.closest('#btnLastMonthAction')) {
+        if (!e.target.closest('#mainFab') && !e.target.closest('#btnLastMonthAction') && !e.target.closest('#btnToggleSearchAction')) {
           hideFabAction();
         }
       });
@@ -1041,7 +1134,7 @@
         fabTimer = setTimeout(() => {
           isFabLongPressTriggered = true;
           showFabAction();
-        }, 1000);
+        }, 800);
       }
 
       function cancelFabPress() {
@@ -1061,13 +1154,82 @@
     }
 
     function showFabAction() {
-      const btn = document.getElementById('btnLastMonthAction');
-      btn.style.display = 'flex';
+      const btn1 = document.getElementById('btnLastMonthAction');
+      const btn2 = document.getElementById('btnToggleSearchAction');
+      btn1.style.display = 'flex';
+      btn2.style.display = 'flex';
+
+      // Modül durumuna göre arama butonunun başlığını ayarla
+      const isSearchNow = (currentModule === 'budget' ? isSearchActiveBudget : isSearchActiveDebts);
+      btn2.innerHTML = isSearchNow ? '✕ Aramayı Kapat' : '🔍 Harcamalarda Ara';
+
       if (navigator.vibrate) navigator.vibrate(50);
     }
 
     function hideFabAction() {
       document.getElementById('btnLastMonthAction').style.display = 'none';
+      document.getElementById('btnToggleSearchAction').style.display = 'none';
+    }
+
+    function toggleSearchFromFab() {
+      hideFabAction();
+      if (currentModule === 'budget') {
+        if (isSearchActiveBudget) closeSearchMode('budget');
+        else openSearchMode('budget');
+      } else {
+        if (isSearchActiveDebts) closeSearchMode('debts');
+        else openSearchMode('debts');
+      }
+    }
+
+    function openSearchMode(mod) {
+      if (mod === 'budget') {
+        isSearchActiveBudget = true;
+        document.getElementById('budgetTabsRow').style.display = 'none';
+        const bar = document.getElementById('budgetSearchBar');
+        bar.classList.add('active');
+        const input = document.getElementById('liveSearchInputBudget');
+        input.value = searchQueryBudget;
+        setTimeout(() => input.focus(), 100);
+        renderBudgetList();
+      } else {
+        isSearchActiveDebts = true;
+        document.getElementById('debtsTabsRow').style.display = 'none';
+        const bar = document.getElementById('debtsSearchBar');
+        bar.classList.add('active');
+        const input = document.getElementById('liveSearchInputDebts');
+        input.value = searchQueryDebts;
+        setTimeout(() => input.focus(), 100);
+        renderDebtsList();
+      }
+    }
+
+    function closeSearchMode(mod) {
+      if (mod === 'budget') {
+        isSearchActiveBudget = false;
+        searchQueryBudget = "";
+        document.getElementById('liveSearchInputBudget').value = "";
+        document.getElementById('budgetSearchBar').classList.remove('active');
+        document.getElementById('budgetTabsRow').style.display = 'flex';
+        renderBudgetList();
+      } else {
+        isSearchActiveDebts = false;
+        searchQueryDebts = "";
+        document.getElementById('liveSearchInputDebts').value = "";
+        document.getElementById('debtsSearchBar').classList.remove('active');
+        document.getElementById('debtsTabsRow').style.display = 'flex';
+        renderDebtsList();
+      }
+    }
+
+    function handleSearchInput(mod) {
+      if (mod === 'budget') {
+        searchQueryBudget = document.getElementById('liveSearchInputBudget').value.trim().toLowerCase();
+        renderBudgetList();
+      } else {
+        searchQueryDebts = document.getElementById('liveSearchInputDebts').value.trim().toLowerCase();
+        renderDebtsList();
+      }
     }
 
     function handleFabClick() {
@@ -1205,7 +1367,6 @@
       card.addEventListener('mouseup', cancelPress);
       card.addEventListener('mouseleave', cancelPress);
 
-      // TIKLAMA İLE 3 SANİYELİK KALAN KART LİMİTİ GÖSTERİMİ
       card.addEventListener('click', () => {
         if (isLongPress) return;
         if (!currentData) return;
@@ -1428,8 +1589,16 @@
       else if (activeBudgetTab === 'tr') rawItems = currentData.trItems || [];
       else if (activeBudgetTab === 'income') { rawItems = currentData.incomeItems || []; isIncome = true; }
 
+      // Canlı Arama Filtrelemesi
+      if (isSearchActiveBudget && searchQueryBudget) {
+        rawItems = rawItems.filter(item => {
+          let str = `${item.merchant || ''} ${item.card || ''} ${item.amount || ''} ${item.date || ''}`.toLowerCase();
+          return str.includes(searchQueryBudget);
+        });
+      }
+
       if (!rawItems || rawItems.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-dim)">Kayıt bulunamadı.</div>';
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-dim)">${isSearchActiveBudget ? 'Aramaya uygun kayıt bulunamadı.' : 'Kayıt bulunamadı.'}</div>`;
         return;
       }
 
@@ -1588,12 +1757,20 @@
       if (!debtsData || currentModule !== 'debts') return;
 
       if (activeDebtTab === 'history') {
-        const history = [...(debtsData.history || [])].sort((a, b) => {
-          return parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
-        });
+        let history = [...(debtsData.history || [])];
+
+        // Borçlar Geçmişi Canlı Arama
+        if (isSearchActiveDebts && searchQueryDebts) {
+          history = history.filter(item => {
+            let str = `${item.person || ''} ${item.note || ''} ${item.amount || ''} ${item.date || ''}`.toLowerCase();
+            return str.includes(searchQueryDebts);
+          });
+        }
+
+        history.sort((a, b) => parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date));
 
         if (history.length === 0) {
-          container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-dim)">Ödeme geçmişi bulunamadı.</div>';
+          container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-dim)">${isSearchActiveDebts ? 'Aramaya uygun geçmiş bulunamadı.' : 'Ödeme geçmişi bulunamadı.'}</div>`;
           return;
         }
 
@@ -1648,8 +1825,16 @@
       const isArchive = document.getElementById('sheetSelect').value === 'archive';
       let rawItems = (activeDebtTab === 'debt') ? (debtsData.debts || []) : (debtsData.credits || []);
 
+      // Borçlar / Alacaklar Canlı Arama
+      if (isSearchActiveDebts && searchQueryDebts) {
+        rawItems = rawItems.filter(item => {
+          let str = `${item.person || ''} ${item.totalAmount || ''} ${item.remainingAmount || ''} ${item.date || ''}`.toLowerCase();
+          return str.includes(searchQueryDebts);
+        });
+      }
+
       if (!rawItems || rawItems.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-dim)">Kayıt bulunamadı.</div>';
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-dim)">${isSearchActiveDebts ? 'Aramaya uygun kayıt bulunamadı.' : 'Kayıt bulunamadı.'}</div>`;
         return;
       }
 
