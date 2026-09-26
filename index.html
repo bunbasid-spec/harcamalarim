@@ -500,7 +500,7 @@
       background: var(--accent);
       color: #0f172a;
     }
-    /* 2. Sıra (Orta): Likidite Planlaması (TURUNCU YAPILDI) */
+    /* 2. Sıra (Orta): Likidite Planlaması (CANLI TURUNCU) */
     #btnLiquidityAction {
       bottom: 155px;
       background: var(--orange);
@@ -1024,7 +1024,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.8.4";
+    const CURRENT_VERSION = "2.8.5";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1389,6 +1389,8 @@
     // =========================================================
     // LİKİDİTE PLANLAMASI & HESAP DAĞILIMI MOTORU
     // =========================================================
+    let liqNetBufferValue = 0; // Detay açılınca ekrana basılacak gerçek tutar
+
     function openLiquidityModal() {
       hideFabAction();
       const container = document.getElementById('liquidityReportContent');
@@ -1463,6 +1465,7 @@
 
       const totalRequiredEUR = targetCardLimit + totalManual + totalTrEUR;
       const netBuffer = totalIncome - totalRequiredEUR;
+      liqNetBufferValue = netBuffer; // Global değişkene ata
 
       let html = `
         <!-- 1. KART HARCAMA (BAŞLIK & DEĞER MAVİ RENKTE EŞİTLENDİ) -->
@@ -1594,15 +1597,15 @@
       }
       html += `</div>`;
 
-      // 4. TOPLAM LİKİDİTE DENGESİ (AÇILIR / KAPANIR AKORDİYON)
+      // 4. TOPLAM LİKİDİTE DENGESİ (KAPALI İKEN MASKELİ, TUTARLAR BEYAZ RENKTE)
       html += `
         <div class="liq-section-title">📊 Toplam Likidite Dengesi</div>
-        <div class="liq-card" style="border-left: 4px solid ${netBuffer >= 0 ? 'var(--green)' : 'var(--red)'};">
+        <div class="liq-card" id="liqBalCard" style="border-left: 4px solid var(--accent);">
           <div class="liq-acc-header" onclick="toggleLiqBalanceDetails()">
             <div>
               <div style="font-size:11px; color:var(--text-dim); font-weight:600;">Net Kalan</div>
-              <div style="font-weight:700; font-size:16px; color: ${netBuffer >= 0 ? 'var(--green)' : 'var(--red)'}; margin-top:2px;">
-                ${netBuffer >= 0 ? '+' : ''}€${netBuffer.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+              <div id="liqNetDisplay" class="masked" style="font-weight:700; font-size:16px; margin-top:2px;">
+                ••••••
               </div>
             </div>
             <div id="liqBalArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Detay ▼</div>
@@ -1611,11 +1614,11 @@
           <div id="liqBalBody" style="display:none; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
             <div class="liq-row">
               <span>Toplam Yapılacak Harcama</span>
-              <span style="font-weight:700; color:var(--red);">-€${totalRequiredEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+              <span style="font-weight:600; color:#fff;">€${totalRequiredEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
             <div class="liq-row">
               <span>Toplam Beklenen Gelir</span>
-              <span style="font-weight:700; color:var(--green);">+€${totalIncome.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+              <span style="font-weight:600; color:#fff;">€${totalIncome.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
             <div class="liq-row total-row" style="color: ${netBuffer >= 0 ? 'var(--green)' : 'var(--red)'};">
               <span>Net Kalan</span>
@@ -1631,12 +1634,25 @@
     function toggleLiqBalanceDetails() {
       const body = document.getElementById('liqBalBody');
       const arrow = document.getElementById('liqBalArrow');
+      const display = document.getElementById('liqNetDisplay');
+      const card = document.getElementById('liqBalCard');
+
       if (body.style.display === 'none') {
         body.style.display = 'block';
         arrow.innerText = 'Gizle ▲';
+        // Detay açıldığında maskeyi kaldır ve renklendir
+        display.classList.remove('masked');
+        display.innerText = `${liqNetBufferValue >= 0 ? '+' : ''}€${liqNetBufferValue.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        display.style.color = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
+        card.style.borderLeftColor = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
       } else {
         body.style.display = 'none';
         arrow.innerText = 'Detay ▼';
+        // Detay kapandığında tekrar maskeli hale getir
+        display.classList.add('masked');
+        display.innerText = '••••••';
+        display.style.color = '';
+        card.style.borderLeftColor = 'var(--accent)';
       }
     }
 
@@ -1667,7 +1683,6 @@
       const cachedName = localStorage.getItem('cache_template_name') || 'Geçen Ay';
       document.getElementById('lblLastMonthTitle').innerText = `${cachedName} Kayıtları`;
 
-      // Hafızada varsa anında bas
       if (loadedTemplateItems && loadedTemplateItems.length > 0) {
         renderTemplateItems(loadedTemplateItems);
       } else {
@@ -1676,7 +1691,6 @@
       
       document.getElementById('modalLastMonth').style.display = 'flex';
 
-      // Arka planda güncelleme
       try {
         const res = await fetch(`${API_URL}?action=getLastMonthTemplate`);
         const data = await res.json();
@@ -2108,10 +2122,7 @@
 
       document.getElementById('mDate').value = parseFormattedDateToInput(item.date);
       document.getElementById('mAmount').value = formatAmountForInput(item.amount);
-  
-      // Parantezli tarihi açıklama kutusundan otomatik temizle (Örn: "Amazon (25.09)" -> "Amazon")
-      let cleanMerchant = (item.merchant || "").replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
-      document.getElementById('mDesc').value = cleanMerchant;
+      document.getElementById('mDesc').value = item.merchant || "";
       document.getElementById('mAccount').value = item.card || "";
 
       document.getElementById('modalBudget').style.display = 'flex';
@@ -2918,8 +2929,8 @@
       }
 
       let merchantText = document.getElementById('mDesc').value.trim();
-  
-      // Eğer tarih girilmişse parantezli tarihi arındır
+
+      // Tarih seçilmişse parantezli vade tarihini açıklamadan otomatik sil
       if (dateFormatted) {
         merchantText = merchantText.replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
       }
@@ -2951,7 +2962,7 @@
 
       onFilterChange();
     }
-    
+
     async function submitDebtEntry() {
       const rawDate = document.getElementById('mDebtDate').value;
       let dateFormatted = "";
