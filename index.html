@@ -238,7 +238,7 @@
     .tab-btn#tab-card.active { background: var(--accent); color: #0f172a; box-shadow: 0 2px 8px rgba(56, 189, 248, 0.35); }
     .tab-btn#tab-manual.active { background: var(--orange); color: #0f172a; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35); }
     .tab-btn#tab-tr.active { background: var(--purple); color: #ffffff; box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35); }
-    .tab-btn#tab-income.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16 appealed, 129, 0.35); }
+    .tab-btn#tab-income.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); }
     
     .tab-btn#tab-debt-give.active { background: var(--red); color: #fff; box-shadow: 0 2px 8px rgba(244, 63, 94, 0.35); }
     .tab-btn#tab-debt-get.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); }
@@ -275,7 +275,6 @@
       font-size: 12px;
     }
     
-    /* ARAMA TOPLAM TUTAR VE ADET ROZETİ */
     .search-sum-badge {
       display: none;
       font-size: 11px;
@@ -394,7 +393,6 @@
       border-bottom-right-radius: 0;
     }
 
-    /* TARİHSİZ / BEKLEYEN KAYIT STİLİ */
     .item-card.pending-card {
       background: #141d2b !important;
       border: 1px solid var(--border) !important;
@@ -476,7 +474,7 @@
     }
     .fab:active { transform: scale(0.92); opacity: 0.9; }
 
-    /* BASILI TUTUNCA AÇILAN 3 AKSİYON BUTONU */
+    /* BASILI TUTUNCA ÇIKAN 4 AKSİYON BUTONU */
     .fab-mini-action {
       position: fixed;
       right: 22px;
@@ -494,16 +492,25 @@
       cursor: pointer;
       animation: popUp 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    #btnToggleSearchAction {
-      bottom: 205px;
-      background: var(--accent);
+    /* 1. Sıra (En Üst): Ay İçi Kontrol (YEŞİL) */
+    #btnControlAction {
+      bottom: 255px;
+      background: var(--green);
       color: #0f172a;
     }
+    /* 2. Sıra: Likidite Planlaması (TURUNCU) */
     #btnLiquidityAction {
-      bottom: 155px;
+      bottom: 205px;
       background: var(--orange);
       color: #0f172a;
     }
+    /* 3. Sıra: Harcamalarda Ara (MAVİ) */
+    #btnToggleSearchAction {
+      bottom: 155px;
+      background: var(--accent);
+      color: #0f172a;
+    }
+    /* 4. Sıra (En Alt): Geçen Aydan Aktar (MOR) */
     #btnLastMonthAction {
       bottom: 105px;
       background: var(--purple);
@@ -883,12 +890,15 @@
     <div id="listContainer"></div>
   </div>
 
-  <!-- BASILI TUTUNCA ÇIKAN 3 AKSİYON BUTONU -->
-  <button id="btnToggleSearchAction" class="fab-mini-action" onclick="toggleSearchFromFab()">
-    🔍 Harcamalarda Ara
+  <!-- BASILI TUTUNCA ÇIKAN 4 AKSİYON BUTONU -->
+  <button id="btnControlAction" class="fab-mini-action" onclick="openControlModal()">
+    🟢 Ay İçi Kontrol
   </button>
   <button id="btnLiquidityAction" class="fab-mini-action" onclick="openLiquidityModal()">
     🔮 Likidite Planlaması
+  </button>
+  <button id="btnToggleSearchAction" class="fab-mini-action" onclick="toggleSearchFromFab()">
+    🔍 Harcamalarda Ara
   </button>
   <button id="btnLastMonthAction" class="fab-mini-action" onclick="openLastMonthTemplateModal()">
     📋 Geçen Aydan Aktar
@@ -900,10 +910,10 @@
   <div class="modal" id="modalLiquidity">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h3 style="font-size: 16px;">🔮 Gelecek Ay Planı</h3>
+        <h3 style="font-size: 16px;">🔮 Likidite Planlaması</h3>
         <div class="mini-view-switcher">
-          <button type="button" class="mini-view-btn active" id="btnLiqViewPlan" onclick="switchLiquidityView('plan')">Plan</button>
-          <button type="button" class="mini-view-btn" id="btnLiqViewSummary" onclick="switchLiquidityView('summary')">Özet</button>
+          <button type="button" class="mini-view-btn active" id="btnLiqViewSummary" onclick="switchLiquidityView('summary')">Özet</button>
+          <button type="button" class="mini-view-btn" id="btnLiqViewPlan" onclick="switchLiquidityView('plan')">Plan</button>
         </div>
       </div>
 
@@ -911,6 +921,25 @@
 
       <div class="modal-actions" style="margin-top: 14px;">
         <button type="button" class="btn-cancel" onclick="closeModal('modalLiquidity')">Kapat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AY İÇİ KONTROL MODALI -->
+  <div class="modal" id="modalControl">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="font-size: 16px;">🟢 Ay İçi Kontrol</h3>
+        <div class="mini-view-switcher">
+          <button type="button" class="mini-view-btn active" id="btnCtrlViewSummary" onclick="switchControlView('summary')">Özet</button>
+          <button type="button" class="mini-view-btn" id="btnCtrlViewPlan" onclick="switchControlView('plan')">Plan</button>
+        </div>
+      </div>
+
+      <div id="controlReportContent" style="max-height: 65vh; overflow-y: auto; padding-right: 2px;"></div>
+
+      <div class="modal-actions" style="margin-top: 14px;">
+        <button type="button" class="btn-cancel" onclick="closeModal('modalControl')">Kapat</button>
       </div>
     </div>
   </div>
@@ -1057,7 +1086,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.8.9";
+    const CURRENT_VERSION = "2.9.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1074,7 +1103,6 @@
     let memoryCache = {};
     let cardTempTimeout = null;
 
-    // Arama Durum Değişkenleri
     let isSearchActiveBudget = false;
     let isSearchActiveDebts = false;
     let searchQueryBudget = "";
@@ -1334,12 +1362,14 @@
     }
 
     function showFabAction() {
-      const bSearch = document.getElementById('btnToggleSearchAction');
+      const bControl = document.getElementById('btnControlAction');
       const bLiq = document.getElementById('btnLiquidityAction');
+      const bSearch = document.getElementById('btnToggleSearchAction');
       const bLast = document.getElementById('btnLastMonthAction');
 
-      bSearch.style.display = 'flex';
+      bControl.style.display = 'flex';
       bLiq.style.display = 'flex';
+      bSearch.style.display = 'flex';
       bLast.style.display = 'flex';
 
       const isSearchNow = (currentModule === 'budget' ? isSearchActiveBudget : isSearchActiveDebts);
@@ -1351,8 +1381,9 @@
     }
 
     function hideFabAction() {
-      document.getElementById('btnToggleSearchAction').style.display = 'none';
+      document.getElementById('btnControlAction').style.display = 'none';
       document.getElementById('btnLiquidityAction').style.display = 'none';
+      document.getElementById('btnToggleSearchAction').style.display = 'none';
       document.getElementById('btnLastMonthAction').style.display = 'none';
     }
 
@@ -1420,14 +1451,15 @@
     }
 
     // =========================================================
-    // LİKİDİTE PLANLAMASI & HESAP DAĞILIMI MOTORU
+    // LİKİDİTE PLANLAMASI & AY İÇİ KONTROL MOTORU
     // =========================================================
-    let currentLiquidityView = 'plan'; // 'plan' veya 'summary'
+    let currentLiquidityView = 'summary'; // İlk açılışta ÖZET
+    let currentControlView = 'summary';   // İlk açılışta ÖZET
     let liqNetBufferValue = 0;
 
     function openLiquidityModal() {
       hideFabAction();
-      currentLiquidityView = 'plan';
+      currentLiquidityView = 'summary';
       updateLiquidityViewSwitcher();
       renderLiquidityContent();
       document.getElementById('modalLiquidity').style.display = 'flex';
@@ -1448,6 +1480,51 @@
       btnSummary.classList.toggle('active', currentLiquidityView === 'summary');
     }
 
+    function openControlModal() {
+      hideFabAction();
+      currentControlView = 'summary';
+      updateControlViewSwitcher();
+      renderControlContent();
+      document.getElementById('modalControl').style.display = 'flex';
+    }
+
+    function switchControlView(view) {
+      currentControlView = view;
+      updateControlViewSwitcher();
+      renderControlContent();
+    }
+
+    function updateControlViewSwitcher() {
+      const btnPlan = document.getElementById('btnCtrlViewPlan');
+      const btnSummary = document.getElementById('btnCtrlViewSummary');
+      if (!btnPlan || !btnSummary) return;
+
+      btnPlan.classList.toggle('active', currentControlView === 'plan');
+      btnSummary.classList.toggle('active', currentControlView === 'summary');
+    }
+
+    // Ortak Toplam Hesaplama (Özet Checkbox'lar için)
+    function recalcSummaryTotal() {
+      const checkboxes = document.querySelectorAll('.chk-summary:checked');
+      let liveTotal = 0;
+      checkboxes.forEach(c => {
+        let val = parseFloat(c.getAttribute('data-eur') || 0);
+        liveTotal += val;
+      });
+      const lbl = document.getElementById('lblSummaryLiveTotal');
+      if (lbl) {
+        lbl.innerText = "€" + liveTotal.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+    }
+
+    function toggleAllSummaryCheckboxes() {
+      const checkboxes = document.querySelectorAll('.chk-summary');
+      const allChecked = Array.from(checkboxes).every(c => c.checked);
+      checkboxes.forEach(c => c.checked = !allChecked);
+      recalcSummaryTotal();
+    }
+
+    // 1. LİKİDİTE PLANLAMASI RENDER (PLAN & ÖZET)
     function renderLiquidityContent() {
       const container = document.getElementById('liquidityReportContent');
       if (!currentData) {
@@ -1457,89 +1534,54 @@
 
       const targetCardLimit = parseAmountToNum(currentData.cardLimit || 0);
 
-      let sumSparkasse = 0;
-      let sumN26 = 0;
-      let sumNakit = 0;
-      let sumC24 = 0;
-      let sumOtherManual = 0;
-      let totalManual = 0;
-
+      let sumSparkasse = 0, sumN26 = 0, sumNakit = 0, sumC24 = 0, sumOtherManual = 0, totalManual = 0;
       (currentData.manualItems || []).forEach(item => {
         let amt = parseAmountToNum(item.amount);
         let acc = (item.card || '').toLowerCase().trim();
         totalManual += amt;
-
-        if (acc.includes('sparkasse')) {
-          sumSparkasse += amt;
-        } else if (acc.includes('n26')) {
-          sumN26 += amt;
-        } else if (acc.includes('nakit') || acc.includes('bar')) {
-          sumNakit += amt;
-        } else if (acc.includes('c24')) {
-          sumC24 += amt;
-        } else {
-          sumOtherManual += amt;
-        }
+        if (acc.includes('sparkasse')) sumSparkasse += amt;
+        else if (acc.includes('n26')) sumN26 += amt;
+        else if (acc.includes('nakit') || acc.includes('bar')) sumNakit += amt;
+        else if (acc.includes('c24')) sumC24 += amt;
+        else sumOtherManual += amt;
       });
 
       const sumMainTwo = sumSparkasse + sumN26;
       const hasSecondary = (sumNakit > 0 || sumC24 > 0 || sumOtherManual > 0);
 
-      let sumWorldEko = 0;
-      let sumEnpara = 0;
-      let sumFree = 0;
-      let sumOtherTR = 0;
-      let totalTrTRY = 0;
-      let totalTrEUR = 0;
-
-      let trRateEUR = 0;
-
+      let sumWorldEko = 0, sumEnpara = 0, sumFree = 0, sumOtherTR = 0, totalTrTRY = 0, totalTrEUR = 0, trRateEUR = 0;
       (currentData.trItems || []).forEach(item => {
         let amtTRY = parseAmountToNum(item.amount);
         let amtEUR = parseAmountToNum(item.eurAmount || 0);
         let name = (item.merchant || '').toLowerCase().trim();
-
         totalTrTRY += amtTRY;
         totalTrEUR += amtEUR;
-
-        if (name.includes('world') || name.includes('eko')) {
-          sumWorldEko += amtTRY;
-        } else if (name.includes('enpara')) {
-          sumEnpara += amtTRY;
-        } else if (name.includes('free') || name.includes('bonus')) {
-          sumFree += amtTRY;
-        } else {
-          sumOtherTR += amtTRY;
-        }
+        if (name.includes('world') || name.includes('eko')) sumWorldEko += amtTRY;
+        else if (name.includes('enpara')) sumEnpara += amtTRY;
+        else if (name.includes('free') || name.includes('bonus')) sumFree += amtTRY;
+        else sumOtherTR += amtTRY;
       });
-
-      if (totalTrTRY > 0 && totalTrEUR > 0) {
-        trRateEUR = totalTrEUR / totalTrTRY;
-      }
+      if (totalTrTRY > 0 && totalTrEUR > 0) trRateEUR = totalTrEUR / totalTrTRY;
 
       let totalIncome = 0;
-      (currentData.incomeItems || []).forEach(item => {
-        totalIncome += parseAmountToNum(item.amount);
-      });
+      (currentData.incomeItems || []).forEach(item => { totalIncome += parseAmountToNum(item.amount); });
 
       const totalRequiredEUR = targetCardLimit + totalManual + totalTrEUR;
       const netBuffer = totalIncome - totalRequiredEUR;
       liqNetBufferValue = netBuffer;
 
-      // -------------------------------------------------------------
-      // GÖRÜNÜM 1: ÖZET GÖRÜNÜM (AYRIK KART & HESAP LİSTESİ)
-      // -------------------------------------------------------------
+      // ÖZET GÖRÜNÜMÜ
       if (currentLiquidityView === 'summary') {
         let html = `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding: 2px 2px 8px 2px; border-bottom: 1px solid var(--border);">
-            <div style="font-weight:700; font-size:16px;">
-              Toplam Tutar: <span id="lblSummaryLiveTotal" style="color:var(--orange);">€0,00</span>
+            <div style="font-weight:700; font-size:14px;">
+              Toplam Tutar: <span id="lblSummaryLiveTotal" style="color:var(--orange); font-size:15px;">€0,00</span>
             </div>
             <button type="button" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;" onclick="toggleAllSummaryCheckboxes()">Tümünü Seç / Kaldır</button>
           </div>
 
           <div id="summaryItemsList">
-            <!-- 1. KART (MAVİ ETİKET, BAŞLIK: N26, AÇIKLAMA: KART HARCAMA LİMİTİ) -->
+            <!-- N26 (Kart Harcama Limiti) -->
             <label class="template-item">
               <div style="display:flex; align-items:center;">
                 <input type="checkbox" class="chk-summary" data-eur="${targetCardLimit}" onchange="recalcSummaryTotal()" checked>
@@ -1554,7 +1596,7 @@
               <div style="font-weight:700; font-size:14px; color:#fff;">€${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
             </label>
 
-            <!-- 2. HESAP SPARKASSE (BAŞLIK: SPARKASSE) -->
+            <!-- Sparkasse -->
             <label class="template-item">
               <div style="display:flex; align-items:center;">
                 <input type="checkbox" class="chk-summary" data-eur="${sumSparkasse}" onchange="recalcSummaryTotal()" checked>
@@ -1569,7 +1611,7 @@
               <div style="font-weight:700; font-size:14px; color:#fff;">€${sumSparkasse.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
             </label>
 
-            <!-- 3. HESAP N26 (BAŞLIK: N26) -->
+            <!-- N26 (Diğer Gider) -->
             <label class="template-item">
               <div style="display:flex; align-items:center;">
                 <input type="checkbox" class="chk-summary" data-eur="${sumN26}" onchange="recalcSummaryTotal()" checked>
@@ -1605,7 +1647,6 @@
 
         if (sumNakit > 0) {
           html += `
-            <!-- NAKİT ETİKETİ HESAP YAPILDI -->
             <label class="template-item">
               <div style="display:flex; align-items:center;">
                 <input type="checkbox" class="chk-summary" data-eur="${sumNakit}" onchange="recalcSummaryTotal()" checked>
@@ -1640,7 +1681,6 @@
           `;
         }
 
-        // TR Kartları (World Eko, Enpara, Free, Diğer)
         if (sumWorldEko > 0) {
           let trEur = sumWorldEko * trRateEUR;
           html += `
@@ -1723,11 +1763,8 @@
         return;
       }
 
-      // -------------------------------------------------------------
-      // GÖRÜNÜM 2: DETAYLI PLAN GÖRÜNÜMÜ
-      // -------------------------------------------------------------
+      // PLAN GÖRÜNÜMÜ
       let html = `
-        <!-- 1. KART HARCAMA (BAŞLIK & DEĞER MAVİ RENKTE EŞİTLENDİ) -->
         <div class="liq-section-title">💳 Kart Harcama</div>
         <div class="liq-card" style="border-left: 4px solid var(--accent);">
           <div class="liq-row">
@@ -1736,7 +1773,6 @@
           </div>
         </div>
 
-        <!-- 2. DİĞER GİDERLER -->
         <div class="liq-section-title">🏦 Diğer Giderler</div>
         <div class="liq-card" style="border-left: 4px solid var(--orange);">
           <div class="liq-row">
@@ -1796,49 +1832,26 @@
       }
       html += `</div>`;
 
-      // 3. TR ÖDEMELER (SADECE HARCAMASI OLANLAR LİSTELENİR)
       html += `
         <div class="liq-section-title">🇹🇷 TR Ödemeler</div>
         <div class="liq-card" style="border-left: 4px solid var(--purple);">
       `;
-
       let hasAnyTR = false;
-
       if (sumWorldEko > 0) {
         hasAnyTR = true;
-        html += `
-          <div class="liq-row">
-            <span>💳 World Eko</span>
-            <span style="font-weight:600; color:#fff;">₺${sumWorldEko.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-          </div>
-        `;
+        html += `<div class="liq-row"><span>💳 World Eko</span><span style="font-weight:600; color:#fff;">₺${sumWorldEko.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
       }
       if (sumEnpara > 0) {
         hasAnyTR = true;
-        html += `
-          <div class="liq-row">
-            <span>💳 Enpara</span>
-            <span style="font-weight:600; color:#fff;">₺${sumEnpara.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-          </div>
-        `;
+        html += `<div class="liq-row"><span>💳 Enpara</span><span style="font-weight:600; color:#fff;">₺${sumEnpara.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
       }
       if (sumFree > 0) {
         hasAnyTR = true;
-        html += `
-          <div class="liq-row">
-            <span>💳 Free</span>
-            <span style="font-weight:600; color:#fff;">₺${sumFree.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-          </div>
-        `;
+        html += `<div class="liq-row"><span>💳 Free</span><span style="font-weight:600; color:#fff;">₺${sumFree.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
       }
       if (sumOtherTR > 0) {
         hasAnyTR = true;
-        html += `
-          <div class="liq-row">
-            <span>💳 Diğer</span>
-            <span style="font-weight:600; color:#fff;">₺${sumOtherTR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-          </div>
-        `;
+        html += `<div class="liq-row"><span>💳 Diğer</span><span style="font-weight:600; color:#fff;">₺${sumOtherTR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
       }
 
       if (!hasAnyTR) {
@@ -1856,16 +1869,13 @@
       }
       html += `</div>`;
 
-      // 4. TOPLAM LİKİDİTE DENGESİ (KAPALI İKEN MASKELİ, TUTARLAR BEYAZ RENKTE)
       html += `
         <div class="liq-section-title">📊 Toplam Likidite Dengesi</div>
         <div class="liq-card" id="liqBalCard" style="border-left: 4px solid var(--accent);">
           <div class="liq-acc-header" onclick="toggleLiqBalanceDetails()">
             <div>
               <div style="font-size:11px; color:var(--text-dim); font-weight:600;">Net Kalan</div>
-              <div id="liqNetDisplay" class="masked" style="font-weight:700; font-size:16px; margin-top:2px;">
-                ••••••
-              </div>
+              <div id="liqNetDisplay" class="masked" style="font-weight:700; font-size:16px; margin-top:2px;">••••••</div>
             </div>
             <div id="liqBalArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Detay ▼</div>
           </div>
@@ -1890,6 +1900,379 @@
       container.innerHTML = html;
     }
 
+    // 2. AY İÇİ KONTROL RENDER (SADECE HENÜZ ÖDENMEMİŞLER - BEKLEYENLER)
+    function renderControlContent() {
+      const container = document.getElementById('controlReportContent');
+      if (!currentData) {
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--red);">Veri bulunamadı.</div>';
+        return;
+      }
+
+      // Kalan Kart Harcama Limiti (Hedef Limit - Harcanan)
+      const targetCardLimit = parseAmountToNum(currentData.cardLimit || 0);
+      const spentCardTotal = parseAmountToNum(currentData.cardTotal || 0);
+      const remainingCardLimit = Math.max(0, targetCardLimit - spentCardTotal);
+
+      // Sadece Henüz Ödenmemiş (Tarihi Boş Olan) Diğer Giderler
+      let remSparkasse = 0;
+      let remN26 = 0;
+      let remNakit = 0;
+      let remC24 = 0;
+      let remOtherManual = 0;
+      let totalRemManual = 0;
+
+      (currentData.manualItems || []).forEach(item => {
+        let isPending = (!item.date || item.date.trim() === "");
+        if (isPending) {
+          let amt = parseAmountToNum(item.amount);
+          let acc = (item.card || '').toLowerCase().trim();
+          totalRemManual += amt;
+          if (acc.includes('sparkasse')) remSparkasse += amt;
+          else if (acc.includes('n26')) remN26 += amt;
+          else if (acc.includes('nakit') || acc.includes('bar')) remNakit += amt;
+          else if (acc.includes('c24')) remC24 += amt;
+          else remOtherManual += amt;
+        }
+      });
+
+      // Sadece Henüz Ödenmemiş (Tarihi Boş Olan) TR Ödemeleri
+      let remWorldEkoTRY = 0, remEnparaTRY = 0, remFreeTRY = 0, remOtherTRY = 0;
+      let totalRemTrTRY = 0, totalRemTrEUR = 0, trRateEUR = 0;
+      let totalTrTRYAll = 0, totalTrEURAll = 0;
+
+      (currentData.trItems || []).forEach(item => {
+        let amtTRY = parseAmountToNum(item.amount);
+        let amtEUR = parseAmountToNum(item.eurAmount || 0);
+        totalTrTRYAll += amtTRY;
+        totalTrEURAll += amtEUR;
+
+        let isPending = (!item.date || item.date.trim() === "");
+        if (isPending) {
+          let name = (item.merchant || '').toLowerCase().trim();
+          totalRemTrTRY += amtTRY;
+          totalRemTrEUR += amtEUR;
+          if (name.includes('world') || name.includes('eko')) remWorldEkoTRY += amtTRY;
+          else if (name.includes('enpara')) remEnpara += amtTRY;
+          else if (name.includes('free') || name.includes('bonus')) remFreeTRY += amtTRY;
+          else remOtherTRY += amtTRY;
+        }
+      });
+
+      if (totalTrTRYAll > 0 && totalTrEURAll > 0) {
+        trRateEUR = totalTrEURAll / totalTrTRYAll;
+      }
+
+      // ÖZET GÖRÜNÜMÜ (AY İÇİ KONTROL)
+      if (currentControlView === 'summary') {
+        let html = `
+          <div style="font-size:11px; color:var(--text-dim); margin-bottom:10px; line-height:1.4;">
+            ℹ️ Bu ekranda sadece bu ay henüz ödenmemiş (tarihi girilmemiş) kalan yükümlülükleriniz listelenir.
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding: 2px 2px 8px 2px; border-bottom: 1px solid var(--border);">
+            <div style="font-weight:700; font-size:14px;">
+              Toplam Kalan: <span id="lblControlLiveTotal" style="color:var(--green); font-size:15px;">€0,00</span>
+            </div>
+            <button type="button" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;" onclick="toggleAllControlCheckboxes()">Tümünü Seç / Kaldır</button>
+          </div>
+
+          <div id="controlItemsList">
+            <!-- 1. KART (KALAN KART LİSTESİ) -->
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-control" data-eur="${remainingCardLimit}" onchange="recalcControlTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-card">KART</span>
+                    N26
+                  </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Kalan Kart Harcama Limiti (Bütün ay için gereken: €${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})})</div>
+                </div>
+              </div>
+              <div style="font-weight:700; font-size:14px; color:#fff;">€${remainingCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </label>
+        `;
+
+        // Sparkasse (Bekleyen)
+        let sparkasseFull = sumSparkasseGlobalCalc(); // Yardımcı fonksiyonla bütün ay taranır
+        let sparkasseRem = remSparkasse;
+        html += `
+          <label class="template-item">
+            <div style="display:flex; align-items:center;">
+              <input type="checkbox" class="chk-control" data-eur="${sparkasseRem}" onchange="recalcControlTotal()" checked>
+              <div>
+                <div style="font-weight:600; font-size:13px;">
+                  <span class="template-tag tag-manual">HESAP</span>
+                  Sparkasse
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Bütün ay için gereken: €${sparkasseFull.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+              </div>
+            </div>
+            <div style="font-weight:700; font-size:14px; color:#fff;">€${sparkasseRem.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+          </label>
+        `;
+
+        // N26 (Bekleyen)
+        let n26Full = sumN26GlobalCalc();
+        let n26Rem = remN26;
+        html += `
+          <label class="template-item">
+            <div style="display:flex; align-items:center;">
+              <input type="checkbox" class="chk-control" data-eur="${n26Rem}" onchange="recalcControlTotal()" checked>
+              <div>
+                <div style="font-weight:600; font-size:13px;">
+                  <span class="template-tag tag-manual">HESAP</span>
+                  N26
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Bütün ay için gereken: €${n26Full.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+              </div>
+            </div>
+            <div style="font-weight:700; font-size:14px; color:#fff;">€${n26Rem.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+          </label>
+        `;
+
+        // Nakit (Bekleyen)
+        let nakitFull = sumNakitGlobalCalc();
+        if (nakitFull > 0 || remNakit > 0) {
+          html += `
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-control" data-eur="${remNakit}" onchange="recalcControlTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-manual">HESAP</span>
+                    Nakit
+                  </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Bütün ay için gereken: €${nakitFull.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+                </div>
+              </div>
+              <div style="font-weight:700; font-size:14px; color:#fff;">€${remNakit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </label>
+          `;
+        }
+
+        // C24 (Bekleyen)
+        let c24Full = sumC24GlobalCalc();
+        if (c24Full > 0 || remC24 > 0) {
+          html += `
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-control" data-eur="${remC24}" onchange="recalcControlTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-manual">HESAP</span>
+                    C24
+                  </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Bütün ay için gereken: €${c24Full.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+                </div>
+              </div>
+              <div style="font-weight:700; font-size:14px; color:#fff;">€${remC24.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </label>
+          `;
+        }
+
+        // TR Ödemeleri (Bekleyenler)
+        if (remWorldEkoTRY > 0) {
+          let trEur = remWorldEkoTRY * trRateEUR;
+          let fullEur = sumWorldEkoGlobalCalc() * trRateEUR;
+          html += `
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-control" data-eur="${trEur}" onchange="recalcControlTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-tr">TR KART</span>
+                    World Eko
+                  </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Bütün ay için gereken: ₺${sumWorldEkoGlobalCalc().toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-weight:700; font-size:14px; color:#fff;">€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                <div style="font-size:10px; color:var(--text-dim);">₺${remWorldEkoTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+              </div>
+            </label>
+          `;
+        }
+
+        if (remEnparaTRY > 0) {
+          let trEur = remEnparaTRY * trRateEUR;
+          html += `
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-control" data-eur="${trEur}" onchange="recalcControlTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-tr">TR KART</span>
+                    Enpara
+                  </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Bütün ay için gereken: ₺${sumEnparaGlobalCalc().toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-weight:700; font-size:14px; color:#fff;">€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                <div style="font-size:10px; color:var(--text-dim);">₺${remEnparaTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+              </div>
+            </label>
+          `;
+        }
+
+        if (remFreeTRY > 0) {
+          let trEur = remFreeTRY * trRateEUR;
+          html += `
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-control" data-eur="${trEur}" onchange="recalcControlTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-tr">TR KART</span>
+                    Free
+                  </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Bütün ay için gereken: ₺${sumFreeGlobalCalc().toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-weight:700; font-size:14px; color:#fff;">€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                <div style="font-size:10px; color:var(--text-dim);">₺${remFreeTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+              </div>
+            </label>
+          `;
+        }
+
+        if (remOtherTRY > 0) {
+          let trEur = remOtherTRY * trRateEUR;
+          html += `
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-control" data-eur="${trEur}" onchange="recalcControlTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-tr">TR KART</span>
+                    Diğer TR
+                  </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Bütün ay için gereken: ₺${sumOtherTRGlobalCalc().toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-weight:700; font-size:14px; color:#fff;">€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                <div style="font-size:10px; color:var(--text-dim);">₺${remOtherTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+              </div>
+            </label>
+          `;
+        }
+
+        html += `</div>`;
+        container.innerHTML = html;
+        recalcControlTotal();
+        return;
+      }
+
+      // PLAN GÖRÜNÜMÜ (AY İÇİ KONTROL)
+      container.innerHTML = `
+        <div class="liq-section-title">🟢 Ay İçi Kalan Yükümlülükler Analizi</div>
+        <div class="liq-card" style="border-left: 4px solid var(--green);">
+          <div class="liq-row">
+            <span>Ödenmemiş Diğer Giderler</span>
+            <span style="font-weight:600; color:#fff;">€${totalRemManual.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          </div>
+          <div class="liq-row">
+            <span>Ödenmemiş TR Ödemeleri (TL)</span>
+            <span style="font-weight:600; color:#fff;">₺${totalRemTrTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          </div>
+          <div class="liq-row total-row" style="color:var(--green);">
+            <span>Toplam Bekleyen Yükümlülük</span>
+            <span>€${(totalRemManual + totalRemTrEUR + remainingCardLimit).toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Global Hesaplama Yardımcıları (Bütün Ay İçin Gereken Tutar)
+    function sumSparkasseGlobalCalc() {
+      let s = 0;
+      (currentData.manualItems || []).forEach(i => {
+        if ((i.card || '').toLowerCase().includes('sparkasse')) s += parseAmountToNum(i.amount);
+      });
+      return s;
+    }
+    function sumN26GlobalCalc() {
+      let s = 0;
+      (currentData.manualItems || []).forEach(i => {
+        if ((i.card || '').toLowerCase().includes('n26')) s += parseAmountToNum(i.amount);
+      });
+      return s;
+    }
+    function sumNakitGlobalCalc() {
+      let s = 0;
+      (currentData.manualItems || []).forEach(i => {
+        let acc = (i.card || '').toLowerCase();
+        if (acc.includes('nakit') || acc.includes('bar')) s += parseAmountToNum(i.amount);
+      });
+      return s;
+    }
+    function sumC24GlobalCalc() {
+      let s = 0;
+      (currentData.manualItems || []).forEach(i => {
+        if ((i.card || '').toLowerCase().includes('c24')) s += parseAmountToNum(i.amount);
+      });
+      return s;
+    }
+    function sumWorldEkoGlobalCalc() {
+      let s = 0;
+      (currentData.trItems || []).forEach(i => {
+        let n = (i.merchant || '').toLowerCase();
+        if (n.includes('world') || n.includes('eko')) s += parseAmountToNum(i.amount);
+      });
+      return s;
+    }
+    function sumEnparaGlobalCalc() {
+      let s = 0;
+      (currentData.trItems || []).forEach(i => {
+        if ((i.merchant || '').toLowerCase().includes('enpara')) s += parseAmountToNum(i.amount);
+      });
+      return s;
+    }
+    function sumFreeGlobalCalc() {
+      let s = 0;
+      (currentData.trItems || []).forEach(i => {
+        let n = (i.merchant || '').toLowerCase();
+        if (n.includes('free') || n.includes('bonus')) s += parseAmountToNum(i.amount);
+      });
+      return s;
+    }
+    function sumOtherTRGlobalCalc() {
+      let s = 0;
+      (currentData.trItems || []).forEach(i => {
+        let n = (i.merchant || '').toLowerCase();
+        if (!n.includes('world') && !n.includes('eko') && !n.includes('enpara') && !n.includes('free') && !n.includes('bonus')) {
+          s += parseAmountToNum(i.amount);
+        }
+      });
+      return s;
+    }
+
+    // Ay İçi Kontrol Özet Hesaplayıcı
+    function recalcControlTotal() {
+      const checkboxes = document.querySelectorAll('.chk-control:checked');
+      let liveTotal = 0;
+      checkboxes.forEach(c => {
+        let val = parseFloat(c.getAttribute('data-eur') || 0);
+        liveTotal += val;
+      });
+      const lbl = document.getElementById('lblControlLiveTotal');
+      if (lbl) {
+        lbl.innerText = "€" + liveTotal.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+    }
+
+    function toggleAllControlCheckboxes() {
+      const checkboxes = document.querySelectorAll('.chk-control');
+      const allChecked = Array.from(checkboxes).every(c => c.checked);
+      checkboxes.forEach(c => c.checked = !allChecked);
+      recalcControlTotal();
+    }
+
+    // Likidite Planlaması Özet Hesaplayıcı
     function recalcSummaryTotal() {
       const checkboxes = document.querySelectorAll('.chk-summary:checked');
       let liveTotal = 0;
