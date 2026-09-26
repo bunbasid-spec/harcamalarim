@@ -870,7 +870,7 @@
   <div class="modal" id="modalLiquidity">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h3 style="font-size: 16px;">🔮 Gelecek Ay Likidite Planı</h3>
+        <h3 style="font-size: 16px;">🔮 Gelecek Ay Planı</h3>
         <span style="font-size: 11px; color: var(--text-dim); font-weight: 600;">Hesap Dağılımı</span>
       </div>
 
@@ -1024,7 +1024,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.8.0";
+    const CURRENT_VERSION = "2.8.1";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1245,7 +1245,7 @@
         fabTimer = setTimeout(() => {
           isFabLongPress = true;
           showFabAction();
-        }, 500); // 500ms ideal basılı tutma süresi
+        }, 500);
       }
 
       function moveFabPress(e) {
@@ -1253,7 +1253,6 @@
         let curX = e.touches ? e.touches[0].clientX : e.clientX;
         let curY = e.touches ? e.touches[0].clientY : e.clientY;
 
-        // 12px'den fazla kayarsa basılı tutmayı iptal et
         if (Math.hypot(curX - fabStartX, curY - fabStartY) > 12) {
           clearTimeout(fabTimer);
           fabTimer = null;
@@ -1271,13 +1270,11 @@
         isFabLongPress = false;
       }
 
-      // Touch olayları (iOS/Android)
       fab.addEventListener('touchstart', startFabPress, { passive: true });
       fab.addEventListener('touchmove', moveFabPress, { passive: true });
       fab.addEventListener('touchend', endFabPress);
       fab.addEventListener('touchcancel', () => { if (fabTimer) clearTimeout(fabTimer); });
 
-      // Mouse olayları (Desktop testleri için)
       fab.addEventListener('mousedown', startFabPress);
       fab.addEventListener('mousemove', moveFabPress);
       fab.addEventListener('mouseup', endFabPress);
@@ -1296,7 +1293,6 @@
       const isSearchNow = (currentModule === 'budget' ? isSearchActiveBudget : isSearchActiveDebts);
       bSearch.innerHTML = isSearchNow ? '✕ Aramayı Kapat' : '🔍 Harcamalarda Ara';
 
-      // Titreşim bildirimi (Haptic Feedback)
       if (navigator.vibrate) {
         navigator.vibrate(60);
       }
@@ -1372,7 +1368,7 @@
     }
 
     // =========================================================
-    // LİKİDİTE PLANLAMASI & HESAP DAĞILIMI MOTORU
+    // LİKİDİTE PLANLAMASI & HESAP DAĞILIMI MOTORU (GÜNCELLENDİ)
     // =========================================================
     function openLiquidityModal() {
       hideFabAction();
@@ -1388,71 +1384,133 @@
       // 1. Hedef Kart Limiti
       const targetCardLimit = parseAmountToNum(currentData.cardLimit || 0);
 
-      // 2. Diğer Giderler (Hesap Bazlı Gruplama)
-      const accountSums = {};
+      // 2. Diğer Giderler (Sparkasse, N26, Nakit, C24 Dağılımı)
+      let sumSparkasse = 0;
+      let sumN26 = 0;
+      let sumNakit = 0;
+      let sumC24 = 0;
+      let sumOtherManual = 0;
       let totalManual = 0;
 
       (currentData.manualItems || []).forEach(item => {
         let amt = parseAmountToNum(item.amount);
-        let accName = (item.card || 'Diğer / Belirtilmemiş').trim();
-        accountSums[accName] = (accountSums[accName] || 0) + amt;
+        let acc = (item.card || '').toLowerCase().trim();
         totalManual += amt;
+
+        if (acc.includes('sparkasse')) {
+          sumSparkasse += amt;
+        } else if (acc.includes('n26')) {
+          sumN26 += amt;
+        } else if (acc.includes('nakit') || acc.includes('bar')) {
+          sumNakit += amt;
+        } else if (acc.includes('c24')) {
+          sumC24 += amt;
+        } else {
+          sumOtherManual += amt;
+        }
       });
 
-      // 3. TR Ödemeleri (Kurum / Kart Bazlı Gruplama)
-      const trSums = {};
+      const sumMainTwo = sumSparkasse + sumN26;
+      const hasSecondary = (sumNakit > 0 || sumC24 > 0 || sumOtherManual > 0);
+
+      // 3. TR Ödemeleri (World Eko, Enpara, Free, Diğer Sıralaması)
+      let sumWorldEko = 0;
+      let sumEnpara = 0;
+      let sumFree = 0;
+      let sumOtherTR = 0;
       let totalTrTRY = 0;
       let totalTrEUR = 0;
 
       (currentData.trItems || []).forEach(item => {
         let amtTRY = parseAmountToNum(item.amount);
         let amtEUR = parseAmountToNum(item.eurAmount || 0);
-        let merchant = (item.merchant || 'Diğer TR').trim();
+        let name = (item.merchant || '').toLowerCase().trim();
 
-        trSums[merchant] = (trSums[merchant] || 0) + amtTRY;
         totalTrTRY += amtTRY;
         totalTrEUR += amtEUR;
+
+        if (name.includes('world') || name.includes('eko')) {
+          sumWorldEko += amtTRY;
+        } else if (name.includes('enpara')) {
+          sumEnpara += amtTRY;
+        } else if (name.includes('free') || name.includes('bonus')) {
+          sumFree += amtTRY;
+        } else {
+          sumOtherTR += amtTRY;
+        }
       });
 
-      // 4. Gelirler
+      // 4. Gelirler & Dengeler
       let totalIncome = 0;
       (currentData.incomeItems || []).forEach(item => {
         totalIncome += parseAmountToNum(item.amount);
       });
 
-      // 5. Genel Toplam Fonlama İhtiyacı
       const totalRequiredEUR = targetCardLimit + totalManual + totalTrEUR;
       const netBuffer = totalIncome - totalRequiredEUR;
 
       // HTML Render
       let html = `
-        <!-- KREDİ KARTI HAVUZU -->
-        <div class="liq-section-title">💳 Kart Harcama Havuzu</div>
+        <!-- 1. KART HARCAMA -->
+        <div class="liq-section-title">💳 Kart Harcama</div>
         <div class="liq-card" style="border-left: 4px solid var(--accent);">
           <div class="liq-row">
-            <span>Hedef Kart Harcama Limiti (F1)</span>
+            <span>Kart Harcama Limiti</span>
             <span style="font-weight:700; color:var(--accent);">€${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
           </div>
         </div>
 
-        <!-- EURO HESAPLARI DAĞILIMI -->
-        <div class="liq-section-title">🏦 Euro Hesap Dağılımı (Diğer Giderler)</div>
+        <!-- 2. DİĞER GİDERLER -->
+        <div class="liq-section-title">🏦 Diğer Giderler</div>
         <div class="liq-card" style="border-left: 4px solid var(--orange);">
+          <div class="liq-row">
+            <span>🏦 Sparkasse</span>
+            <span style="font-weight:600; color:#fff;">€${sumSparkasse.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          </div>
+          <div class="liq-row">
+            <span>🏦 N26</span>
+            <span style="font-weight:600; color:#fff;">€${sumN26.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          </div>
       `;
 
-      const accKeys = Object.keys(accountSums);
-      if (accKeys.length === 0) {
-        html += `<div style="font-size:12px; color:var(--text-dim); padding:4px 0;">Bu ay için kayıtlı gider bulunamadı.</div>`;
-      } else {
-        accKeys.sort().forEach(acc => {
-          let val = accountSums[acc];
+      if (hasSecondary) {
+        html += `
+          <div class="liq-row total-row" style="color:var(--orange);">
+            <span>Toplam</span>
+            <span>€${sumMainTwo.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          </div>
+        `;
+        if (sumNakit > 0) {
           html += `
             <div class="liq-row">
-              <span>🏦 ${acc}</span>
-              <span style="font-weight:600;">€${val.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+              <span>💵 Nakit</span>
+              <span style="font-weight:600; color:#fff;">€${sumNakit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
           `;
-        });
+        }
+        if (sumC24 > 0) {
+          html += `
+            <div class="liq-row">
+              <span>🏦 C24</span>
+              <span style="font-weight:600; color:#fff;">€${sumC24.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
+          `;
+        }
+        if (sumOtherManual > 0) {
+          html += `
+            <div class="liq-row">
+              <span>Diğer</span>
+              <span style="font-weight:600; color:#fff;">€${sumOtherManual.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
+          `;
+        }
+        html += `
+          <div class="liq-row total-row" style="color:var(--orange);">
+            <span>Toplam Diğer Giderler</span>
+            <span>€${totalManual.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          </div>
+        `;
+      } else {
         html += `
           <div class="liq-row total-row" style="color:var(--orange);">
             <span>Toplam Diğer Giderler</span>
@@ -1462,51 +1520,69 @@
       }
       html += `</div>`;
 
-      // TR ÖDEMELERİ (AKORDİYON)
+      // 3. TR ÖDEMELER
       html += `
-        <div class="liq-section-title">🇹🇷 TR Kart & Taksit Dağılımı</div>
+        <div class="liq-section-title">🇹🇷 TR Ödemeler</div>
         <div class="liq-card" style="border-left: 4px solid var(--purple);">
-          <div class="liq-acc-header" onclick="toggleLiqTrDetails()">
-            <div>
-              <div style="font-weight:700; font-size:14px; color:#fff;">₺${totalTrTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-              <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Yaklaşık: €${totalTrEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            </div>
-            <div id="liqTrArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Detay ▼</div>
+          <div class="liq-row">
+            <span>💳 World Eko</span>
+            <span style="font-weight:600; color:#fff;">₺${sumWorldEko.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
           </div>
-          <div id="liqTrBody" style="display:none; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
+          <div class="liq-row">
+            <span>💳 Enpara</span>
+            <span style="font-weight:600; color:#fff;">₺${sumEnpara.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          </div>
+          <div class="liq-row">
+            <span>💳 Free</span>
+            <span style="font-weight:600; color:#fff;">₺${sumFree.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          </div>
       `;
 
-      const trKeys = Object.keys(trSums);
-      if (trKeys.length === 0) {
-        html += `<div style="font-size:12px; color:var(--text-dim);">TR ödemesi bulunamadı.</div>`;
-      } else {
-        trKeys.sort().forEach(k => {
-          html += `
-            <div class="liq-row">
-              <span>💳 ${k}</span>
-              <span style="font-weight:600; color:var(--purple);">₺${trSums[k].toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-            </div>
-          `;
-        });
+      if (sumOtherTR > 0) {
+        html += `
+          <div class="liq-row">
+            <span>💳 Diğer</span>
+            <span style="font-weight:600; color:#fff;">₺${sumOtherTR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          </div>
+        `;
       }
+
       html += `
+          <div class="liq-row total-row" style="color:var(--purple);">
+            <span>Toplam TR Ödemeleri</span>
+            <span style="text-align:right;">
+              ₺${totalTrTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+              <div style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-top:2px;">~€${totalTrEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </span>
           </div>
         </div>
 
-        <!-- NAKİT VE LİKİDİTE GÜVENLİK ÖZETİ -->
+        <!-- 4. TOPLAM LİKİDİTE DENGESİ (AÇILIR / KAPANIR AKORDİYON) -->
         <div class="liq-section-title">📊 Toplam Likidite Dengesi</div>
-        <div class="liq-card" style="border-left: 4px solid var(--green);">
-          <div class="liq-row">
-            <span>Toplam Gereken Fonlama</span>
-            <span style="font-weight:700; color:var(--red);">-€${totalRequiredEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+        <div class="liq-card" style="border-left: 4px solid ${netBuffer >= 0 ? 'var(--green)' : 'var(--red)'};">
+          <div class="liq-acc-header" onclick="toggleLiqBalanceDetails()">
+            <div>
+              <div style="font-size:11px; color:var(--text-dim); font-weight:600;">Net Kalan Bütçe</div>
+              <div style="font-weight:700; font-size:16px; color: ${netBuffer >= 0 ? 'var(--green)' : 'var(--red)'}; margin-top:2px;">
+                ${netBuffer >= 0 ? '+' : ''}€${netBuffer.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+              </div>
+            </div>
+            <div id="liqBalArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Detay ▼</div>
           </div>
-          <div class="liq-row">
-            <span>Beklenen Toplam Gelir</span>
-            <span style="font-weight:700; color:var(--green);">+€${totalIncome.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-          </div>
-          <div class="liq-row total-row" style="color: ${netBuffer >= 0 ? 'var(--green)' : 'var(--red)'};">
-            <span>Net Kalan (Güvenlik Marjı)</span>
-            <span>€${netBuffer.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+
+          <div id="liqBalBody" style="display:none; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
+            <div class="liq-row">
+              <span>Toplam Yapılacak Harcama</span>
+              <span style="font-weight:700; color:var(--red);">-€${totalRequiredEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
+            <div class="liq-row">
+              <span>Toplam Beklenen Gelir</span>
+              <span style="font-weight:700; color:var(--green);">+€${totalIncome.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
+            <div class="liq-row total-row" style="color: ${netBuffer >= 0 ? 'var(--green)' : 'var(--red)'};">
+              <span>Net Kalan</span>
+              <span>${netBuffer >= 0 ? '+' : ''}€${netBuffer.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
           </div>
         </div>
       `;
@@ -1514,9 +1590,9 @@
       container.innerHTML = html;
     }
 
-    function toggleLiqTrDetails() {
-      const body = document.getElementById('liqTrBody');
-      const arrow = document.getElementById('liqTrArrow');
+    function toggleLiqBalanceDetails() {
+      const body = document.getElementById('liqBalBody');
+      const arrow = document.getElementById('liqBalArrow');
       if (body.style.display === 'none') {
         body.style.display = 'block';
         arrow.innerText = 'Gizle ▲';
