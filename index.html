@@ -925,7 +925,7 @@
     </div>
   </div>
 
-  <!-- AY İÇİ KONTROL MODALI -->
+  <!-- AY İÇİ KONTROL MODALI (İLK AÇILIŞ ÖZET [SOL BUTON], DİĞERİ PLAN [SAĞ BUTON]) -->
   <div class="modal" id="modalControl">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
@@ -1086,7 +1086,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.9.5";
+    const CURRENT_VERSION = "2.9.6";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1476,8 +1476,8 @@
       const btnSummary = document.getElementById('btnLiqViewSummary');
       if (!btnPlan || !btnSummary) return;
 
-      btnPlan.classList.toggle('active', currentLiquidityView === 'plan');
       btnSummary.classList.toggle('active', currentLiquidityView === 'summary');
+      btnPlan.classList.toggle('active', currentLiquidityView === 'plan');
     }
 
     function openControlModal() {
@@ -1499,8 +1499,8 @@
       const btnSummary = document.getElementById('btnCtrlViewSummary');
       if (!btnPlan || !btnSummary) return;
 
-      btnPlan.classList.toggle('active', currentControlView === 'plan');
       btnSummary.classList.toggle('active', currentControlView === 'summary');
+      btnPlan.classList.toggle('active', currentControlView === 'plan');
     }
 
     // Ortak Özet Checkbox Hesaplayıcıları
@@ -1532,17 +1532,14 @@
         liveTotal += val;
       });
       const lbl = document.getElementById('lblControlLiveTotal');
-      const cardBox = document.getElementById('controlTotalCardBox');
       if (lbl) {
         let formatted = "€" + liveTotal.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         if (liveTotal > 0) {
           lbl.innerText = "-" + formatted;
           lbl.style.color = "var(--red)";
-          if (cardBox) cardBox.style.borderLeftColor = "var(--red)";
         } else {
           lbl.innerText = "€0,00";
           lbl.style.color = "var(--green)";
-          if (cardBox) cardBox.style.borderLeftColor = "var(--green)";
         }
       }
     }
@@ -1600,7 +1597,7 @@
       const netBuffer = totalIncome - totalRequiredEUR;
       liqNetBufferValue = netBuffer;
 
-      // SAYFA 1: ÖZET GÖRÜNÜMÜ (Görseldeki Gibi Analitik Rapor)
+      // SAYFA: ÖZET GÖRÜNÜMÜ (Görseldeki Gibi Analitik Rapor)
       if (currentLiquidityView === 'summary') {
         let html = `
           <div class="liq-section-title">💳 Kart Harcama</div>
@@ -1696,7 +1693,7 @@
         return;
       }
 
-      // SAYFA 2: PLAN GÖRÜNÜMÜ (Checkbox'lı, İnteraktif Toplamı Değişen)
+      // SAYFA: PLAN GÖRÜNÜMÜ (Checkbox'lı, İnteraktif Toplamı Değişen)
       let html = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding: 2px 2px 8px 2px; border-bottom: 1px solid var(--border);">
           <div style="font-weight:700; font-size:14px;">
@@ -1884,7 +1881,7 @@
       recalcSummaryTotal();
     }
 
-    // 2. AY İÇİ KONTROL RENDER (PLAN & ÖZET)
+    // 2. AY İÇİ KONTROL RENDER (ÖZET & PLAN)
     function renderControlContent() {
       const container = document.getElementById('controlReportContent');
       if (!currentData) {
@@ -1946,235 +1943,235 @@
 
       if (totalTrTRYAll > 0 && totalTrEURAll > 0) trRateEUR = totalTrEURAll / totalTrTRYAll;
 
-      // ÖZET GÖRÜNÜMÜ (AY İÇİ KONTROL)
+      // SAYFA: ÖZET GÖRÜNÜMÜ (AY İÇİ KONTROL - ANALİTİK)
       if (currentControlView === 'summary') {
-        let html = `
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding: 2px 2px 8px 2px; border-bottom: 1px solid var(--border);">
-            <div style="font-weight:700; font-size:14px;">
-              Bekleyen Ödemeler: <span id="lblControlLiveTotal" style="color:var(--red); font-size:15px;">€0,00</span>
+        container.innerHTML = `
+          <div class="liq-section-title">Ay İçi Kalan Analizi</div>
+          <div class="liq-card" style="border-left: 4px solid var(--green);">
+            <div class="liq-row">
+              <span>Ödenmemiş Diğer Giderler</span>
+              <span style="font-weight:600; color:#fff;">€${totalRemManual.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
-            <button type="button" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;" onclick="toggleAllControlCheckboxes()">Tümünü Seç / Kaldır</button>
+            <div class="liq-row">
+              <span>Ödenmemiş TR Ödemeleri (TL)</span>
+              <span style="font-weight:600; color:#fff;">₺${totalRemTrTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
+            <div class="liq-row total-row" style="color:var(--green);">
+              <span>Toplam Bekleyen Yükümlülük</span>
+              <span>€${(totalRemManual + totalRemTrEUR + remainingCardLimit).toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
           </div>
-
-          <div id="controlItemsList">
-            <!-- 1. KART (N26) -->
-            <label class="template-item">
-              <div style="display:flex; align-items:center;">
-                <input type="checkbox" class="chk-control" data-eur="${remainingCardLimit}" onchange="recalcControlTotal()" checked>
-                <div>
-                  <div style="font-weight:600; font-size:13px;">
-                    <span class="template-tag tag-card">KART</span>
-                    N26
-                  </div>
-                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Kart Harcama Limiti: €${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
-                </div>
-              </div>
-              <div style="font-weight:700; font-size:14px; color:#fff;">-€${remainingCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            </label>
         `;
-
-        if (fullSparkasse > 0 || remSparkasse > 0) {
-          html += `
-            <label class="template-item">
-              <div style="display:flex; align-items:center;">
-                <input type="checkbox" class="chk-control" data-eur="${remSparkasse}" onchange="recalcControlTotal()" checked>
-                <div>
-                  <div style="font-weight:600; font-size:13px;">
-                    <span class="template-tag tag-manual">HESAP</span>
-                    Sparkasse
-                  </div>
-                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gereken: €${fullSparkasse.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
-                </div>
-              </div>
-              <div style="font-weight:700; font-size:14px; color:#fff;">-€${remSparkasse.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            </label>
-          `;
-        }
-
-        if (fullN26 > 0 || remN26 > 0) {
-          html += `
-            <label class="template-item">
-              <div style="display:flex; align-items:center;">
-                <input type="checkbox" class="chk-control" data-eur="${remN26}" onchange="recalcControlTotal()" checked>
-                <div>
-                  <div style="font-weight:600; font-size:13px;">
-                    <span class="template-tag tag-manual">HESAP</span>
-                    N26
-                  </div>
-                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gereken: €${fullN26.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
-                </div>
-              </div>
-              <div style="font-weight:700; font-size:14px; color:#fff;">-€${remN26.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            </label>
-          `;
-        }
-
-        if (fullC24 > 0 || remC24 > 0) {
-          html += `
-            <label class="template-item">
-              <div style="display:flex; align-items:center;">
-                <input type="checkbox" class="chk-control" data-eur="${remC24}" onchange="recalcControlTotal()" checked>
-                <div>
-                  <div style="font-weight:600; font-size:13px;">
-                    <span class="template-tag tag-manual">HESAP</span>
-                    C24
-                  </div>
-                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gereken: €${fullC24.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
-                </div>
-              </div>
-              <div style="font-weight:700; font-size:14px; color:#fff;">-€${remC24.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            </label>
-          `;
-        }
-
-        if (fullNakit > 0 || remNakit > 0) {
-          html += `
-            <label class="template-item">
-              <div style="display:flex; align-items:center;">
-                <input type="checkbox" class="chk-control" data-eur="${remNakit}" onchange="recalcControlTotal()" checked>
-                <div>
-                  <div style="font-weight:600; font-size:13px;">
-                    <span class="template-tag tag-manual">HESAP</span>
-                    Nakit
-                  </div>
-                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gereken: €${fullNakit.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
-                </div>
-              </div>
-              <div style="font-weight:700; font-size:14px; color:#fff;">-€${remNakit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            </label>
-          `;
-        }
-
-        if (fullOtherManual > 0 || remOtherManual > 0) {
-          html += `
-            <label class="template-item">
-              <div style="display:flex; align-items:center;">
-                <input type="checkbox" class="chk-control" data-eur="${remOtherManual}" onchange="recalcControlTotal()" checked>
-                <div>
-                  <div style="font-weight:600; font-size:13px;">
-                    <span class="template-tag tag-manual">HESAP</span>
-                    Diğer
-                  </div>
-                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gereken: €${fullOtherManual.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
-                </div>
-              </div>
-              <div style="font-weight:700; font-size:14px; color:#fff;">-€${remOtherManual.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            </label>
-          `;
-        }
-
-        if (fullWorldEkoTRY > 0 || remWorldEkoTRY > 0) {
-          let trEur = remWorldEkoTRY * trRateEUR;
-          html += `
-            <label class="template-item">
-              <div style="display:flex; align-items:center;">
-                <input type="checkbox" class="chk-control" data-eur="${trEur}" onchange="recalcControlTotal()" checked>
-                <div>
-                  <div style="font-weight:600; font-size:13px;">
-                    <span class="template-tag tag-tr">TR KART</span>
-                    World Eko
-                  </div>
-                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gereken: ₺${fullWorldEkoTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
-                </div>
-              </div>
-              <div style="text-align:right;">
-                <div style="font-weight:700; font-size:14px; color:#fff;">-€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                <div style="font-size:10px; color:var(--text-dim);">₺${remWorldEkoTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
-              </div>
-            </label>
-          `;
-        }
-
-        if (fullEnparaTRY > 0 || remEnparaTRY > 0) {
-          let trEur = remEnparaTRY * trRateEUR;
-          html += `
-            <label class="template-item">
-              <div style="display:flex; align-items:center;">
-                <input type="checkbox" class="chk-control" data-eur="${trEur}" onchange="recalcControlTotal()" checked>
-                <div>
-                  <div style="font-weight:600; font-size:13px;">
-                    <span class="template-tag tag-tr">TR KART</span>
-                    Enpara
-                  </div>
-                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gereken: ₺${fullEnparaTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
-                </div>
-              </div>
-              <div style="text-align:right;">
-                <div style="font-weight:700; font-size:14px; color:#fff;">-€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                <div style="font-size:10px; color:var(--text-dim);">₺${remEnparaTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
-              </div>
-            </label>
-          `;
-        }
-
-        if (fullFreeTRY > 0 || remFreeTRY > 0) {
-          let trEur = remFreeTRY * trRateEUR;
-          html += `
-            <label class="template-item">
-              <div style="display:flex; align-items:center;">
-                <input type="checkbox" class="chk-control" data-eur="${trEur}" onchange="recalcControlTotal()" checked>
-                <div>
-                  <div style="font-weight:600; font-size:13px;">
-                    <span class="template-tag tag-tr">TR KART</span>
-                    Free
-                  </div>
-                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gereken: ₺${fullFreeTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
-                </div>
-              </div>
-              <div style="text-align:right;">
-                <div style="font-weight:700; font-size:14px; color:#fff;">-€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                <div style="font-size:10px; color:var(--text-dim);">₺${remFreeTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
-              </div>
-            </label>
-          `;
-        }
-
-        if (fullOtherTRY > 0 || remOtherTRY > 0) {
-          let trEur = remOtherTRY * trRateEUR;
-          html += `
-            <label class="template-item">
-              <div style="display:flex; align-items:center;">
-                <input type="checkbox" class="chk-control" data-eur="${trEur}" onchange="recalcControlTotal()" checked>
-                <div>
-                  <div style="font-weight:600; font-size:13px;">
-                    <span class="template-tag tag-tr">TR KART</span>
-                    Diğer
-                  </div>
-                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gereken: ₺${fullOtherTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
-                </div>
-              </div>
-              <div style="text-align:right;">
-                <div style="font-weight:700; font-size:14px; color:#fff;">-€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                <div style="font-size:10px; color:var(--text-dim);">₺${remOtherTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
-              </div>
-            </label>
-          `;
-        }
-
-        html += `</div>`;
-        container.innerHTML = html;
-        recalcControlTotal();
         return;
       }
 
-      // PLAN GÖRÜNÜMÜ
-      container.innerHTML = `
-        <div class="liq-section-title">Ay İçi Kalan Analizi</div>
-        <div class="liq-card" style="border-left: 4px solid var(--green);">
-          <div class="liq-row">
-            <span>Ödenmemiş Diğer Giderler</span>
-            <span style="font-weight:600; color:#fff;">€${totalRemManual.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+      // SAYFA: PLAN GÖRÜNÜMÜ (AY İÇİ KONTROL - CHECKBOX'LI VE İNTERAKTİF)
+      let html = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding: 2px 2px 8px 2px; border-bottom: 1px solid var(--border);">
+          <div style="font-weight:700; font-size:14px;">
+            Bekleyen Ödemeler: <span id="lblControlLiveTotal" style="color:var(--red); font-size:15px;">€0,00</span>
           </div>
-          <div class="liq-row">
-            <span>Ödenmemiş TR Ödemeleri (TL)</span>
-            <span style="font-weight:600; color:#fff;">₺${totalRemTrTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-          </div>
-          <div class="liq-row total-row" style="color:var(--green);">
-            <span>Toplam Bekleyen Yükümlülük</span>
-            <span>€${(totalRemManual + totalRemTrEUR + remainingCardLimit).toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-          </div>
+          <button type="button" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;" onclick="toggleAllControlCheckboxes()">Tümünü Seç / Kaldır</button>
         </div>
+
+        <div id="controlItemsList">
+          <!-- 1. KART (N26) -->
+          <label class="template-item">
+            <div style="display:flex; align-items:center;">
+              <input type="checkbox" class="chk-control" data-eur="${remainingCardLimit}" onchange="recalcControlTotal()" checked>
+              <div>
+                <div style="font-weight:600; font-size:13px;">
+                  <span class="template-tag tag-card">KART</span>
+                  N26
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Kart Harcama Limiti: €${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+              </div>
+            </div>
+            <div style="font-weight:700; font-size:14px; color:#fff;">-€${remainingCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+          </label>
       `;
+
+      if (fullSparkasse > 0 || remSparkasse > 0) {
+        html += `
+          <label class="template-item">
+            <div style="display:flex; align-items:center;">
+              <input type="checkbox" class="chk-control" data-eur="${remSparkasse}" onchange="recalcControlTotal()" checked>
+              <div>
+                <div style="font-weight:600; font-size:13px;">
+                  <span class="template-tag tag-manual">HESAP</span>
+                  Sparkasse
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gereken: €${fullSparkasse.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+              </div>
+            </div>
+            <div style="font-weight:700; font-size:14px; color:#fff;">-€${remSparkasse.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+          </label>
+        `;
+      }
+
+      if (fullN26 > 0 || remN26 > 0) {
+        html += `
+          <label class="template-item">
+            <div style="display:flex; align-items:center;">
+              <input type="checkbox" class="chk-control" data-eur="${remN26}" onchange="recalcControlTotal()" checked>
+              <div>
+                <div style="font-weight:600; font-size:13px;">
+                  <span class="template-tag tag-manual">HESAP</span>
+                  N26
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gereken: €${fullN26.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+              </div>
+            </div>
+            <div style="font-weight:700; font-size:14px; color:#fff;">-€${remN26.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+          </label>
+        `;
+      }
+
+      if (fullC24 > 0 || remC24 > 0) {
+        html += `
+          <label class="template-item">
+            <div style="display:flex; align-items:center;">
+              <input type="checkbox" class="chk-control" data-eur="${remC24}" onchange="recalcControlTotal()" checked>
+              <div>
+                <div style="font-weight:600; font-size:13px;">
+                  <span class="template-tag tag-manual">HESAP</span>
+                  C24
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gereken: €${fullC24.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+              </div>
+            </div>
+            <div style="font-weight:700; font-size:14px; color:#fff;">-€${remC24.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+          </label>
+        `;
+      }
+
+      if (fullNakit > 0 || remNakit > 0) {
+        html += `
+          <label class="template-item">
+            <div style="display:flex; align-items:center;">
+              <input type="checkbox" class="chk-control" data-eur="${remNakit}" onchange="recalcControlTotal()" checked>
+              <div>
+                <div style="font-weight:600; font-size:13px;">
+                  <span class="template-tag tag-manual">HESAP</span>
+                  Nakit
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gereken: €${fullNakit.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+              </div>
+            </div>
+            <div style="font-weight:700; font-size:14px; color:#fff;">-€${remNakit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+          </label>
+        `;
+      }
+
+      if (fullOtherManual > 0 || remOtherManual > 0) {
+        html += `
+          <label class="template-item">
+            <div style="display:flex; align-items:center;">
+              <input type="checkbox" class="chk-control" data-eur="${remOtherManual}" onchange="recalcControlTotal()" checked>
+              <div>
+                <div style="font-weight:600; font-size:13px;">
+                  <span class="template-tag tag-manual">HESAP</span>
+                  Diğer
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gereken: €${fullOtherManual.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+              </div>
+            </div>
+            <div style="font-weight:700; font-size:14px; color:#fff;">-€${remOtherManual.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+          </label>
+        `;
+      }
+
+      if (fullWorldEkoTRY > 0 || remWorldEkoTRY > 0) {
+        let trEur = remWorldEkoTRY * trRateEUR;
+        html += `
+          <label class="template-item">
+            <div style="display:flex; align-items:center;">
+              <input type="checkbox" class="chk-control" data-eur="${trEur}" onchange="recalcControlTotal()" checked>
+              <div>
+                <div style="font-weight:600; font-size:13px;">
+                  <span class="template-tag tag-tr">TR KART</span>
+                  World Eko
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gereken: ₺${fullWorldEkoTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:700; font-size:14px; color:#fff;">-€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+              <div style="font-size:10px; color:var(--text-dim);">₺${remWorldEkoTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+            </div>
+          </label>
+        `;
+      }
+
+      if (fullEnparaTRY > 0 || remEnparaTRY > 0) {
+        let trEur = remEnparaTRY * trRateEUR;
+        html += `
+          <label class="template-item">
+            <div style="display:flex; align-items:center;">
+              <input type="checkbox" class="chk-control" data-eur="${trEur}" onchange="recalcControlTotal()" checked>
+              <div>
+                <div style="font-weight:600; font-size:13px;">
+                  <span class="template-tag tag-tr">TR KART</span>
+                  Enpara
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gereken: ₺${fullEnparaTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:700; font-size:14px; color:#fff;">-€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+              <div style="font-size:10px; color:var(--text-dim);">₺${remEnparaTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+            </div>
+          </label>
+        `;
+      }
+
+      if (fullFreeTRY > 0 || remFreeTRY > 0) {
+        let trEur = remFreeTRY * trRateEUR;
+        html += `
+          <label class="template-item">
+            <div style="display:flex; align-items:center;">
+              <input type="checkbox" class="chk-control" data-eur="${trEur}" onchange="recalcControlTotal()" checked>
+              <div>
+                <div style="font-weight:600; font-size:13px;">
+                  <span class="template-tag tag-tr">TR KART</span>
+                  Free
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gereken: ₺${fullFreeTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:700; font-size:14px; color:#fff;">-€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+              <div style="font-size:10px; color:var(--text-dim);">₺${remFreeTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+            </div>
+          </label>
+        `;
+      }
+
+      if (fullOtherTRY > 0 || remOtherTRY > 0) {
+        let trEur = remOtherTRY * trRateEUR;
+        html += `
+          <label class="template-item">
+            <div style="display:flex; align-items:center;">
+              <input type="checkbox" class="chk-control" data-eur="${trEur}" onchange="recalcControlTotal()" checked>
+              <div>
+                <div style="font-weight:600; font-size:13px;">
+                  <span class="template-tag tag-tr">TR KART</span>
+                  Diğer
+                </div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gereken: ₺${fullOtherTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:700; font-size:14px; color:#fff;">-€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+              <div style="font-size:10px; color:var(--text-dim);">₺${remOtherTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+            </div>
+          </label>
+        `;
+      }
+
+      html += `</div>`;
+      container.innerHTML = html;
+      recalcControlTotal();
     }
 
     function toggleLiqBalanceDetails() {
