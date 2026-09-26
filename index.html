@@ -2108,7 +2108,10 @@
 
       document.getElementById('mDate').value = parseFormattedDateToInput(item.date);
       document.getElementById('mAmount').value = formatAmountForInput(item.amount);
-      document.getElementById('mDesc').value = item.merchant || "";
+  
+      // Parantezli tarihi açıklama kutusundan otomatik temizle (Örn: "Amazon (25.09)" -> "Amazon")
+      let cleanMerchant = (item.merchant || "").replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
+      document.getElementById('mDesc').value = cleanMerchant;
       document.getElementById('mAccount').value = item.card || "";
 
       document.getElementById('modalBudget').style.display = 'flex';
@@ -2914,10 +2917,17 @@
         dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
       }
 
+      let merchantText = document.getElementById('mDesc').value.trim();
+  
+      // Eğer tarih girilmişse parantezli tarihi arındır
+      if (dateFormatted) {
+        merchantText = merchantText.replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
+      }
+
       const payload = {
         date: dateFormatted,
         amount: document.getElementById('mAmount').value,
-        merchant: document.getElementById('mDesc').value,
+        merchant: merchantText,
         card: document.getElementById('mAccount').value
       };
 
@@ -2941,7 +2951,7 @@
 
       onFilterChange();
     }
-
+    
     async function submitDebtEntry() {
       const rawDate = document.getElementById('mDebtDate').value;
       let dateFormatted = "";
