@@ -444,6 +444,7 @@
     .acc-note { color: var(--text); text-align: left; }
     .acc-amount { font-weight: 600; text-align: right; white-space: nowrap; }
 
+    /* HASSASİYETİ YÜKSEK BÜYÜK YUVARLAK FAB BUTON */
     .fab { 
       position: fixed; 
       bottom: 20px; 
@@ -460,12 +461,22 @@
       align-items: center; 
       justify-content: center; 
       z-index: 50; 
-      transition: transform 0.15s ease; 
+      transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
     }
-    .fab span { display: block; font-size: 40px; font-weight: 400; line-height: 1; margin-top: -3px; }
+    .fab span { 
+      display: block; 
+      font-size: 40px; 
+      font-weight: 400; 
+      line-height: 1; 
+      margin-top: -3px; 
+      pointer-events: none;
+    }
     .fab:active { transform: scale(0.92); opacity: 0.9; }
 
-    /* BASILI TUTUNCA AÇILAN 2 BUTONLU MENÜ */
+    /* BASILI TUTUNCA AÇILAN 3 AKSİYON BUTONU */
     .fab-mini-action {
       position: fixed;
       right: 22px;
@@ -483,15 +494,25 @@
       cursor: pointer;
       animation: popUp 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    #btnLastMonthAction {
-      bottom: 105px;
-      background: var(--purple);
-    }
+    /* 1. Sıra (En Üst): Harcamalarda Ara */
     #btnToggleSearchAction {
-      bottom: 155px;
+      bottom: 205px;
       background: var(--accent);
       color: #0f172a;
     }
+    /* 2. Sıra (Orta): Likidite Planlaması */
+    #btnLiquidityAction {
+      bottom: 155px;
+      background: var(--green);
+      color: #0f172a;
+    }
+    /* 3. Sıra (En Alt): Geçen Aydan Aktar */
+    #btnLastMonthAction {
+      bottom: 105px;
+      background: var(--purple);
+      color: #fff;
+    }
+
     @keyframes popUp {
       from { transform: translateY(20px) scale(0.6); opacity: 0; }
       to { transform: translateY(0px) scale(1); opacity: 1; }
@@ -695,6 +716,46 @@
     .tag-manual { background: rgba(245, 158, 11, 0.2); color: var(--orange); }
     .tag-tr { background: rgba(168, 85, 247, 0.2); color: var(--purple); }
     .tag-income { background: rgba(16, 185, 129, 0.2); color: var(--green); }
+
+    /* LİKİDİTE PLANI KARTLARI */
+    .liq-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 14px 0 6px 2px;
+    }
+    .liq-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+    }
+    .liq-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      font-size: 13px;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+    }
+    .liq-row:last-child { border-bottom: none; }
+    .liq-row.total-row {
+      font-weight: 700;
+      font-size: 14px;
+      border-top: 1px solid var(--border);
+      margin-top: 6px;
+      padding-top: 8px;
+    }
+    .liq-acc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
   </style>
 </head>
 <body>
@@ -792,15 +853,34 @@
     <div id="listContainer"></div>
   </div>
 
-  <!-- BASILI TUTUNCA ÇIKAN AKSİYON BUTONLARI -->
+  <!-- BASILI TUTUNCA ÇIKAN 3 AKSİYON BUTONU -->
   <button id="btnToggleSearchAction" class="fab-mini-action" onclick="toggleSearchFromFab()">
     🔍 Harcamalarda Ara
+  </button>
+  <button id="btnLiquidityAction" class="fab-mini-action" onclick="openLiquidityModal()">
+    🔮 Likidite Planlaması
   </button>
   <button id="btnLastMonthAction" class="fab-mini-action" onclick="openLastMonthTemplateModal()">
     📋 Geçen Aydan Aktar
   </button>
 
-  <button class="fab" id="mainFab" onclick="handleFabClick()"><span>+</span></button>
+  <button class="fab" id="mainFab"><span>+</span></button>
+
+  <!-- LİKİDİTE PLANLAMASI MODALI -->
+  <div class="modal" id="modalLiquidity">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="font-size: 16px;">🔮 Gelecek Ay Likidite Planı</h3>
+        <span style="font-size: 11px; color: var(--text-dim); font-weight: 600;">Hesap Dağılımı</span>
+      </div>
+
+      <div id="liquidityReportContent" style="max-height: 65vh; overflow-y: auto; padding-right: 2px;"></div>
+
+      <div class="modal-actions" style="margin-top: 14px;">
+        <button type="button" class="btn-cancel" onclick="closeModal('modalLiquidity')">Kapat</button>
+      </div>
+    </div>
+  </div>
 
   <!-- BÜTÇE EKLEME & DÜZENLEME MODALI -->
   <div class="modal" id="modalBudget">
@@ -944,7 +1024,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.7.2";
+    const CURRENT_VERSION = "2.8.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -981,7 +1061,7 @@
       
       initPullToRefresh();
       initCardLimitLongPress();
-      initFabLongPress();
+      initFabTouchEngine();
       initComboboxGlobalClick();
 
       fetchInitialData();
@@ -1135,57 +1215,97 @@
         if (!e.target.closest('.combobox-container')) {
           closeAllComboboxes();
         }
-        if (!e.target.closest('#mainFab') && !e.target.closest('#btnLastMonthAction') && !e.target.closest('#btnToggleSearchAction')) {
+        if (!e.target.closest('#mainFab') && !e.target.closest('.fab-mini-action')) {
           hideFabAction();
         }
       });
     }
 
+    // =========================================================
+    // YÜKSEK HASSASİYETLİ VE HAPTİK DESTEKLİ FAB TOUCH MOTORU
+    // =========================================================
     let fabTimer = null;
-    let isFabLongPressTriggered = false;
+    let isFabLongPress = false;
+    let fabStartX = 0;
+    let fabStartY = 0;
 
-    function initFabLongPress() {
+    function initFabTouchEngine() {
       const fab = document.getElementById('mainFab');
 
-      function startFabPress() {
-        isFabLongPressTriggered = false;
+      function startFabPress(e) {
+        isFabLongPress = false;
+        if (e.touches && e.touches[0]) {
+          fabStartX = e.touches[0].clientX;
+          fabStartY = e.touches[0].clientY;
+        } else {
+          fabStartX = e.clientX;
+          fabStartY = e.clientY;
+        }
+
         fabTimer = setTimeout(() => {
-          isFabLongPressTriggered = true;
+          isFabLongPress = true;
           showFabAction();
-        }, 800);
+        }, 500); // 500ms ideal basılı tutma süresi
       }
 
-      function cancelFabPress() {
-        if (fabTimer) {
+      function moveFabPress(e) {
+        if (!fabTimer) return;
+        let curX = e.touches ? e.touches[0].clientX : e.clientX;
+        let curY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        // 12px'den fazla kayarsa basılı tutmayı iptal et
+        if (Math.hypot(curX - fabStartX, curY - fabStartY) > 12) {
           clearTimeout(fabTimer);
           fabTimer = null;
         }
       }
 
-      fab.addEventListener('touchstart', startFabPress, { passive: true });
-      fab.addEventListener('touchend', cancelFabPress);
-      fab.addEventListener('touchmove', cancelFabPress, { passive: true });
+      function endFabPress(e) {
+        if (fabTimer) {
+          clearTimeout(fabTimer);
+          fabTimer = null;
+        }
+        if (!isFabLongPress) {
+          handleFabClick();
+        }
+        isFabLongPress = false;
+      }
 
+      // Touch olayları (iOS/Android)
+      fab.addEventListener('touchstart', startFabPress, { passive: true });
+      fab.addEventListener('touchmove', moveFabPress, { passive: true });
+      fab.addEventListener('touchend', endFabPress);
+      fab.addEventListener('touchcancel', () => { if (fabTimer) clearTimeout(fabTimer); });
+
+      // Mouse olayları (Desktop testleri için)
       fab.addEventListener('mousedown', startFabPress);
-      fab.addEventListener('mouseup', cancelFabPress);
-      fab.addEventListener('mouseleave', cancelFabPress);
+      fab.addEventListener('mousemove', moveFabPress);
+      fab.addEventListener('mouseup', endFabPress);
+      fab.addEventListener('mouseleave', () => { if (fabTimer) clearTimeout(fabTimer); });
     }
 
     function showFabAction() {
-      const btn1 = document.getElementById('btnLastMonthAction');
-      const btn2 = document.getElementById('btnToggleSearchAction');
-      btn1.style.display = 'flex';
-      btn2.style.display = 'flex';
+      const bSearch = document.getElementById('btnToggleSearchAction');
+      const bLiq = document.getElementById('btnLiquidityAction');
+      const bLast = document.getElementById('btnLastMonthAction');
+
+      bSearch.style.display = 'flex';
+      bLiq.style.display = 'flex';
+      bLast.style.display = 'flex';
 
       const isSearchNow = (currentModule === 'budget' ? isSearchActiveBudget : isSearchActiveDebts);
-      btn2.innerHTML = isSearchNow ? '✕ Aramayı Kapat' : '🔍 Harcamalarda Ara';
+      bSearch.innerHTML = isSearchNow ? '✕ Aramayı Kapat' : '🔍 Harcamalarda Ara';
 
-      if (navigator.vibrate) navigator.vibrate(50);
+      // Titreşim bildirimi (Haptic Feedback)
+      if (navigator.vibrate) {
+        navigator.vibrate(60);
+      }
     }
 
     function hideFabAction() {
-      document.getElementById('btnLastMonthAction').style.display = 'none';
       document.getElementById('btnToggleSearchAction').style.display = 'none';
+      document.getElementById('btnLiquidityAction').style.display = 'none';
+      document.getElementById('btnLastMonthAction').style.display = 'none';
     }
 
     function toggleSearchFromFab() {
@@ -1251,11 +1371,162 @@
       }
     }
 
-    function handleFabClick() {
-      if (isFabLongPressTriggered) {
-        isFabLongPressTriggered = false;
+    // =========================================================
+    // LİKİDİTE PLANLAMASI & HESAP DAĞILIMI MOTORU
+    // =========================================================
+    function openLiquidityModal() {
+      hideFabAction();
+      const container = document.getElementById('liquidityReportContent');
+      container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-dim);">Hesap dağılımı hazırlanıyor...</div>';
+      document.getElementById('modalLiquidity').style.display = 'flex';
+
+      if (!currentData) {
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--red);">Veri bulunamadı.</div>';
         return;
       }
+
+      // 1. Hedef Kart Limiti
+      const targetCardLimit = parseAmountToNum(currentData.cardLimit || 0);
+
+      // 2. Diğer Giderler (Hesap Bazlı Gruplama)
+      const accountSums = {};
+      let totalManual = 0;
+
+      (currentData.manualItems || []).forEach(item => {
+        let amt = parseAmountToNum(item.amount);
+        let accName = (item.card || 'Diğer / Belirtilmemiş').trim();
+        accountSums[accName] = (accountSums[accName] || 0) + amt;
+        totalManual += amt;
+      });
+
+      // 3. TR Ödemeleri (Kurum / Kart Bazlı Gruplama)
+      const trSums = {};
+      let totalTrTRY = 0;
+      let totalTrEUR = 0;
+
+      (currentData.trItems || []).forEach(item => {
+        let amtTRY = parseAmountToNum(item.amount);
+        let amtEUR = parseAmountToNum(item.eurAmount || 0);
+        let merchant = (item.merchant || 'Diğer TR').trim();
+
+        trSums[merchant] = (trSums[merchant] || 0) + amtTRY;
+        totalTrTRY += amtTRY;
+        totalTrEUR += amtEUR;
+      });
+
+      // 4. Gelirler
+      let totalIncome = 0;
+      (currentData.incomeItems || []).forEach(item => {
+        totalIncome += parseAmountToNum(item.amount);
+      });
+
+      // 5. Genel Toplam Fonlama İhtiyacı
+      const totalRequiredEUR = targetCardLimit + totalManual + totalTrEUR;
+      const netBuffer = totalIncome - totalRequiredEUR;
+
+      // HTML Render
+      let html = `
+        <!-- KREDİ KARTI HAVUZU -->
+        <div class="liq-section-title">💳 Kart Harcama Havuzu</div>
+        <div class="liq-card" style="border-left: 4px solid var(--accent);">
+          <div class="liq-row">
+            <span>Hedef Kart Harcama Limiti (F1)</span>
+            <span style="font-weight:700; color:var(--accent);">€${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          </div>
+        </div>
+
+        <!-- EURO HESAPLARI DAĞILIMI -->
+        <div class="liq-section-title">🏦 Euro Hesap Dağılımı (Diğer Giderler)</div>
+        <div class="liq-card" style="border-left: 4px solid var(--orange);">
+      `;
+
+      const accKeys = Object.keys(accountSums);
+      if (accKeys.length === 0) {
+        html += `<div style="font-size:12px; color:var(--text-dim); padding:4px 0;">Bu ay için kayıtlı gider bulunamadı.</div>`;
+      } else {
+        accKeys.sort().forEach(acc => {
+          let val = accountSums[acc];
+          html += `
+            <div class="liq-row">
+              <span>🏦 ${acc}</span>
+              <span style="font-weight:600;">€${val.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
+          `;
+        });
+        html += `
+          <div class="liq-row total-row" style="color:var(--orange);">
+            <span>Toplam Diğer Giderler</span>
+            <span>€${totalManual.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          </div>
+        `;
+      }
+      html += `</div>`;
+
+      // TR ÖDEMELERİ (AKORDİYON)
+      html += `
+        <div class="liq-section-title">🇹🇷 TR Kart & Taksit Dağılımı</div>
+        <div class="liq-card" style="border-left: 4px solid var(--purple);">
+          <div class="liq-acc-header" onclick="toggleLiqTrDetails()">
+            <div>
+              <div style="font-weight:700; font-size:14px; color:#fff;">₺${totalTrTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+              <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Yaklaşık: €${totalTrEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </div>
+            <div id="liqTrArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Detay ▼</div>
+          </div>
+          <div id="liqTrBody" style="display:none; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
+      `;
+
+      const trKeys = Object.keys(trSums);
+      if (trKeys.length === 0) {
+        html += `<div style="font-size:12px; color:var(--text-dim);">TR ödemesi bulunamadı.</div>`;
+      } else {
+        trKeys.sort().forEach(k => {
+          html += `
+            <div class="liq-row">
+              <span>💳 ${k}</span>
+              <span style="font-weight:600; color:var(--purple);">₺${trSums[k].toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
+          `;
+        });
+      }
+      html += `
+          </div>
+        </div>
+
+        <!-- NAKİT VE LİKİDİTE GÜVENLİK ÖZETİ -->
+        <div class="liq-section-title">📊 Toplam Likidite Dengesi</div>
+        <div class="liq-card" style="border-left: 4px solid var(--green);">
+          <div class="liq-row">
+            <span>Toplam Gereken Fonlama</span>
+            <span style="font-weight:700; color:var(--red);">-€${totalRequiredEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          </div>
+          <div class="liq-row">
+            <span>Beklenen Toplam Gelir</span>
+            <span style="font-weight:700; color:var(--green);">+€${totalIncome.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          </div>
+          <div class="liq-row total-row" style="color: ${netBuffer >= 0 ? 'var(--green)' : 'var(--red)'};">
+            <span>Net Kalan (Güvenlik Marjı)</span>
+            <span>€${netBuffer.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    function toggleLiqTrDetails() {
+      const body = document.getElementById('liqTrBody');
+      const arrow = document.getElementById('liqTrArrow');
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        arrow.innerText = 'Gizle ▲';
+      } else {
+        body.style.display = 'none';
+        arrow.innerText = 'Detay ▼';
+      }
+    }
+
+    function handleFabClick() {
       hideFabAction();
       closeAllComboboxes();
       editingBudgetRowIndex = null;
