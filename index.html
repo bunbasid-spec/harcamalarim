@@ -1021,7 +1021,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.8.2";
+    const CURRENT_VERSION = "2.8.3";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1517,25 +1517,43 @@
       }
       html += `</div>`;
 
-      // 3. TR ÖDEMELER
+      // 3. TR ÖDEMELER (SADECE HARCAMASI OLANLAR LİSTELENİR)
       html += `
         <div class="liq-section-title">🇹🇷 TR Ödemeler</div>
         <div class="liq-card" style="border-left: 4px solid var(--purple);">
+      `;
+
+      let hasAnyTR = false;
+
+      if (sumWorldEko > 0) {
+        hasAnyTR = true;
+        html += `
           <div class="liq-row">
             <span>💳 World Eko</span>
             <span style="font-weight:600; color:#fff;">₺${sumWorldEko.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
           </div>
+        `;
+      }
+      if (sumEnpara > 0) {
+        hasAnyTR = true;
+        html += `
           <div class="liq-row">
             <span>💳 Enpara</span>
             <span style="font-weight:600; color:#fff;">₺${sumEnpara.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
           </div>
+        `;
+      }
+      if (sumFree > 0) {
+        hasAnyTR = true;
+        html += `
           <div class="liq-row">
             <span>💳 Free</span>
             <span style="font-weight:600; color:#fff;">₺${sumFree.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
           </div>
-      `;
-
+        `;
+      }
       if (sumOtherTR > 0) {
+        hasAnyTR = true;
         html += `
           <div class="liq-row">
             <span>💳 Diğer</span>
@@ -1544,7 +1562,10 @@
         `;
       }
 
-      html += `
+      if (!hasAnyTR) {
+        html += `<div style="font-size:12px; color:var(--text-dim); padding:4px 0;">Bu ay için kayıtlı TR ödemesi bulunamadı.</div>`;
+      } else {
+        html += `
           <div class="liq-row total-row" style="color:var(--purple);">
             <span>Toplam TR Ödemeleri</span>
             <span style="text-align:right;">
@@ -1552,9 +1573,12 @@
               <div style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-top:2px;">~€${totalTrEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
             </span>
           </div>
-        </div>
+        `;
+      }
+      html += `</div>`;
 
-        <!-- 4. TOPLAM LİKİDİTE DENGESİ (AÇILIR / KAPANIR AKORDİYON) -->
+      // 4. TOPLAM LİKİDİTE DENGESİ (AÇILIR / KAPANIR AKORDİYON)
+      html += `
         <div class="liq-section-title">📊 Toplam Likidite Dengesi</div>
         <div class="liq-card" style="border-left: 4px solid ${netBuffer >= 0 ? 'var(--green)' : 'var(--red)'};">
           <div class="liq-acc-header" onclick="toggleLiqBalanceDetails()">
@@ -2714,7 +2738,6 @@
       appContent = document.getElementById('appContent');
 
       document.addEventListener('touchstart', e => {
-        // Herhangi bir modal açıkken veya modal içinden dokunuluyorsa PULL ENGELLE
         const anyModalOpen = Array.from(document.querySelectorAll('.modal')).some(m => m.style.display === 'flex');
         if (anyModalOpen || e.target.closest('.modal')) {
           isPulling = false;
