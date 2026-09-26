@@ -238,7 +238,7 @@
     .tab-btn#tab-card.active { background: var(--accent); color: #0f172a; box-shadow: 0 2px 8px rgba(56, 189, 248, 0.35); }
     .tab-btn#tab-manual.active { background: var(--orange); color: #0f172a; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35); }
     .tab-btn#tab-tr.active { background: var(--purple); color: #ffffff; box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35); }
-    .tab-btn#tab-income.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); }
+    .tab-btn#tab-income.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16 appealed, 129, 0.35); }
     
     .tab-btn#tab-debt-give.active { background: var(--red); color: #fff; box-shadow: 0 2px 8px rgba(244, 63, 94, 0.35); }
     .tab-btn#tab-debt-get.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); }
@@ -494,19 +494,16 @@
       cursor: pointer;
       animation: popUp 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    /* 1. Sıra (En Üst): Harcamalarda Ara */
     #btnToggleSearchAction {
       bottom: 205px;
       background: var(--accent);
       color: #0f172a;
     }
-    /* 2. Sıra (Orta): Likidite Planlaması (CANLI TURUNCU) */
     #btnLiquidityAction {
       bottom: 155px;
       background: var(--orange);
       color: #0f172a;
     }
-    /* 3. Sıra (En Alt): Geçen Aydan Aktar */
     #btnLastMonthAction {
       bottom: 105px;
       background: var(--purple);
@@ -713,6 +710,7 @@
       border-radius: 4px;
       margin-right: 6px;
     }
+    .tag-card { background: rgba(56, 189, 248, 0.2); color: var(--accent); }
     .tag-manual { background: rgba(245, 158, 11, 0.2); color: var(--orange); }
     .tag-tr { background: rgba(168, 85, 247, 0.2); color: var(--purple); }
     .tag-income { background: rgba(16, 185, 129, 0.2); color: var(--green); }
@@ -903,7 +901,6 @@
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
         <h3 style="font-size: 16px;">🔮 Gelecek Ay Planı</h3>
-        <!-- BÜYÜTÜLMÜŞ PLAN & ÖZET SEÇİCİ -->
         <div class="mini-view-switcher">
           <button type="button" class="mini-view-btn active" id="btnLiqViewPlan" onclick="switchLiquidityView('plan')">Plan</button>
           <button type="button" class="mini-view-btn" id="btnLiqViewSummary" onclick="switchLiquidityView('summary')">Özet</button>
@@ -1060,7 +1057,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.8.8";
+    const CURRENT_VERSION = "2.8.9";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1542,29 +1539,29 @@
           </div>
 
           <div id="summaryItemsList">
-            <!-- 1. KART (KART HARCAMA LİMİTİ) - N26'YA BAĞLI -->
+            <!-- 1. KART (MAVİ ETİKET, BAŞLIK: N26, AÇIKLAMA: KART HARCAMA LİMİTİ) -->
             <label class="template-item">
               <div style="display:flex; align-items:center;">
                 <input type="checkbox" class="chk-summary" data-eur="${targetCardLimit}" onchange="recalcSummaryTotal()" checked>
                 <div>
                   <div style="font-weight:600; font-size:13px;">
-                    <span class="template-tag tag-manual">KART</span>
-                    Kart
+                    <span class="template-tag tag-card">KART</span>
+                    N26
                   </div>
-                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Kart Harcama Limiti • N26</div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Kart Harcama Limiti</div>
                 </div>
               </div>
               <div style="font-weight:700; font-size:14px; color:#fff;">€${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
             </label>
 
-            <!-- 2. HESAP SPARKASSE -->
+            <!-- 2. HESAP SPARKASSE (BAŞLIK: SPARKASSE) -->
             <label class="template-item">
               <div style="display:flex; align-items:center;">
                 <input type="checkbox" class="chk-summary" data-eur="${sumSparkasse}" onchange="recalcSummaryTotal()" checked>
                 <div>
                   <div style="font-weight:600; font-size:13px;">
                     <span class="template-tag tag-manual">HESAP</span>
-                    Hesap Sparkasse
+                    Sparkasse
                   </div>
                   <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Diğer Giderler</div>
                 </div>
@@ -1572,14 +1569,14 @@
               <div style="font-weight:700; font-size:14px; color:#fff;">€${sumSparkasse.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
             </label>
 
-            <!-- 3. HESAP N26 -->
+            <!-- 3. HESAP N26 (BAŞLIK: N26) -->
             <label class="template-item">
               <div style="display:flex; align-items:center;">
                 <input type="checkbox" class="chk-summary" data-eur="${sumN26}" onchange="recalcSummaryTotal()" checked>
                 <div>
                   <div style="font-weight:600; font-size:13px;">
                     <span class="template-tag tag-manual">HESAP</span>
-                    Hesap N26
+                    N26
                   </div>
                   <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Diğer Giderler</div>
                 </div>
@@ -1596,7 +1593,7 @@
                 <div>
                   <div style="font-weight:600; font-size:13px;">
                     <span class="template-tag tag-manual">HESAP</span>
-                    Hesap C24
+                    C24
                   </div>
                   <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Diğer Giderler</div>
                 </div>
@@ -1608,12 +1605,13 @@
 
         if (sumNakit > 0) {
           html += `
+            <!-- NAKİT ETİKETİ HESAP YAPILDI -->
             <label class="template-item">
               <div style="display:flex; align-items:center;">
                 <input type="checkbox" class="chk-summary" data-eur="${sumNakit}" onchange="recalcSummaryTotal()" checked>
                 <div>
                   <div style="font-weight:600; font-size:13px;">
-                    <span class="template-tag tag-manual">NAKİT</span>
+                    <span class="template-tag tag-manual">HESAP</span>
                     Nakit
                   </div>
                   <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Diğer Giderler</div>
@@ -1631,9 +1629,10 @@
                 <input type="checkbox" class="chk-summary" data-eur="${sumOtherManual}" onchange="recalcSummaryTotal()" checked>
                 <div>
                   <div style="font-weight:600; font-size:13px;">
-                    <span class="template-tag tag-manual">DİĞER</span>
-                    Diğer Gider
+                    <span class="template-tag tag-manual">HESAP</span>
+                    Diğer
                   </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Diğer Giderler</div>
                 </div>
               </div>
               <div style="font-weight:700; font-size:14px; color:#fff;">€${sumOtherManual.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
@@ -1891,7 +1890,6 @@
       container.innerHTML = html;
     }
 
-    // Özet Görünümünde Canlı Seçim ve Toplam Hesaplayıcı
     function recalcSummaryTotal() {
       const checkboxes = document.querySelectorAll('.chk-summary:checked');
       let liveTotal = 0;
