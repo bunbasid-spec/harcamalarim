@@ -494,19 +494,16 @@
       cursor: pointer;
       animation: popUp 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    /* 1. Sıra (En Üst): Harcamalarda Ara */
     #btnToggleSearchAction {
       bottom: 205px;
       background: var(--accent);
       color: #0f172a;
     }
-    /* 2. Sıra (Orta): Likidite Planlaması (CANLI TURUNCU) */
     #btnLiquidityAction {
       bottom: 155px;
       background: var(--orange);
       color: #0f172a;
     }
-    /* 3. Sıra (En Alt): Geçen Aydan Aktar */
     #btnLastMonthAction {
       bottom: 105px;
       background: var(--purple);
@@ -756,6 +753,33 @@
       cursor: pointer;
       user-select: none;
     }
+
+    /* MODAL İÇİ KÜÇÜK GÖRÜNÜM DEĞİŞTİRİCİSİ */
+    .mini-view-switcher {
+      display: flex;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 2px;
+      height: 28px;
+    }
+    .mini-view-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 0 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .mini-view-btn.active {
+      background: var(--orange);
+      color: #0f172a;
+      box-shadow: 0 1px 4px rgba(245, 158, 11, 0.3);
+    }
   </style>
 </head>
 <body>
@@ -871,7 +895,11 @@
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
         <h3 style="font-size: 16px;">🔮 Gelecek Ay Planı</h3>
-        <span style="font-size: 11px; color: var(--text-dim); font-weight: 600;">Hesap Dağılımı</span>
+        <!-- PLAN VE ÖZET SEÇMELİ BUTONLAR -->
+        <div class="mini-view-switcher">
+          <button type="button" class="mini-view-btn active" id="btnLiqViewPlan" onclick="switchLiquidityView('plan')">Plan</button>
+          <button type="button" class="mini-view-btn" id="btnLiqViewSummary" onclick="switchLiquidityView('summary')">Özet</button>
+        </div>
       </div>
 
       <div id="liquidityReportContent" style="max-height: 65vh; overflow-y: auto; padding-right: 2px;"></div>
@@ -1024,7 +1052,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.8.5";
+    const CURRENT_VERSION = "2.8.6";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1389,19 +1417,40 @@
     // =========================================================
     // LİKİDİTE PLANLAMASI & HESAP DAĞILIMI MOTORU
     // =========================================================
-    let liqNetBufferValue = 0; // Detay açılınca ekrana basılacak gerçek tutar
+    let currentLiquidityView = 'plan'; // 'plan' veya 'summary'
+    let liqNetBufferValue = 0;
 
     function openLiquidityModal() {
       hideFabAction();
-      const container = document.getElementById('liquidityReportContent');
-      container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-dim);">Hesap dağılımı hazırlanıyor...</div>';
+      currentLiquidityView = 'plan';
+      updateLiquidityViewSwitcher();
+      renderLiquidityContent();
       document.getElementById('modalLiquidity').style.display = 'flex';
+    }
 
+    function switchLiquidityView(view) {
+      currentLiquidityView = view;
+      updateLiquidityViewSwitcher();
+      renderLiquidityContent();
+    }
+
+    function updateLiquidityViewSwitcher() {
+      const btnPlan = document.getElementById('btnLiqViewPlan');
+      const btnSummary = document.getElementById('btnLiqViewSummary');
+      if (!btnPlan || !btnSummary) return;
+
+      btnPlan.classList.toggle('active', currentLiquidityView === 'plan');
+      btnSummary.classList.toggle('active', currentLiquidityView === 'summary');
+    }
+
+    function renderLiquidityContent() {
+      const container = document.getElementById('liquidityReportContent');
       if (!currentData) {
         container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--red);">Veri bulunamadı.</div>';
         return;
       }
 
+      // Ortak Veri Hesaplamaları
       const targetCardLimit = parseAmountToNum(currentData.cardLimit || 0);
 
       let sumSparkasse = 0;
@@ -1465,8 +1514,120 @@
 
       const totalRequiredEUR = targetCardLimit + totalManual + totalTrEUR;
       const netBuffer = totalIncome - totalRequiredEUR;
-      liqNetBufferValue = netBuffer; // Global değişkene ata
+      liqNetBufferValue = netBuffer;
 
+      // -------------------------------------------------------------
+      // GÖRÜNÜM 1: ÖZET GÖRÜNÜM (FONLAMA / PARA TRANSFERİ)
+      // -------------------------------------------------------------
+      if (currentLiquidityView === 'summary') {
+        const n26TotalFunding = sumN26 + targetCardLimit; // N26 Gideri + Kart Limiti
+
+        let html = `
+          <div class="liq-section-title">🏦 Banka Fonlama Dağılımı</div>
+          <div class="liq-card" style="border-left: 4px solid var(--accent);">
+            <!-- Sparkasse -->
+            <div class="liq-row">
+              <span style="font-weight:600;">🏦 Sparkasse</span>
+              <span style="font-weight:700; color:#fff;">€${sumSparkasse.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
+
+            <!-- N26 (Gider + Kart Limiti Dahil) -->
+            <div class="liq-row">
+              <div>
+                <span style="font-weight:600;">🏦 N26</span>
+                <span style="font-size:10px; color:var(--text-dim); display:block; margin-top:2px;">(Gider + Kart Limiti)</span>
+              </div>
+              <span style="font-weight:700; color:var(--accent);">€${n26TotalFunding.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
+        `;
+
+        if (sumC24 > 0) {
+          html += `
+            <div class="liq-row">
+              <span style="font-weight:600;">🏦 C24</span>
+              <span style="font-weight:700; color:#fff;">€${sumC24.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
+          `;
+        }
+        if (sumNakit > 0) {
+          html += `
+            <div class="liq-row">
+              <span style="font-weight:600;">💵 Nakit</span>
+              <span style="font-weight:700; color:#fff;">€${sumNakit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
+          `;
+        }
+        if (sumOtherManual > 0) {
+          html += `
+            <div class="liq-row">
+              <span style="font-weight:600;">Diğer</span>
+              <span style="font-weight:700; color:#fff;">€${sumOtherManual.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
+          `;
+        }
+
+        html += `</div>`;
+
+        // TR Ödemeleri Varsa Göster
+        let hasAnyTR = (sumWorldEko > 0 || sumEnpara > 0 || sumFree > 0 || sumOtherTR > 0);
+        if (hasAnyTR) {
+          html += `
+            <div class="liq-section-title">🇹🇷 TR Kart Ödemeleri</div>
+            <div class="liq-card" style="border-left: 4px solid var(--purple);">
+          `;
+          if (sumWorldEko > 0) {
+            html += `
+              <div class="liq-row">
+                <span style="font-weight:600;">💳 World Eko</span>
+                <span style="font-weight:700; color:#fff;">₺${sumWorldEko.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+              </div>
+            `;
+          }
+          if (sumEnpara > 0) {
+            html += `
+              <div class="liq-row">
+                <span style="font-weight:600;">💳 Enpara</span>
+                <span style="font-weight:700; color:#fff;">₺${sumEnpara.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+              </div>
+            `;
+          }
+          if (sumFree > 0) {
+            html += `
+              <div class="liq-row">
+                <span style="font-weight:600;">💳 Free</span>
+                <span style="font-weight:700; color:#fff;">₺${sumFree.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+              </div>
+            `;
+          }
+          if (sumOtherTR > 0) {
+            html += `
+              <div class="liq-row">
+                <span style="font-weight:600;">💳 Diğer</span>
+                <span style="font-weight:700; color:#fff;">₺${sumOtherTR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+              </div>
+            `;
+          }
+          html += `</div>`;
+        }
+
+        // Toplam Tutar Kartı
+        html += `
+          <div class="liq-section-title">📊 Genel Fonlama İhtiyacı</div>
+          <div class="liq-card" style="border-left: 4px solid var(--orange);">
+            <div class="liq-row total-row" style="margin-top:0; padding-top:0; border-top:none; color:var(--orange);">
+              <span>Toplam Tutar</span>
+              <span style="font-size:16px;">€${totalRequiredEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
+          </div>
+        `;
+
+        container.innerHTML = html;
+        return;
+      }
+
+      // -------------------------------------------------------------
+      // GÖRÜNÜM 2: DETAYLI PLAN GÖRÜNÜMÜ
+      // -------------------------------------------------------------
       let html = `
         <!-- 1. KART HARCAMA (BAŞLIK & DEĞER MAVİ RENKTE EŞİTLENDİ) -->
         <div class="liq-section-title">💳 Kart Harcama</div>
@@ -1640,7 +1801,6 @@
       if (body.style.display === 'none') {
         body.style.display = 'block';
         arrow.innerText = 'Gizle ▲';
-        // Detay açıldığında maskeyi kaldır ve renklendir
         display.classList.remove('masked');
         display.innerText = `${liqNetBufferValue >= 0 ? '+' : ''}€${liqNetBufferValue.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         display.style.color = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
@@ -1648,7 +1808,6 @@
       } else {
         body.style.display = 'none';
         arrow.innerText = 'Detay ▼';
-        // Detay kapandığında tekrar maskeli hale getir
         display.classList.add('masked');
         display.innerText = '••••••';
         display.style.color = '';
@@ -2930,7 +3089,6 @@
 
       let merchantText = document.getElementById('mDesc').value.trim();
 
-      // Tarih seçilmişse parantezli vade tarihini açıklamadan otomatik sil
       if (dateFormatted) {
         merchantText = merchantText.replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
       }
