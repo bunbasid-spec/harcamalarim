@@ -460,7 +460,7 @@
       justify-content: center; 
       z-index: 50; 
       transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-      touch-action: none;
+      touch-action: manipulation;
       user-select: none;
       -webkit-user-select: none;
     }
@@ -492,21 +492,25 @@
       cursor: pointer;
       animation: popUp 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
+    /* 1. Sıra (En Üst): Ay İçi Kontrol (YEŞİL) */
     #btnControlAction {
       bottom: 255px;
       background: var(--green);
       color: #0f172a;
     }
+    /* 2. Sıra: Harcamalarda Ara (MAVİ) */
     #btnToggleSearchAction {
       bottom: 205px;
       background: var(--accent);
       color: #0f172a;
     }
+    /* 3. Sıra: Likidite Planlaması (TURUNCU) */
     #btnLiquidityAction {
       bottom: 155px;
       background: var(--orange);
       color: #0f172a;
     }
+    /* 4. Sıra (En Alt): Geçen Aydan Aktar (MOR) */
     #btnLastMonthAction {
       bottom: 105px;
       background: var(--purple);
@@ -1082,7 +1086,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.9.7";
+    const CURRENT_VERSION = "2.9.8";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1298,7 +1302,7 @@
     }
 
     // =========================================================
-    // YÜKSEK HASSASİYETLİ VE HAPTİK DESTEKLİ FAB TOUCH MOTORU
+    // HATASIZ, ANINDA TEPKİ VEREN VE HAPTİK DESTEKLİ FAB TOUCH MOTORU
     // =========================================================
     let fabTimer = null;
     let isFabLongPress = false;
@@ -1310,14 +1314,11 @@
 
       function startFabPress(e) {
         isFabLongPress = false;
-        if (e.touches && e.touches[0]) {
-          fabStartX = e.touches[0].clientX;
-          fabStartY = e.touches[0].clientY;
-        } else {
-          fabStartX = e.clientX;
-          fabStartY = e.clientY;
-        }
+        const pt = (e.touches && e.touches[0]) ? e.touches[0] : e;
+        fabStartX = pt.clientX;
+        fabStartY = pt.clientY;
 
+        if (fabTimer) clearTimeout(fabTimer);
         fabTimer = setTimeout(() => {
           isFabLongPress = true;
           showFabAction();
@@ -1326,10 +1327,8 @@
 
       function moveFabPress(e) {
         if (!fabTimer) return;
-        let curX = e.touches ? e.touches[0].clientX : e.clientX;
-        let curY = e.touches ? e.touches[0].clientY : e.clientY;
-
-        if (Math.hypot(curX - fabStartX, curY - fabStartY) > 12) {
+        const pt = (e.touches && e.touches[0]) ? e.touches[0] : e;
+        if (Math.hypot(pt.clientX - fabStartX, pt.clientY - fabStartY) > 12) {
           clearTimeout(fabTimer);
           fabTimer = null;
         }
@@ -1449,8 +1448,8 @@
     // =========================================================
     // LİKİDİTE PLANLAMASI & AY İÇİ KONTROL MOTORU
     // =========================================================
-    let currentLiquidityView = 'summary'; // İLK AÇILIŞ ÖZET
-    let currentControlView = 'summary';   // İLK AÇILIŞ ÖZET
+    let currentLiquidityView = 'summary'; // İLK AÇILIŞ: ÖZET
+    let currentControlView = 'summary';   // İLK AÇILIŞ: ÖZET
     let liqNetBufferValue = 0;
 
     function openLiquidityModal() {
@@ -1499,6 +1498,7 @@
       btnPlan.classList.toggle('active', currentControlView === 'plan');
     }
 
+    // Ortak Özet Checkbox Hesaplayıcıları
     function recalcSummaryTotal() {
       const checkboxes = document.querySelectorAll('.chk-summary:checked');
       let liveTotal = 0;
@@ -1517,33 +1517,6 @@
       const allChecked = Array.from(checkboxes).every(c => c.checked);
       checkboxes.forEach(c => c.checked = !allChecked);
       recalcSummaryTotal();
-    }
-
-    function recalcControlTotal() {
-      const checkboxes = document.querySelectorAll('.chk-control:checked');
-      let liveTotal = 0;
-      checkboxes.forEach(c => {
-        let val = parseFloat(c.getAttribute('data-eur') || 0);
-        liveTotal += val;
-      });
-      const lbl = document.getElementById('lblControlLiveTotal');
-      if (lbl) {
-        let formatted = "€" + liveTotal.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        if (liveTotal > 0) {
-          lbl.innerText = "-" + formatted;
-          lbl.style.color = "var(--red)";
-        } else {
-          lbl.innerText = "€0,00";
-          lbl.style.color = "var(--green)";
-        }
-      }
-    }
-
-    function toggleAllControlCheckboxes() {
-      const checkboxes = document.querySelectorAll('.chk-control');
-      const allChecked = Array.from(checkboxes).every(c => c.checked);
-      checkboxes.forEach(c => c.checked = !allChecked);
-      recalcControlTotal();
     }
 
     // 1. LİKİDİTE PLANLAMASI RENDER
@@ -1688,7 +1661,7 @@
         return;
       }
 
-      // SAYFA: PLAN GÖRÜNÜMÜ (Checkbox'lı İnteraktif Liste)
+      // SAYFA: PLAN GÖRÜNÜMÜ (Checkbox'lı, İnteraktif Toplamı Değişen)
       let html = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding: 2px 2px 8px 2px; border-bottom: 1px solid var(--border);">
           <div style="font-weight:700; font-size:14px;">
@@ -1941,13 +1914,11 @@
 
       if (totalTrTRYAll > 0 && totalTrEURAll > 0) trRateEUR = totalTrEURAll / totalTrTRYAll;
 
-      // Toplam Bekleyen Yükümlülük (Kalan Kart Limiti + Ödenmemiş Diğer Giderler + Ödenmemiş TR Euro Karşılığı)
       const totalPendingObligation = remainingCardLimit + totalRemManual + totalRemTrEUR;
 
-      // SAYFA: ÖZET GÖRÜNÜMÜ (LİKİDİTE PLANLAMASINDAKİ GİBİ BLOKLU, GİZLİ OLMAYAN AÇIK KART TASARIMI)
+      // SAYFA: ÖZET GÖRÜNÜMÜ (AY İÇİ KONTROL - AÇIK KART TASARIMI)
       if (currentControlView === 'summary') {
         let html = `
-          <!-- 1. KART HARCAMA (LİMİT PARANTEZDE, KALAN SAĞDA) -->
           <div class="liq-section-title">💳 Kart Harcama</div>
           <div class="liq-card" style="border-left: 4px solid var(--accent);">
             <div class="liq-row">
@@ -1956,7 +1927,6 @@
             </div>
           </div>
 
-          <!-- 2. DİĞER GİDERLER (SADECE ÖDENMEMİŞ TUTARLAR) -->
           <div class="liq-section-title">🏦 Diğer Giderler</div>
           <div class="liq-card" style="border-left: 4px solid var(--orange);">
             <div class="liq-row">
@@ -1985,7 +1955,6 @@
         }
         html += `</div>`;
 
-        // 3. TR ÖDEMELER (SADECE ÖDENMEMİŞLER)
         html += `
           <div class="liq-section-title">🇹🇷 TR Ödemeler</div>
           <div class="liq-card" style="border-left: 4px solid var(--purple);">
@@ -2011,7 +1980,6 @@
         }
         html += `</div>`;
 
-        // 4. KALAN TOPLAM TUTAR (GİZLİ NOKTALI DEĞİL - NET VE AÇIK)
         let isNegative = totalPendingObligation > 0;
         let colorTheme = isNegative ? 'var(--red)' : 'var(--green)';
 
@@ -2046,7 +2014,6 @@
         </div>
 
         <div id="controlItemsList">
-          <!-- 1. KART (N26) -->
           <label class="template-item">
             <div style="display:flex; align-items:center;">
               <input type="checkbox" class="chk-control" data-eur="${remainingCardLimit}" onchange="recalcControlTotal()" checked>
@@ -2167,8 +2134,8 @@
               </div>
             </div>
             <div style="text-align:right;">
-              <div style="font-weight:700; font-size:14px; color:#fff;">-€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-              <div style="font-size:10px; color:var(--text-dim);">₺${remWorldEkoTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+                <div style="font-weight:700; font-size:14px; color:#fff;">-€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                <div style="font-size:10px; color:var(--text-dim);">₺${remWorldEkoTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
             </div>
           </label>
         `;
@@ -2189,8 +2156,8 @@
               </div>
             </div>
             <div style="text-align:right;">
-              <div style="font-weight:700; font-size:14px; color:#fff;">-€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-              <div style="font-size:10px; color:var(--text-dim);">₺${remEnparaTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+                <div style="font-weight:700; font-size:14px; color:#fff;">-€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                <div style="font-size:10px; color:var(--text-dim);">₺${remEnparaTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
             </div>
           </label>
         `;
@@ -2211,8 +2178,8 @@
               </div>
             </div>
             <div style="text-align:right;">
-              <div style="font-weight:700; font-size:14px; color:#fff;">-€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-              <div style="font-size:10px; color:var(--text-dim);">₺${remFreeTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+                <div style="font-weight:700; font-size:14px; color:#fff;">-€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                <div style="font-size:10px; color:var(--text-dim);">₺${remFreeTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
             </div>
           </label>
         `;
@@ -2233,8 +2200,8 @@
               </div>
             </div>
             <div style="text-align:right;">
-              <div style="font-weight:700; font-size:14px; color:#fff;">-€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-              <div style="font-size:10px; color:var(--text-dim);">₺${remOtherTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+                <div style="font-weight:700; font-size:14px; color:#fff;">-€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                <div style="font-size:10px; color:var(--text-dim);">₺${remOtherTRY.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
             </div>
           </label>
         `;
@@ -2403,9 +2370,8 @@
       card.addEventListener('touchmove', cancelPress, { passive: true });
 
       card.addEventListener('mousedown', startPress);
-      card.addEventListener('mousemove', moveFabPress);
-      card.addEventListener('mouseup', endFabPress);
-      card.addEventListener('mouseleave', () => { if (fabTimer) clearTimeout(fabTimer); });
+      card.addEventListener('mouseup', cancelPress);
+      card.addEventListener('mouseleave', cancelPress);
 
       card.addEventListener('click', () => {
         if (isLongPress) return;
