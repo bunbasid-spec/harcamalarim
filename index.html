@@ -754,31 +754,36 @@
       user-select: none;
     }
 
-    /* MODAL İÇİ KÜÇÜK GÖRÜNÜM DEĞİŞTİRİCİSİ */
+    /* MODAL İÇİ BÜTÇE / BORÇLAR BÜYÜKLÜĞÜNDE SEÇİCİ */
     .mini-view-switcher {
       display: flex;
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 2px;
-      gap: 2px;
-      height: 28px;
+      border-radius: 8px;
+      padding: 3px;
+      gap: 3px;
+      height: 36px;
+      width: 140px;
     }
     .mini-view-btn {
+      flex: 1;
       border: none;
       background: transparent;
       color: var(--text-dim);
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
-      padding: 0 10px;
-      border-radius: 4px;
+      padding: 0;
+      border-radius: 6px;
       cursor: pointer;
-      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
     }
     .mini-view-btn.active {
       background: var(--orange);
       color: #0f172a;
-      box-shadow: 0 1px 4px rgba(245, 158, 11, 0.3);
+      box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
     }
   </style>
 </head>
@@ -890,12 +895,12 @@
 
   <button class="fab" id="mainFab"><span>+</span></button>
 
-  <!-- LİKİDİTE PLANLAMASI MODALI -->
+  <!-- LİKİDİTE PLANLAMASI & ÖZET MODALI -->
   <div class="modal" id="modalLiquidity">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
         <h3 style="font-size: 16px;">🔮 Gelecek Ay Planı</h3>
-        <!-- PLAN VE ÖZET SEÇMELİ BUTONLAR -->
+        <!-- BÜYÜTÜLMÜŞ PLAN & ÖZET SEÇİCİ -->
         <div class="mini-view-switcher">
           <button type="button" class="mini-view-btn active" id="btnLiqViewPlan" onclick="switchLiquidityView('plan')">Plan</button>
           <button type="button" class="mini-view-btn" id="btnLiqViewSummary" onclick="switchLiquidityView('summary')">Özet</button>
@@ -1450,7 +1455,6 @@
         return;
       }
 
-      // Ortak Veri Hesaplamaları
       const targetCardLimit = parseAmountToNum(currentData.cardLimit || 0);
 
       let sumSparkasse = 0;
@@ -1488,6 +1492,9 @@
       let totalTrTRY = 0;
       let totalTrEUR = 0;
 
+      // TR Kartları için Euro hesaplama katsayısı
+      let trRateEUR = 0;
+
       (currentData.trItems || []).forEach(item => {
         let amtTRY = parseAmountToNum(item.amount);
         let amtEUR = parseAmountToNum(item.eurAmount || 0);
@@ -1507,6 +1514,10 @@
         }
       });
 
+      if (totalTrTRY > 0 && totalTrEUR > 0) {
+        trRateEUR = totalTrEUR / totalTrTRY;
+      }
+
       let totalIncome = 0;
       (currentData.incomeItems || []).forEach(item => {
         totalIncome += parseAmountToNum(item.amount);
@@ -1517,111 +1528,184 @@
       liqNetBufferValue = netBuffer;
 
       // -------------------------------------------------------------
-      // GÖRÜNÜM 1: ÖZET GÖRÜNÜM (FONLAMA / PARA TRANSFERİ)
+      // GÖRÜNÜM 1: ÖZET GÖRÜNÜM (GEÇEN AYDAN AKTAR TASARIMINDA & SEÇİMLİ)
       // -------------------------------------------------------------
       if (currentLiquidityView === 'summary') {
-        const n26TotalFunding = sumN26 + targetCardLimit; // N26 Gideri + Kart Limiti
+        const n26TotalFunding = sumN26 + targetCardLimit;
 
         let html = `
-          <div class="liq-section-title">🏦 Banka Fonlama Dağılımı</div>
-          <div class="liq-card" style="border-left: 4px solid var(--accent);">
-            <!-- Sparkasse -->
-            <div class="liq-row">
-              <span style="font-weight:600;">🏦 Sparkasse</span>
-              <span style="font-weight:700; color:#fff;">€${sumSparkasse.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding: 2px 2px 8px 2px; border-bottom: 1px solid var(--border);">
+            <div style="font-weight:700; font-size:16px;">
+              Toplam Tutar: <span id="lblSummaryLiveTotal" style="color:var(--orange);">€0,00</span>
             </div>
+            <button type="button" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;" onclick="toggleAllSummaryCheckboxes()">Tümünü Seç / Kaldır</button>
+          </div>
 
-            <!-- N26 (Gider + Kart Limiti Dahil) -->
-            <div class="liq-row">
-              <div>
-                <span style="font-weight:600;">🏦 N26</span>
-                <span style="font-size:10px; color:var(--text-dim); display:block; margin-top:2px;">(Gider + Kart Limiti)</span>
+          <div id="summaryItemsList">
+            <!-- Sparkasse -->
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-summary" data-eur="${sumSparkasse}" onchange="recalcSummaryTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-manual">HESAP</span>
+                    Sparkasse
+                  </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Diğer Giderler Toplamı</div>
+                </div>
               </div>
-              <span style="font-weight:700; color:var(--accent);">€${n26TotalFunding.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-            </div>
+              <div style="font-weight:700; font-size:14px; color:#fff;">€${sumSparkasse.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </label>
+
+            <!-- N26 (Gider + Kart Limiti) -->
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-summary" data-eur="${n26TotalFunding}" onchange="recalcSummaryTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-manual">HESAP + KART</span>
+                    N26
+                  </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Gider (€${sumN26.toLocaleString("de-DE", {minimumFractionDigits: 2})}) + Kart Limiti (€${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})})</div>
+                </div>
+              </div>
+              <div style="font-weight:700; font-size:14px; color:#fff;">€${n26TotalFunding.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </label>
         `;
 
         if (sumC24 > 0) {
           html += `
-            <div class="liq-row">
-              <span style="font-weight:600;">🏦 C24</span>
-              <span style="font-weight:700; color:#fff;">€${sumC24.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-            </div>
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-summary" data-eur="${sumC24}" onchange="recalcSummaryTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-manual">HESAP</span>
+                    C24
+                  </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Diğer Giderler Toplamı</div>
+                </div>
+              </div>
+              <div style="font-weight:700; font-size:14px; color:#fff;">€${sumC24.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </label>
           `;
         }
+
         if (sumNakit > 0) {
           html += `
-            <div class="liq-row">
-              <span style="font-weight:600;">💵 Nakit</span>
-              <span style="font-weight:700; color:#fff;">€${sumNakit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-            </div>
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-summary" data-eur="${sumNakit}" onchange="recalcSummaryTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-manual">NAKİT</span>
+                    Nakit
+                  </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Nakit Ayrılacak Tutar</div>
+                </div>
+              </div>
+              <div style="font-weight:700; font-size:14px; color:#fff;">€${sumNakit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </label>
           `;
         }
+
         if (sumOtherManual > 0) {
           html += `
-            <div class="liq-row">
-              <span style="font-weight:600;">Diğer</span>
-              <span style="font-weight:700; color:#fff;">€${sumOtherManual.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-            </div>
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-summary" data-eur="${sumOtherManual}" onchange="recalcSummaryTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-manual">DİĞER</span>
+                    Diğer Gider
+                  </div>
+                </div>
+              </div>
+              <div style="font-weight:700; font-size:14px; color:#fff;">€${sumOtherManual.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </label>
+          `;
+        }
+
+        // TR Kartları (Varsa Listelenir, Gri TL tutarı + Sağda Euro tutarı)
+        if (sumWorldEko > 0) {
+          let trEur = sumWorldEko * trRateEUR;
+          html += `
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-summary" data-eur="${trEur}" onchange="recalcSummaryTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-tr">TR KART</span>
+                    World Eko
+                  </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">₺${sumWorldEko.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                </div>
+              </div>
+              <div style="font-weight:700; font-size:14px; color:#fff;">€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </label>
+          `;
+        }
+
+        if (sumEnpara > 0) {
+          let trEur = sumEnpara * trRateEUR;
+          html += `
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-summary" data-eur="${trEur}" onchange="recalcSummaryTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-tr">TR KART</span>
+                    Enpara
+                  </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">₺${sumEnpara.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                </div>
+              </div>
+              <div style="font-weight:700; font-size:14px; color:#fff;">€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </label>
+          `;
+        }
+
+        if (sumFree > 0) {
+          let trEur = sumFree * trRateEUR;
+          html += `
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-summary" data-eur="${trEur}" onchange="recalcSummaryTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-tr">TR KART</span>
+                    Free
+                  </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">₺${sumFree.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                </div>
+              </div>
+              <div style="font-weight:700; font-size:14px; color:#fff;">€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </label>
+          `;
+        }
+
+        if (sumOtherTR > 0) {
+          let trEur = sumOtherTR * trRateEUR;
+          html += `
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-summary" data-eur="${trEur}" onchange="recalcSummaryTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-tr">TR KART</span>
+                    Diğer TR
+                  </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">₺${sumOtherTR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                </div>
+              </div>
+              <div style="font-weight:700; font-size:14px; color:#fff;">€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </label>
           `;
         }
 
         html += `</div>`;
-
-        // TR Ödemeleri Varsa Göster
-        let hasAnyTR = (sumWorldEko > 0 || sumEnpara > 0 || sumFree > 0 || sumOtherTR > 0);
-        if (hasAnyTR) {
-          html += `
-            <div class="liq-section-title">🇹🇷 TR Kart Ödemeleri</div>
-            <div class="liq-card" style="border-left: 4px solid var(--purple);">
-          `;
-          if (sumWorldEko > 0) {
-            html += `
-              <div class="liq-row">
-                <span style="font-weight:600;">💳 World Eko</span>
-                <span style="font-weight:700; color:#fff;">₺${sumWorldEko.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-              </div>
-            `;
-          }
-          if (sumEnpara > 0) {
-            html += `
-              <div class="liq-row">
-                <span style="font-weight:600;">💳 Enpara</span>
-                <span style="font-weight:700; color:#fff;">₺${sumEnpara.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-              </div>
-            `;
-          }
-          if (sumFree > 0) {
-            html += `
-              <div class="liq-row">
-                <span style="font-weight:600;">💳 Free</span>
-                <span style="font-weight:700; color:#fff;">₺${sumFree.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-              </div>
-            `;
-          }
-          if (sumOtherTR > 0) {
-            html += `
-              <div class="liq-row">
-                <span style="font-weight:600;">💳 Diğer</span>
-                <span style="font-weight:700; color:#fff;">₺${sumOtherTR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-              </div>
-            `;
-          }
-          html += `</div>`;
-        }
-
-        // Toplam Tutar Kartı
-        html += `
-          <div class="liq-section-title">📊 Genel Fonlama İhtiyacı</div>
-          <div class="liq-card" style="border-left: 4px solid var(--orange);">
-            <div class="liq-row total-row" style="margin-top:0; padding-top:0; border-top:none; color:var(--orange);">
-              <span>Toplam Tutar</span>
-              <span style="font-size:16px;">€${totalRequiredEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-            </div>
-          </div>
-        `;
-
         container.innerHTML = html;
+        recalcSummaryTotal(); // İlk açılışta seçililerin toplamını yaz
         return;
       }
 
@@ -1792,6 +1876,27 @@
       container.innerHTML = html;
     }
 
+    // Özet Görünümünde Canlı Seçim ve Toplam Hesaplayıcı
+    function recalcSummaryTotal() {
+      const checkboxes = document.querySelectorAll('.chk-summary:checked');
+      let liveTotal = 0;
+      checkboxes.forEach(c => {
+        let val = parseFloat(c.getAttribute('data-eur') || 0);
+        liveTotal += val;
+      });
+      const lbl = document.getElementById('lblSummaryLiveTotal');
+      if (lbl) {
+        lbl.innerText = "€" + liveTotal.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+    }
+
+    function toggleAllSummaryCheckboxes() {
+      const checkboxes = document.querySelectorAll('.chk-summary');
+      const allChecked = Array.from(checkboxes).every(c => c.checked);
+      checkboxes.forEach(c => c.checked = !allChecked);
+      recalcSummaryTotal();
+    }
+
     function toggleLiqBalanceDetails() {
       const body = document.getElementById('liqBalBody');
       const arrow = document.getElementById('liqBalArrow');
@@ -1835,7 +1940,6 @@
       }
     }
 
-    // 0ms Anında Açılan Şablon Modalı
     async function openLastMonthTemplateModal() {
       hideFabAction();
       const container = document.getElementById('templateItemsContainer');
@@ -2281,7 +2385,9 @@
 
       document.getElementById('mDate').value = parseFormattedDateToInput(item.date);
       document.getElementById('mAmount').value = formatAmountForInput(item.amount);
-      document.getElementById('mDesc').value = item.merchant || "";
+      
+      let cleanMerchant = (item.merchant || "").replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
+      document.getElementById('mDesc').value = cleanMerchant;
       document.getElementById('mAccount').value = item.card || "";
 
       document.getElementById('modalBudget').style.display = 'flex';
