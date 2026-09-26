@@ -474,7 +474,7 @@
     }
     .fab:active { transform: scale(0.92); opacity: 0.9; }
 
-    /* BASILI TUTUNCA ÇIKAN 4 AKSİYON BUTONU (İSTEDİĞİNİZ SIRALAMA) */
+    /* BASILI TUTUNCA ÇIKAN 4 AKSİYON BUTONU (YENİ LOGO - YEŞİL) */
     .fab-mini-action {
       position: fixed;
       right: 22px;
@@ -492,7 +492,7 @@
       cursor: pointer;
       animation: popUp 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    /* 1. Sıra (En Üst): Ay İçi Kontrol (ÖZEL YEŞİL LOGO İLE) */
+    /* 1. Sıra (En Üst): Ay İçi Kontrol (YEŞİL LOGO) */
     #btnControlAction {
       bottom: 255px;
       background: var(--green);
@@ -890,9 +890,9 @@
     <div id="listContainer"></div>
   </div>
 
-  <!-- BASILI TUTUNCA ÇIKAN 4 AKSİYON BUTONU (YENİ LOGO VE İSTEDİĞİNİZ SIRALAMA) -->
+  <!-- BASILI TUTUNCA ÇIKAN 4 AKSİYON BUTONU -->
   <button id="btnControlAction" class="fab-mini-action" onclick="openControlModal()">
-    🟢📋 Ay İçi Kontrol
+    📋 Ay İçi Kontrol
   </button>
   <button id="btnToggleSearchAction" class="fab-mini-action" onclick="toggleSearchFromFab()">
     🔍 Harcamalarda Ara
@@ -906,14 +906,14 @@
 
   <button class="fab" id="mainFab"><span>+</span></button>
 
-  <!-- LİKİDİTE PLANLAMASI MODALI (İLK AÇILIŞ ÖZET) -->
+  <!-- LİKİDİTE PLANLAMASI MODALI (İLK AÇILIŞ PLAN) -->
   <div class="modal" id="modalLiquidity">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
         <h3 style="font-size: 16px;">🔮 Likidite Planlaması</h3>
         <div class="mini-view-switcher">
-          <button type="button" class="mini-view-btn active" id="btnLiqViewSummary" onclick="switchLiquidityView('summary')">Özet</button>
-          <button type="button" class="mini-view-btn" id="btnLiqViewPlan" onclick="switchLiquidityView('plan')">Plan</button>
+          <button type="button" class="mini-view-btn active" id="btnLiqViewPlan" onclick="switchLiquidityView('plan')">Plan</button>
+          <button type="button" class="mini-view-btn" id="btnLiqViewSummary" onclick="switchLiquidityView('summary')">Özet</button>
         </div>
       </div>
 
@@ -925,14 +925,14 @@
     </div>
   </div>
 
-  <!-- AY İÇİ KONTROL MODALI (İLK AÇILIŞ ÖZET) -->
+  <!-- AY İÇİ KONTROL MODALI (İLK AÇILIŞ PLAN) -->
   <div class="modal" id="modalControl">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h3 style="font-size: 16px;">🟢📋 Ay İçi Kontrol</h3>
+        <h3 style="font-size: 16px;">📋 Ay İçi Kontrol</h3>
         <div class="mini-view-switcher">
-          <button type="button" class="mini-view-btn active" id="btnCtrlViewSummary" onclick="switchControlView('summary')">Özet</button>
-          <button type="button" class="mini-view-btn" id="btnCtrlViewPlan" onclick="switchControlView('plan')">Plan</button>
+          <button type="button" class="mini-view-btn active" id="btnCtrlViewPlan" onclick="switchControlView('plan')">Plan</button>
+          <button type="button" class="mini-view-btn" id="btnCtrlViewSummary" onclick="switchControlView('summary')">Özet</button>
         </div>
       </div>
 
@@ -1086,7 +1086,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.9.2";
+    const CURRENT_VERSION = "2.9.3";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1355,7 +1355,7 @@
       fab.addEventListener('touchend', endFabPress);
       fab.addEventListener('touchcancel', () => { if (fabTimer) clearTimeout(fabTimer); });
 
-      fab.addEventListener('mousedown', startFabPress);
+      fab.addEventListener('mousedown', startPress);
       fab.addEventListener('mousemove', moveFabPress);
       fab.addEventListener('mouseup', endFabPress);
       fab.addEventListener('mouseleave', () => { if (fabTimer) clearTimeout(fabTimer); });
@@ -1453,13 +1453,13 @@
     // =========================================================
     // LİKİDİTE PLANLAMASI & AY İÇİ KONTROL MOTORU
     // =========================================================
-    let currentLiquidityView = 'summary'; // İLK AÇILIŞ ÖZET
-    let currentControlView = 'summary';   // İLK AÇILIŞ ÖZET
+    let currentLiquidityView = 'plan'; // İLK AÇILIŞ PLAN
+    let currentControlView = 'plan';   // İLK AÇILIŞ PLAN
     let liqNetBufferValue = 0;
 
     function openLiquidityModal() {
       hideFabAction();
-      currentLiquidityView = 'summary';
+      currentLiquidityView = 'plan';
       updateLiquidityViewSwitcher();
       renderLiquidityContent();
       document.getElementById('modalLiquidity').style.display = 'flex';
@@ -1482,7 +1482,7 @@
 
     function openControlModal() {
       hideFabAction();
-      currentControlView = 'summary';
+      currentControlView = 'plan';
       updateControlViewSwitcher();
       renderControlContent();
       document.getElementById('modalControl').style.display = 'flex';
@@ -1503,7 +1503,6 @@
       btnSummary.classList.toggle('active', currentControlView === 'summary');
     }
 
-    // Ortak Özet Checkbox Hesaplayıcıları
     function recalcSummaryTotal() {
       const checkboxes = document.querySelectorAll('.chk-summary:checked');
       let liveTotal = 0;
@@ -1522,36 +1521,6 @@
       const allChecked = Array.from(checkboxes).every(c => c.checked);
       checkboxes.forEach(c => c.checked = !allChecked);
       recalcSummaryTotal();
-    }
-
-    function recalcControlTotal() {
-      const checkboxes = document.querySelectorAll('.chk-control:checked');
-      let liveTotal = 0;
-      checkboxes.forEach(c => {
-        let val = parseFloat(c.getAttribute('data-eur') || 0);
-        liveTotal += val;
-      });
-      const lbl = document.getElementById('lblControlLiveTotal');
-      const cardBox = document.getElementById('controlTotalCardBox');
-      if (lbl) {
-        let formatted = "€" + liveTotal.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        if (liveTotal > 0) {
-          lbl.innerText = "-" + formatted;
-          lbl.style.color = "var(--red)";
-          if (cardBox) cardBox.style.borderLeftColor = "var(--red)";
-        } else {
-          lbl.innerText = "€0,00";
-          lbl.style.color = "var(--green)";
-          if (cardBox) cardBox.style.borderLeftColor = "var(--green)";
-        }
-      }
-    }
-
-    function toggleAllControlCheckboxes() {
-      const checkboxes = document.querySelectorAll('.chk-control');
-      const allChecked = Array.from(checkboxes).every(c => c.checked);
-      checkboxes.forEach(c => c.checked = !allChecked);
-      recalcControlTotal();
     }
 
     // 1. LİKİDİTE PLANLAMASI RENDER
@@ -1884,7 +1853,7 @@
       container.innerHTML = html;
     }
 
-    // 2. AY İÇİ KONTROL RENDER (ÖZET & PLAN)
+    // 2. AY İÇİ KONTROL RENDER (PLAN & ÖZET)
     function renderControlContent() {
       const container = document.getElementById('controlReportContent');
       if (!currentData) {
@@ -2165,7 +2134,7 @@
 
       // PLAN GÖRÜNÜMÜ (AY İÇİ KONTROL)
       container.innerHTML = `
-        <div class="liq-section-title">🟢 Ay İçi Kalan Analizi</div>
+        <div class="liq-section-title">Ay İçi Kalan Analizi</div>
         <div class="liq-card" style="border-left: 4px solid var(--green);">
           <div class="liq-row">
             <span>Ödenmemiş Diğer Giderler</span>
@@ -2183,7 +2152,6 @@
       `;
     }
 
-    // Ay İçi Kontrol Özet Hesaplayıcı (Dinamik Renkler)
     function recalcControlTotal() {
       const checkboxes = document.querySelectorAll('.chk-control:checked');
       let liveTotal = 0;
@@ -2858,163 +2826,6 @@
         currentlySwiped = null;
         currentlySwipedContainer = null;
       }
-    }
-
-    function openPaymentModal(debtType, rowIndex, personName) {
-      resetCurrentSwipe();
-      document.getElementById('payDebtType').value = debtType;
-      document.getElementById('payRowIndex').value = rowIndex;
-      document.getElementById('payPersonName').value = personName;
-      document.getElementById('payIsHistoryEdit').value = 'false';
-
-      const lblTitle = document.getElementById('lblPaymentTitle');
-      const lblDate = document.getElementById('lblPaymentDate');
-      const lblAmount = document.getElementById('lblPaymentAmount');
-      const btnSubmit = document.getElementById('btnPaymentSubmit');
-
-      if (debtType === 'debt') {
-        lblTitle.innerText = `${personName} İçin Ödeme Ekle`;
-        lblDate.innerText = 'Ödeme Tarihi';
-        lblAmount.innerText = 'Ödenen Tutar (€)';
-        btnSubmit.innerText = 'Ödemeyi Kaydet';
-      } else {
-        lblTitle.innerText = `${personName} İçin Tahsilat Ekle`;
-        lblDate.innerText = 'Alınma Tarihi';
-        lblAmount.innerText = 'Alınan Tutar (€)';
-        btnSubmit.innerText = 'Tahsilatı Kaydet';
-      }
-
-      document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
-      document.getElementById('payAmount').value = '';
-      document.getElementById('modalPayment').style.display = 'flex';
-    }
-
-    async function submitDebtPayment() {
-      const debtType = document.getElementById('payDebtType').value;
-      const rowIndex = document.getElementById('payRowIndex').value;
-      const personName = document.getElementById('payPersonName').value;
-      const rawDate = document.getElementById('payDate').value;
-      const amount = document.getElementById('payAmount').value;
-      const isHistoryEdit = document.getElementById('payIsHistoryEdit').value === 'true';
-
-      if (!amount) return;
-
-      let dateFormatted = "";
-      if (rawDate) {
-        const p = rawDate.split("-");
-        dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
-      }
-
-      closeModal('modalPayment');
-
-      if (isHistoryEdit) {
-        await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'editHistoryEntry',
-            rowIndex: rowIndex,
-            amount: amount,
-            date: dateFormatted
-          })
-        });
-      } else {
-        await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'updateDebtPayment',
-            debtType: debtType,
-            rowIndex: rowIndex,
-            amount: amount,
-            date: dateFormatted,
-            person: personName
-          })
-        });
-      }
-      loadDebtsData();
-    }
-
-    async function undoHistoryEntry(rowIndex) {
-      if (!confirm("Bu ödeme işlemini geri almak (silmek) istediğinize emin misiniz?")) {
-        resetCurrentSwipe();
-        return;
-      }
-
-      const row = document.getElementById(`history-row-${rowIndex}`);
-      if (row) row.remove();
-
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'deleteHistoryEntry',
-          rowIndex: rowIndex
-        })
-      });
-      loadDebtsData();
-    }
-
-    async function handleDebtArchive(debtType, rowIndex) {
-      if (!confirm("Bu borç/alacak kapandı olarak arşive taşınsın mı?")) {
-        resetCurrentSwipe();
-        return;
-      }
-
-      const row = document.getElementById(`debt-row-${rowIndex}`);
-      if (row) row.remove();
-
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'archiveDebt',
-          debtType: debtType,
-          rowIndex: rowIndex
-        })
-      });
-      loadDebtsData();
-    }
-
-    async function handleDebtDelete(debtType, rowIndex) {
-      if (!confirm("Bu borç/alacak kaydını tamamen silmek istediğinize emin misiniz?")) {
-        resetCurrentSwipe();
-        return;
-      }
-      const isArchive = document.getElementById('sheetSelect').value === 'archive';
-
-      const row = document.getElementById(`debt-row-${rowIndex}`);
-      if (row) row.remove();
-
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'deleteDebt',
-          debtType: debtType,
-          rowIndex: rowIndex,
-          isArchive: isArchive
-        })
-      });
-      loadDebtsData();
-    }
-
-    async function deleteBudgetItem(type, rowIndex) {
-      if (!confirm("Bu harcama/gelir kaydını silmek istediğinize emin misiniz?")) {
-        resetCurrentSwipe();
-        return;
-      }
-
-      const sheet = document.getElementById('sheetSelect').value;
-      const row = document.getElementById(`item-row-${rowIndex}`);
-      if (row) row.remove();
-
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'deleteEntry',
-          sheet: sheet,
-          type: type,
-          rowIndex: rowIndex
-        })
-      });
-      delete memoryCache[sheet];
-      onFilterChange();
     }
 
     let touchStartY = 0;
