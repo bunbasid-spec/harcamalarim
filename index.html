@@ -798,29 +798,6 @@
       color: #0f172a;
       box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
     }
-
-    /* Ay İçi Kontrol Plan Kırılım Kutuları */
-    .ctrl-breakdown-box {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 8px 12px;
-      margin-top: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-    .ctrl-breakdown-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 12px;
-      color: var(--text-dim);
-    }
-    .ctrl-breakdown-row span:last-child {
-      font-weight: 600;
-      color: var(--text);
-    }
   </style>
 </head>
 <body>
@@ -1112,7 +1089,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.0.3";
+    const CURRENT_VERSION = "3.0.4";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1325,6 +1302,9 @@
       });
     }
 
+    // =========================================================
+    // KUSURSUZ VE HIZLI DOKUNMA MOTORU (FAB TOUCH)
+    // =========================================================
     let fabTimer = null;
     let isFabLongPress = false;
     let fabStartX = 0;
@@ -1539,7 +1519,7 @@
       recalcSummaryTotal();
     }
 
-    // AY İÇİ KONTROL (PLAN): EN ÜST TOPLAM VE HESAP/TR KIRILIMI HESAPLAYICI
+    // AY İÇİ KONTROL (PLAN): EN ÜST BAŞLIK VE AYNI ÖZELLİKTE ALT ALTA SIRALANAN HESAPLAR
     function recalcControlTotal() {
       const checkboxes = document.querySelectorAll('.chk-control:checked');
       let liveTotal = 0;
@@ -1580,63 +1560,54 @@
         }
       }
 
-      // Alt Kırılım Alanını Güncelle / Göster / Gizle
-      const breakdownBox = document.getElementById('ctrlBreakdownBox');
-      if (!breakdownBox) return;
+      // Alt alta listelenen satırları aynı başlık özellikleri ve büyüklüğünde güncelle
+      const listArea = document.getElementById('ctrlAccountsSummaryLines');
+      if (!listArea) return;
 
-      let hasAnyBreakdown = (sumSparkasse > 0 || sumN26 > 0 || sumC24 > 0 || sumNakit > 0 || sumTrTRY > 0);
-
-      if (!hasAnyBreakdown) {
-        breakdownBox.style.display = 'none';
-        breakdownBox.innerHTML = '';
-        return;
-      }
-
-      breakdownBox.style.display = 'flex';
-      let bHtml = '';
+      let linesHtml = '';
 
       if (sumSparkasse > 0) {
-        bHtml += `
-          <div class="ctrl-breakdown-row">
-            <span>🏦 Sparkasse</span>
-            <span>€${sumSparkasse.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        linesHtml += `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+            <div style="font-weight:700; font-size:14px;">Sparkasse:</div>
+            <div style="font-weight:700; font-size:15px; color:var(--red);">-€${sumSparkasse.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </div>
         `;
       }
       if (sumN26 > 0) {
-        bHtml += `
-          <div class="ctrl-breakdown-row">
-            <span>🏦 N26</span>
-            <span>€${sumN26.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        linesHtml += `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+            <div style="font-weight:700; font-size:14px;">N26:</div>
+            <div style="font-weight:700; font-size:15px; color:var(--red);">-€${sumN26.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </div>
         `;
       }
       if (sumC24 > 0) {
-        bHtml += `
-          <div class="ctrl-breakdown-row">
-            <span>🏦 C24</span>
-            <span>€${sumC24.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        linesHtml += `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+            <div style="font-weight:700; font-size:14px;">C24:</div>
+            <div style="font-weight:700; font-size:15px; color:var(--red);">-€${sumC24.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </div>
         `;
       }
       if (sumNakit > 0) {
-        bHtml += `
-          <div class="ctrl-breakdown-row">
-            <span>💵 Nakit</span>
-            <span>€${sumNakit.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        linesHtml += `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+            <div style="font-weight:700; font-size:14px;">Nakit:</div>
+            <div style="font-weight:700; font-size:15px; color:var(--red);">-€${sumNakit.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </div>
         `;
       }
       if (sumTrTRY > 0) {
-        bHtml += `
-          <div class="ctrl-breakdown-row">
-            <span>🇹🇷 TR Kartları</span>
-            <span>₺${sumTrTRY.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span style="font-size:11px; color:var(--text-dim);">(~€${sumTrEUR.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span></span>
+        linesHtml += `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+            <div style="font-weight:700; font-size:14px;">TR:</div>
+            <div style="font-weight:700; font-size:15px; color:var(--red);">-₺${sumTrTRY.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span style="font-size:12px; font-weight:normal; color:var(--text-dim);">(-€${sumTrEUR.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span></div>
           </div>
         `;
       }
 
-      breakdownBox.innerHTML = bHtml;
+      listArea.innerHTML = linesHtml;
     }
 
     function toggleAllControlCheckboxes() {
@@ -1692,7 +1663,7 @@
       const netBuffer = totalIncome - totalRequiredEUR;
       liqNetBufferValue = netBuffer;
 
-      // SAYFA: ÖZET GÖRÜNÜMÜ (Analitik Bütçe Kartları)
+      // SAYFA: ÖZET GÖRÜNÜMÜ
       if (currentLiquidityView === 'summary') {
         let html = `
           <div class="liq-section-title">💳 Kart Harcama</div>
@@ -2065,7 +2036,6 @@
           </div>
         `;
 
-        // 2. DİĞER GİDERLER (Sadece sıfırdan büyük olan bankalar listelenir, hiç ödenmemiş yoksa pencere gizlenir)
         if (totalRemManual > 0) {
           html += `
             <div class="liq-section-title">🏦 Diğer Giderler</div>
@@ -2112,7 +2082,6 @@
           `;
         }
 
-        // 3. TR ÖDEMELER (Sadece sıfırdan büyük olanlar listelenir, hiç ödenmemiş yoksa pencere gizlenir)
         if (totalRemTrTRY > 0) {
           html += `
             <div class="liq-section-title">🇹🇷 TR Ödemeler</div>
@@ -2135,7 +2104,6 @@
           `;
         }
 
-        // 4. KALAN TOPLAM TUTAR
         let isPending = totalPendingObligation > 0;
         let colorTheme = isPending ? 'var(--red)' : 'var(--green)';
 
@@ -2158,10 +2126,11 @@
       }
 
       // =========================================================================
-      // AY İÇİ KONTROL: PLAN SAYFASI (ÜSTTE TOPLAM + SEÇİLENLERİN HESAP/TR KIRILIMI)
+      // AY İÇİ KONTROL: PLAN SAYFASI (AYNI ÖZELLİKTE ALT ALTA SIRALANAN BAŞLIK VE HESAPLAR)
       // =========================================================================
       let html = `
-        <div style="background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:12px;">
+        <div style="margin-bottom:14px; padding-bottom:6px; border-bottom:1px solid var(--border);">
+          <!-- ANA TOPLAM SATIRI -->
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="font-weight:700; font-size:14px;">
               Bekleyen Ödemeler: <span id="lblControlLiveTotal" style="color:var(--red); font-size:15px;">€0,00</span>
@@ -2169,8 +2138,8 @@
             <button type="button" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;" onclick="toggleAllControlCheckboxes()">Tümünü Seç / Kaldır</button>
           </div>
 
-          <!-- SEÇİLENLERİN CANLI BANKA & TR KIRILIM KUTUSU -->
-          <div id="ctrlBreakdownBox" class="ctrl-breakdown-box" style="display:none;"></div>
+          <!-- ALT ALTA AYNI BÜYÜKLÜKTE SIRALANAN HESAPLAR (AYRI BİR KUTU/PENCERE DEĞİL) -->
+          <div id="ctrlAccountsSummaryLines" style="margin-top:2px;"></div>
         </div>
 
         <div id="controlItemsList">
@@ -2195,7 +2164,7 @@
         `;
       }
 
-      // 2. HESAP (Tüm ödenmemiş diğer giderler tek tek kendi ismi ve banka tipiyle)
+      // 2. HESAP (Tüm ödenmemiş diğer giderler tek tek kendi ismiyle)
       pendingManualItems.forEach(item => {
         let numAmt = parseAmountToNum(item.amount);
         let cleanName = item.merchant || 'Açıklamasız';
