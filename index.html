@@ -203,7 +203,6 @@
     .val-inc { color: var(--text); }
     .masked { letter-spacing: 3px; color: var(--text-dim) !important; font-size: 18px; }
 
-    /* SEKME & ARAMA ÇUBUĞU ALANI */
     .tabs-bar-wrapper {
       position: relative;
       margin-bottom: 16px;
@@ -244,7 +243,6 @@
     .tab-btn#tab-debt-get.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); }
     .tab-btn#tab-debt-history.active { background: var(--purple); color: #fff; box-shadow: 0 2px 8px rgba(168, 85, 247, 0.35); }
 
-    /* CANLI ARAMA ÇUBUĞU */
     .search-bar-inline {
       display: none;
       align-items: center;
@@ -442,7 +440,6 @@
     .acc-note { color: var(--text); text-align: left; }
     .acc-amount { font-weight: 600; text-align: right; white-space: nowrap; }
 
-    /* HASSASİYETİ YÜKSEK BÜYÜK YUVARLAK FAB BUTON */
     .fab { 
       position: fixed; 
       bottom: 20px; 
@@ -474,7 +471,6 @@
     }
     .fab:active { transform: scale(0.92); opacity: 0.9; }
 
-    /* BASILI TUTUNCA ÇIKAN 4 AKSİYON BUTONU */
     .fab-mini-action {
       position: fixed;
       right: 22px;
@@ -718,7 +714,6 @@
     .tag-tr { background: rgba(168, 85, 247, 0.2); color: var(--purple); }
     .tag-income { background: rgba(16, 185, 129, 0.2); color: var(--green); }
 
-    /* LİKİDİTE PLANI KARTLARI */
     .liq-section-title {
       font-size: 11px;
       font-weight: 700;
@@ -758,7 +753,6 @@
       user-select: none;
     }
 
-    /* MODAL İÇİ BÜTÇE / BORÇLAR BÜYÜKLÜĞÜNDE SEÇİCİ */
     .mini-view-switcher {
       display: flex;
       background: var(--bg);
@@ -831,7 +825,6 @@
         </div>
       </div>
 
-      <!-- DÖNÜŞÜMLÜ SEKME / ARAMA ALANI -->
       <div class="tabs-bar-wrapper">
         <div class="tabs" id="budgetTabsRow">
           <button class="tab-btn active" id="tab-card" onclick="switchBudgetTab('card')">Kart</button>
@@ -866,7 +859,6 @@
         </div>
       </div>
 
-      <!-- DÖNÜŞÜMLÜ SEKME / ARAMA ALANI (BORÇLAR) -->
       <div class="tabs-bar-wrapper">
         <div class="tabs" id="debtsTabsRow">
           <button class="tab-btn active" id="tab-debt-give" onclick="switchDebtTab('debt')">Borçlarım</button>
@@ -902,7 +894,7 @@
 
   <button class="fab" id="mainFab"><span>+</span></button>
 
-  <!-- LİKİDİTE PLANLAMASI MODALI (İLK AÇILIŞ ÖZET [SOL BUTON], DİĞERİ PLAN [SAĞ BUTON]) -->
+  <!-- LİKİDİTE PLANLAMASI MODALI -->
   <div class="modal" id="modalLiquidity">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
@@ -921,7 +913,7 @@
     </div>
   </div>
 
-  <!-- AY İÇİ KONTROL MODALI (İLK AÇILIŞ ÖZET [SOL BUTON], DİĞERİ PLAN [SAĞ BUTON]) -->
+  <!-- AY İÇİ KONTROL MODALI -->
   <div class="modal" id="modalControl">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
@@ -1082,7 +1074,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "2.9.9";
+    const CURRENT_VERSION = "3.0.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1170,9 +1162,7 @@
         if (data && data.sheets) {
           localStorage.setItem('cache_initial_data', JSON.stringify(data));
           populateBudgetSheets(data.sheets, data.activeSheet);
-          if (data.settings) {
-            settingsData = data.settings;
-          }
+          if (data.settings) settingsData = data.settings;
           if (data.dashboard) {
             currentData = data.dashboard;
             memoryCache[data.activeSheet || "Mevcut Ay"] = data.dashboard;
@@ -1298,7 +1288,7 @@
     }
 
     // =========================================================
-    // 2.9.5 SÜRÜMÜNDEKİ KUSURSUZ VE HIZLI DOKUNMA MOTORU
+    // KUSURSUZ VE HIZLI DOKUNMA MOTORU (FAB TOUCH)
     // =========================================================
     let fabTimer = null;
     let isFabLongPress = false;
@@ -1310,27 +1300,21 @@
 
       function startFabPress(e) {
         isFabLongPress = false;
-        if (e.touches && e.touches[0]) {
-          fabStartX = e.touches[0].clientX;
-          fabStartY = e.touches[0].clientY;
-        } else {
-          fabStartX = e.clientX;
-          fabStartY = e.clientY;
-        }
+        const pt = (e.touches && e.touches[0]) ? e.touches[0] : e;
+        fabStartX = pt.clientX;
+        fabStartY = pt.clientY;
 
         if (fabTimer) clearTimeout(fabTimer);
         fabTimer = setTimeout(() => {
           isFabLongPress = true;
           showFabAction();
-        }, 500);
+        }, 450);
       }
 
       function moveFabPress(e) {
         if (!fabTimer) return;
-        let curX = e.touches ? e.touches[0].clientX : e.clientX;
-        let curY = e.touches ? e.touches[0].clientY : e.clientY;
-
-        if (Math.hypot(curX - fabStartX, curY - fabStartY) > 12) {
+        const pt = (e.touches && e.touches[0]) ? e.touches[0] : e;
+        if (Math.hypot(pt.clientX - fabStartX, pt.clientY - fabStartY) > 10) {
           clearTimeout(fabTimer);
           fabTimer = null;
         }
@@ -1347,13 +1331,11 @@
         isFabLongPress = false;
       }
 
-      // Touch olayları (iOS Safari ve Ana Ekran PWA)
       fab.addEventListener('touchstart', startFabPress, { passive: true });
       fab.addEventListener('touchmove', moveFabPress, { passive: true });
       fab.addEventListener('touchend', endFabPress);
       fab.addEventListener('touchcancel', () => { if (fabTimer) clearTimeout(fabTimer); });
 
-      // Mouse olayları (Desktop tarayıcılar için)
       fab.addEventListener('mousedown', startFabPress);
       fab.addEventListener('mousemove', moveFabPress);
       fab.addEventListener('mouseup', endFabPress);
@@ -1361,21 +1343,16 @@
     }
 
     function showFabAction() {
-      const bControl = document.getElementById('btnControlAction');
-      const bSearch = document.getElementById('btnToggleSearchAction');
-      const bLiq = document.getElementById('btnLiquidityAction');
-      const bLast = document.getElementById('btnLastMonthAction');
-
-      bControl.style.display = 'flex';
-      bSearch.style.display = 'flex';
-      bLiq.style.display = 'flex';
-      bLast.style.display = 'flex';
+      document.getElementById('btnControlAction').style.display = 'flex';
+      document.getElementById('btnToggleSearchAction').style.display = 'flex';
+      document.getElementById('btnLiquidityAction').style.display = 'flex';
+      document.getElementById('btnLastMonthAction').style.display = 'flex';
 
       const isSearchNow = (currentModule === 'budget' ? isSearchActiveBudget : isSearchActiveDebts);
-      bSearch.innerHTML = isSearchNow ? '✕ Aramayı Kapat' : '🔍 Harcamalarda Ara';
+      document.getElementById('btnToggleSearchAction').innerHTML = isSearchNow ? '✕ Aramayı Kapat' : '🔍 Harcamalarda Ara';
 
       if (navigator.vibrate) {
-        navigator.vibrate(60);
+        navigator.vibrate(50);
       }
     }
 
@@ -1549,7 +1526,6 @@
       recalcControlTotal();
     }
 
-    // 1. LİKİDİTE PLANLAMASI RENDER
     function renderLiquidityContent() {
       const container = document.getElementById('liquidityReportContent');
       if (!currentData) {
@@ -1595,7 +1571,7 @@
       const netBuffer = totalIncome - totalRequiredEUR;
       liqNetBufferValue = netBuffer;
 
-      // SAYFA: ÖZET GÖRÜNÜMÜ (Analitik Bütçe Kartları)
+      // ÖZET GÖRÜNÜMÜ
       if (currentLiquidityView === 'summary') {
         let html = `
           <div class="liq-section-title">💳 Kart Harcama</div>
@@ -1691,7 +1667,7 @@
         return;
       }
 
-      // SAYFA: PLAN GÖRÜNÜMÜ (Checkbox'lı, İnteraktif Toplamı Değişen)
+      // PLAN GÖRÜNÜMÜ
       let html = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding: 2px 2px 8px 2px; border-bottom: 1px solid var(--border);">
           <div style="font-weight:700; font-size:14px;">
@@ -1828,7 +1804,7 @@
                   <span class="template-tag tag-tr">TR KART</span>
                   Enpara
                 </div>
-                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">₺${sumEnpara.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">₺${sumEnpara.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
               </div>
             </div>
             <div style="font-weight:700; font-size:14px; color:#fff;">€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
@@ -1847,7 +1823,7 @@
                   <span class="template-tag tag-tr">TR KART</span>
                   Free
                 </div>
-                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">₺${sumFree.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">₺${sumFree.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
               </div>
             </div>
             <div style="font-weight:700; font-size:14px; color:#fff;">€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
@@ -1866,7 +1842,7 @@
                   <span class="template-tag tag-tr">TR KART</span>
                   Diğer
                 </div>
-                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">₺${sumOtherTR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">₺${sumOtherTR.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
               </div>
             </div>
             <div style="font-weight:700; font-size:14px; color:#fff;">€${trEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
@@ -1879,7 +1855,6 @@
       recalcSummaryTotal();
     }
 
-    // 2. AY İÇİ KONTROL RENDER (LİKİDİTE PLANLAMASI İLE BİREBİR AYNI KART BLOKLU ÖZET TASARIMI)
     function renderControlContent() {
       const container = document.getElementById('controlReportContent');
       if (!currentData) {
@@ -1946,7 +1921,7 @@
 
       const totalPendingObligation = remainingCardLimit + totalRemManual + totalRemTrEUR;
 
-      // SAYFA: ÖZET GÖRÜNÜMÜ (AY İÇİ KONTROL - AÇIK KART TASARIMI)
+      // SAYFA: ÖZET GÖRÜNÜMÜ
       if (currentControlView === 'summary') {
         let html = `
           <div class="liq-section-title">💳 Kart Harcama</div>
@@ -2034,7 +2009,7 @@
         return;
       }
 
-      // SAYFA: PLAN GÖRÜNÜMÜ (AY İÇİ KONTROL - CHECKBOX'LI VE İNTERAKTİF)
+      // SAYFA: PLAN GÖRÜNÜMÜ
       let html = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding: 2px 2px 8px 2px; border-bottom: 1px solid var(--border);">
           <div style="font-weight:700; font-size:14px;">
@@ -2608,6 +2583,7 @@
       return isNaN(num) ? 0 : num;
     }
 
+    // %100 Güvenli Düzenleme Butonu Bağlayıcısı
     function renderBudgetList() {
       const container = document.getElementById('listContainer');
       const badge = document.getElementById('budgetSearchSumBadge');
@@ -2685,17 +2661,6 @@
         wrapper.className = canManage ? 'swipe-container' : 'row-wrapper';
         wrapper.id = `item-row-${item.rowIndex}`;
 
-        let swipeActions = '';
-        if (canManage) {
-          const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
-          swipeActions = `
-            <div class="swipe-actions" style="width: 150px;">
-              <button class="swipe-btn edit" onclick="openEditBudgetModal('${activeBudgetTab}', ${itemJson})">Düzenle</button>
-              <button class="swipe-btn delete" onclick="deleteBudgetItem('${activeBudgetTab}', ${item.rowIndex})">Sil</button>
-            </div>
-          `;
-        }
-
         const cardEl = document.createElement('div');
         cardEl.className = 'item-card' + (isPending ? ' pending-card' : '');
         cardEl.innerHTML = `
@@ -2709,10 +2674,379 @@
           </div>
         `;
 
-        if (canManage) wrapper.innerHTML = swipeActions;
-        wrapper.appendChild(cardEl);
+        if (canManage) {
+          const actionsDiv = document.createElement('div');
+          actionsDiv.className = 'swipe-actions';
+          actionsDiv.style.width = '150px';
 
+          const editBtn = document.createElement('button');
+          editBtn.className = 'swipe-btn edit';
+          editBtn.innerText = 'Düzenle';
+          editBtn.onclick = () => openEditBudgetModal(activeBudgetTab, item);
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'swipe-btn delete';
+          delBtn.innerText = 'Sil';
+          delBtn.onclick = () => deleteBudgetItem(activeBudgetTab, item.rowIndex);
+
+          actionsDiv.appendChild(editBtn);
+          actionsDiv.appendChild(delBtn);
+          wrapper.appendChild(actionsDiv);
+        }
+
+        wrapper.appendChild(cardEl);
         if (canManage) attachSwipeEvents(cardEl, wrapper, null);
+        container.appendChild(wrapper);
+      });
+    }
+
+    function openEditBudgetModal(type, item) {
+      resetCurrentSwipe();
+      editingBudgetRowIndex = item.rowIndex;
+      modalSelectedType = type;
+
+      document.getElementById('lblModalBudgetTitle').innerText = 'Kaydı Düzenle';
+      document.getElementById('btnBudgetSubmit').innerText = 'Güncelle';
+      document.getElementById('budgetTypeSwitcher').style.display = 'none';
+
+      setModalType(type, false);
+
+      document.getElementById('mDate').value = parseFormattedDateToInput(item.date);
+      document.getElementById('mAmount').value = formatAmountForInput(item.amount);
+      
+      let cleanMerchant = (item.merchant || "").replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
+      document.getElementById('mDesc').value = cleanMerchant;
+      document.getElementById('mAccount').value = item.card || "";
+
+      document.getElementById('modalBudget').style.display = 'flex';
+    }
+
+    function renderDebtsDashboard(data) {
+      if (!data || currentModule !== 'debts') return;
+      
+      const isArchive = document.getElementById('sheetSelect').value === 'archive';
+      
+      document.getElementById('lblDebtNetTitle').innerHTML = isArchive ? "NET KAPANAN DURUM" : "NET BORÇ / ALACAK DURUMU";
+      document.getElementById('lblDebtGiveTitle').innerHTML = isArchive ? "KAPATTIĞIM<br>BORÇLAR" : "BORÇLARIM (ALDIKLARIM)";
+      document.getElementById('lblDebtGetTitle').innerHTML = isArchive ? "TAHSİL ETTİĞİM<br>ALACAKLAR" : "ALACAKLARIM (VERDİKLERİM)";
+
+      updateMaskedDisplay();
+      renderDebtsList();
+    }
+
+    function switchDebtTab(tab) {
+      activeDebtTab = tab;
+      document.querySelectorAll('#viewDebts .tab-btn').forEach(btn => btn.classList.remove('active'));
+      
+      let targetId = 'tab-debt-give';
+      if (tab === 'credit') targetId = 'tab-debt-get';
+      if (tab === 'history') targetId = 'tab-debt-history';
+      
+      const target = document.getElementById(targetId);
+      if (target) target.classList.add('active');
+      renderDebtsList();
+    }
+
+    function calculateDurationText(startDateStr, endDateStr) {
+      if (!startDateStr) return "";
+      const sParts = startDateStr.toString().trim().split(".");
+      if (sParts.length !== 3) return "";
+      
+      let start = new Date(parseInt(sParts[2]), parseInt(sParts[1]) - 1, parseInt(sParts[0]));
+      let end = new Date();
+
+      if (endDateStr) {
+        const eParts = endDateStr.toString().trim().split(".");
+        if (eParts.length === 3) {
+          end = new Date(parseInt(eParts[2]), parseInt(eParts[1]) - 1, parseInt(eParts[0]));
+        }
+      }
+
+      if (end < start) return "(0 gün)";
+
+      let years = end.getFullYear() - start.getFullYear();
+      let months = end.getMonth() - start.getMonth();
+      let days = end.getDate() - start.getDate();
+
+      if (days < 0) {
+        months -= 1;
+        let prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
+        days += prevMonth.getDate();
+      }
+
+      if (months < 0) {
+        years -= 1;
+        months += 12;
+      }
+
+      let totalMonths = years * 12 + months;
+      let textParts = [];
+
+      if (totalMonths > 0) textParts.push(`${totalMonths} ay`);
+      if (days > 0 || totalMonths === 0) textParts.push(`${days} gün`);
+
+      return `(${textParts.join(" ")})`;
+    }
+
+    function renderDebtsList() {
+      const container = document.getElementById('listContainer');
+      const badge = document.getElementById('debtsSearchSumBadge');
+      container.innerHTML = '';
+      if (!debtsData || currentModule !== 'debts') return;
+
+      if (activeDebtTab === 'history') {
+        let history = [...(debtsData.history || [])];
+
+        if (isSearchActiveDebts && searchQueryDebts) {
+          history = history.filter(item => {
+            let str = `${item.person || ''} ${item.note || ''} ${item.amount || ''} ${item.date || ''}`.toLowerCase();
+            return str.includes(searchQueryDebts);
+          });
+
+          let totalSum = 0;
+          history.forEach(item => { totalSum += parseAmountToNum(item.amount || 0); });
+          let count = history.length;
+          let formattedTotal = "€" + totalSum.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          badge.innerText = `(${count}) ${formattedTotal}`;
+          badge.style.display = "inline-block";
+        } else {
+          badge.style.display = "none";
+        }
+
+        history.sort((a, b) => parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date));
+
+        if (history.length === 0) {
+          container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-dim)">${isSearchActiveDebts ? 'Aramaya uygun geçmiş bulunamadı.' : 'Ödeme geçmişi bulunamadı.'}</div>`;
+          return;
+        }
+
+        history.forEach(item => {
+          let itemColor = 'var(--green)';
+          let canManage = false;
+
+          if (item.note.includes("Borç Alma")) {
+            itemColor = 'var(--red)';
+          } else if (item.note.includes("Borç Verme")) {
+            itemColor = 'var(--accent)';
+          } else if (item.note.includes("Geri Ödeme")) {
+            canManage = true;
+          }
+
+          const wrapper = document.createElement('div');
+          wrapper.className = canManage ? 'swipe-container' : 'row-wrapper';
+          wrapper.id = `history-row-${item.rowIndex}`;
+
+          const cardEl = document.createElement('div');
+          cardEl.className = 'item-card';
+          cardEl.innerHTML = `
+            <div class="item-left">
+              <div class="name">${item.person}</div>
+              <div class="sub">${item.date} • ${item.note}</div>
+            </div>
+            <div class="item-right" style="color: ${itemColor}">
+              ${formatAmount(item.amount)}
+            </div>
+          `;
+
+          if (canManage) {
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'swipe-actions';
+            actionsDiv.style.width = '150px';
+
+            const editBtn = document.createElement('button');
+            editBtn.className = 'swipe-btn edit';
+            editBtn.innerText = 'Düzenle';
+            editBtn.onclick = () => openEditHistoryModal(item);
+
+            const undoBtn = document.createElement('button');
+            undoBtn.className = 'swipe-btn undo';
+            undoBtn.innerText = 'Geri Al';
+            undoBtn.onclick = () => undoHistoryEntry(item.rowIndex);
+
+            actionsDiv.appendChild(editBtn);
+            actionsDiv.appendChild(undoBtn);
+            wrapper.appendChild(actionsDiv);
+          }
+
+          wrapper.appendChild(cardEl);
+          if (canManage) attachSwipeEvents(cardEl, wrapper, null);
+          container.appendChild(wrapper);
+        });
+        return;
+      }
+
+      const isArchive = document.getElementById('sheetSelect').value === 'archive';
+      let rawItems = (activeDebtTab === 'debt') ? (debtsData.debts || []) : (debtsData.credits || []);
+
+      if (isSearchActiveDebts && searchQueryDebts) {
+        rawItems = rawItems.filter(item => {
+          let str = `${item.person || ''} ${item.totalAmount || ''} ${item.remainingAmount || ''} ${item.date || ''}`.toLowerCase();
+          return str.includes(searchQueryDebts);
+        });
+
+        let totalSum = 0;
+        rawItems.forEach(item => {
+          totalSum += parseAmountToNum(isArchive ? item.totalAmount : item.remainingAmount);
+        });
+        let count = rawItems.length;
+        let formattedTotal = "€" + totalSum.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        badge.innerText = `(${count}) ${formattedTotal}`;
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      if (!rawItems || rawItems.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-dim)">${isSearchActiveDebts ? 'Aramaya uygun kayıt bulunamadı.' : 'Kayıt bulunamadı.'}</div>`;
+        return;
+      }
+
+      let items = [...rawItems].sort((a, b) => {
+        if (isArchive) {
+          return parseDateToTimestamp(b.closeDate || b.date) - parseDateToTimestamp(a.closeDate || a.date);
+        } else {
+          return parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
+        }
+      });
+
+      items.forEach(item => {
+        const total = formatAmount(item.totalAmount);
+        const rem = formatAmount(item.remainingAmount);
+        const paid = formatAmount(item.paidAmount);
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'swipe-container';
+        wrapper.id = `debt-row-${item.rowIndex}`;
+
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'swipe-actions';
+
+        if (!isArchive) {
+          actionsDiv.style.width = '225px';
+
+          const payBtn = document.createElement('button');
+          payBtn.className = 'swipe-btn pay';
+          payBtn.innerText = 'Ödeme';
+          payBtn.onclick = () => openPaymentModal(activeDebtTab, item.rowIndex, item.person);
+
+          const closeBtn = document.createElement('button');
+          closeBtn.className = 'swipe-btn close';
+          closeBtn.innerText = 'Kapat';
+          closeBtn.onclick = () => handleDebtArchive(activeDebtTab, item.rowIndex);
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'swipe-btn delete';
+          delBtn.innerText = 'Sil';
+          delBtn.onclick = () => handleDebtDelete(activeDebtTab, item.rowIndex);
+
+          actionsDiv.appendChild(payBtn);
+          actionsDiv.appendChild(closeBtn);
+          actionsDiv.appendChild(delBtn);
+        } else {
+          actionsDiv.style.width = '75px';
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'swipe-btn delete';
+          delBtn.innerText = 'Sil';
+          delBtn.onclick = () => handleDebtDelete(activeDebtTab, item.rowIndex);
+
+          actionsDiv.appendChild(delBtn);
+        }
+
+        let initialLabel = (activeDebtTab === 'debt') ? 'Borç Alındı' : 'Borç Verildi';
+        let initialColor = (activeDebtTab === 'debt') ? 'var(--red)' : 'var(--green)';
+        let paymentColor = (activeDebtTab === 'debt') ? 'var(--green)' : 'var(--red)';
+
+        let histHtml = `
+          <div class="acc-row">
+            <span class="acc-date">📅 ${item.date}</span>
+            <span class="acc-note">${initialLabel}</span>
+            <span class="acc-amount" style="color: ${initialColor}">${total}</span>
+          </div>
+        `;
+
+        if (item.history && item.history.length > 0) {
+          const paymentsOnly = item.history.filter(h => h.note.includes("Geri Ödeme"));
+          paymentsOnly.forEach(h => {
+            histHtml += `
+              <div class="acc-row">
+                <span class="acc-date">📅 ${h.date}</span>
+                <span class="acc-note">Geri Ödeme</span>
+                <span class="acc-amount" style="color: ${paymentColor}">${formatAmount(h.amount)}</span>
+              </div>
+            `;
+          });
+        }
+
+        let archiveCloseHtml = '';
+        if (isArchive && item.closeDate) {
+          archiveCloseHtml = `
+            <div class="acc-row" style="color: var(--text-dim); border-top: 1px dashed rgba(255,255,255,0.08); margin-top: 4px; padding-top: 4px;">
+              <span class="acc-date">📅 ${item.closeDate}</span>
+              <span class="acc-note" style="color: var(--text-dim)">Kapanma Tarihi</span>
+              <span class="acc-amount" style="color: var(--text-dim)">Kapandı</span>
+            </div>
+          `;
+        }
+
+        let subText = "";
+        let rightMainDisplay = "";
+        let rightSubDisplay = "";
+
+        if (isArchive) {
+          subText = `${item.date} • Kapanış: ${item.closeDate}`;
+          rightMainDisplay = total;
+          rightSubDisplay = "Kapandı";
+        } else {
+          if (activeDebtTab === 'debt') {
+            subText = `${item.date} • Alınan: ${total}`;
+            rightMainDisplay = rem;
+            rightSubDisplay = `Ödenen: ${paid}`;
+          } else {
+            subText = `${item.date} • Verilen: ${total}`;
+            rightMainDisplay = rem;
+            rightSubDisplay = `Alınan: ${paid}`;
+          }
+        }
+
+        let durationText = isArchive 
+          ? calculateDurationText(item.date, item.closeDate)
+          : calculateDurationText(item.date, null);
+
+        const cardEl = document.createElement('div');
+        cardEl.className = 'item-card';
+        cardEl.innerHTML = `
+          <div class="item-left">
+            <div class="name">
+              <span style="font-size:10px; color:var(--text-dim); margin-right:4px;">▼</span>${item.person}
+              <span style="font-weight:normal; font-size:12px; color:var(--text-dim);">&nbsp;&nbsp;/&nbsp;&nbsp;${durationText}</span>
+            </div>
+            <div class="sub">${subText}</div>
+          </div>
+          <div class="item-right" style="color: ${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">
+            ${rightMainDisplay}
+            <div class="sub-eur">${rightSubDisplay}</div>
+          </div>
+        `;
+
+        const accBody = document.createElement('div');
+        accBody.className = 'accordion-body';
+        accBody.id = `acc-${item.rowIndex}`;
+        accBody.innerHTML = `
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase;">İşlem Geçmişi</div>
+          ${histHtml}
+          ${archiveCloseHtml}
+          <div class="acc-row" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); font-weight: bold;">
+            <span style="grid-column: span 2;">${isArchive ? 'Kapanan Tutar' : 'Kalan Tutar'}</span>
+            <span class="acc-amount" style="color:${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">${isArchive ? total : rem}</span>
+          </div>
+        `;
+
+        wrapper.appendChild(actionsDiv);
+        wrapper.appendChild(cardEl);
+        wrapper.appendChild(accBody);
+
+        attachSwipeEvents(cardEl, wrapper, `acc-${item.rowIndex}`);
         container.appendChild(wrapper);
       });
     }
@@ -3083,6 +3417,163 @@
         })
       });
 
+      onFilterChange();
+    }
+
+    function openPaymentModal(debtType, rowIndex, personName) {
+      resetCurrentSwipe();
+      document.getElementById('payDebtType').value = debtType;
+      document.getElementById('payRowIndex').value = rowIndex;
+      document.getElementById('payPersonName').value = personName;
+      document.getElementById('payIsHistoryEdit').value = 'false';
+
+      const lblTitle = document.getElementById('lblPaymentTitle');
+      const lblDate = document.getElementById('lblPaymentDate');
+      const lblAmount = document.getElementById('lblPaymentAmount');
+      const btnSubmit = document.getElementById('btnPaymentSubmit');
+
+      if (debtType === 'debt') {
+        lblTitle.innerText = `${personName} İçin Ödeme Ekle`;
+        lblDate.innerText = 'Ödeme Tarihi';
+        lblAmount.innerText = 'Ödenen Tutar (€)';
+        btnSubmit.innerText = 'Ödemeyi Kaydet';
+      } else {
+        lblTitle.innerText = `${personName} İçin Tahsilat Ekle`;
+        lblDate.innerText = 'Alınma Tarihi';
+        lblAmount.innerText = 'Alınan Tutar (€)';
+        btnSubmit.innerText = 'Tahsilatı Kaydet';
+      }
+
+      document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('payAmount').value = '';
+      document.getElementById('modalPayment').style.display = 'flex';
+    }
+
+    async function submitDebtPayment() {
+      const debtType = document.getElementById('payDebtType').value;
+      const rowIndex = document.getElementById('payRowIndex').value;
+      const personName = document.getElementById('payPersonName').value;
+      const rawDate = document.getElementById('payDate').value;
+      const amount = document.getElementById('payAmount').value;
+      const isHistoryEdit = document.getElementById('payIsHistoryEdit').value === 'true';
+
+      if (!amount) return;
+
+      let dateFormatted = "";
+      if (rawDate) {
+        const p = rawDate.split("-");
+        dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
+      }
+
+      closeModal('modalPayment');
+
+      if (isHistoryEdit) {
+        await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'editHistoryEntry',
+            rowIndex: rowIndex,
+            amount: amount,
+            date: dateFormatted
+          })
+        });
+      } else {
+        await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'updateDebtPayment',
+            debtType: debtType,
+            rowIndex: rowIndex,
+            amount: amount,
+            date: dateFormatted,
+            person: personName
+          })
+        });
+      }
+      loadDebtsData();
+    }
+
+    async function undoHistoryEntry(rowIndex) {
+      if (!confirm("Bu ödeme işlemini geri almak (silmek) istediğinize emin misiniz?")) {
+        resetCurrentSwipe();
+        return;
+      }
+
+      const row = document.getElementById(`history-row-${rowIndex}`);
+      if (row) row.remove();
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'deleteHistoryEntry',
+          rowIndex: rowIndex
+        })
+      });
+      loadDebtsData();
+    }
+
+    async function handleDebtArchive(debtType, rowIndex) {
+      if (!confirm("Bu borç/alacak kapandı olarak arşive taşınsın mı?")) {
+        resetCurrentSwipe();
+        return;
+      }
+
+      const row = document.getElementById(`debt-row-${rowIndex}`);
+      if (row) row.remove();
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'archiveDebt',
+          debtType: debtType,
+          rowIndex: rowIndex
+        })
+      });
+      loadDebtsData();
+    }
+
+    async function handleDebtDelete(debtType, rowIndex) {
+      if (!confirm("Bu borç/alacak kaydını tamamen silmek istediğinize emin misiniz?")) {
+        resetCurrentSwipe();
+        return;
+      }
+      const isArchive = document.getElementById('sheetSelect').value === 'archive';
+
+      const row = document.getElementById(`debt-row-${rowIndex}`);
+      if (row) row.remove();
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'deleteDebt',
+          debtType: debtType,
+          rowIndex: rowIndex,
+          isArchive: isArchive
+        })
+      });
+      loadDebtsData();
+    }
+
+    async function deleteBudgetItem(type, rowIndex) {
+      if (!confirm("Bu harcama/gelir kaydını silmek istediğinize emin misiniz?")) {
+        resetCurrentSwipe();
+        return;
+      }
+
+      const sheet = document.getElementById('sheetSelect').value;
+      const row = document.getElementById(`item-row-${rowIndex}`);
+      if (row) row.remove();
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'deleteEntry',
+          sheet: sheet,
+          type: type,
+          rowIndex: rowIndex
+        })
+      });
+      delete memoryCache[sheet];
       onFilterChange();
     }
 
