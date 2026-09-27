@@ -798,6 +798,29 @@
       color: #0f172a;
       box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
     }
+
+    /* Ay İçi Kontrol Plan Kırılım Kutuları */
+    .ctrl-breakdown-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .ctrl-breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .ctrl-breakdown-row span:last-child {
+      font-weight: 600;
+      color: var(--text);
+    }
   </style>
 </head>
 <body>
@@ -909,7 +932,7 @@
 
   <button class="fab" id="mainFab"><span>+</span></button>
 
-  <!-- LİKİDİTE PLANLAMASI MODALI (İLK AÇILIŞ ÖZET [SOL BUTON], DİĞERİ PLAN [SAĞ BUTON]) -->
+  <!-- LİKİDİTE PLANLAMASI MODALI (İLK AÇILIŞ: ÖZET) -->
   <div class="modal" id="modalLiquidity">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
@@ -928,7 +951,7 @@
     </div>
   </div>
 
-  <!-- AY İÇİ KONTROL MODALI (İLK AÇILIŞ ÖZET [SOL BUTON], DİĞERİ PLAN [SAĞ BUTON]) -->
+  <!-- AY İÇİ KONTROL MODALI (İLK AÇILIŞ: ÖZET) -->
   <div class="modal" id="modalControl">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
@@ -1089,7 +1112,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.0.2";
+    const CURRENT_VERSION = "3.0.3";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1302,9 +1325,6 @@
       });
     }
 
-    // =========================================================
-    // KUSURSUZ VE HIZLI DOKUNMA MOTORU (FAB TOUCH)
-    // =========================================================
     let fabTimer = null;
     let isFabLongPress = false;
     let fabStartX = 0;
@@ -1519,12 +1539,33 @@
       recalcSummaryTotal();
     }
 
+    // AY İÇİ KONTROL (PLAN): EN ÜST TOPLAM VE HESAP/TR KIRILIMI HESAPLAYICI
     function recalcControlTotal() {
       const checkboxes = document.querySelectorAll('.chk-control:checked');
       let liveTotal = 0;
+
+      let sumSparkasse = 0;
+      let sumN26 = 0;
+      let sumC24 = 0;
+      let sumNakit = 0;
+      let sumTrTRY = 0;
+      let sumTrEUR = 0;
+
       checkboxes.forEach(c => {
-        let val = parseFloat(c.getAttribute('data-eur') || 0);
-        liveTotal += val;
+        let eurVal = parseFloat(c.getAttribute('data-eur') || 0);
+        let tryVal = parseFloat(c.getAttribute('data-try') || 0);
+        let accType = c.getAttribute('data-account') || '';
+
+        liveTotal += eurVal;
+
+        if (accType === 'sparkasse') sumSparkasse += eurVal;
+        else if (accType === 'n26') sumN26 += eurVal;
+        else if (accType === 'c24') sumC24 += eurVal;
+        else if (accType === 'nakit') sumNakit += eurVal;
+        else if (accType === 'tr') {
+          sumTrTRY += tryVal;
+          sumTrEUR += eurVal;
+        }
       });
 
       const lbl = document.getElementById('lblControlLiveTotal');
@@ -1538,6 +1579,64 @@
           lbl.style.color = "var(--green)";
         }
       }
+
+      // Alt Kırılım Alanını Güncelle / Göster / Gizle
+      const breakdownBox = document.getElementById('ctrlBreakdownBox');
+      if (!breakdownBox) return;
+
+      let hasAnyBreakdown = (sumSparkasse > 0 || sumN26 > 0 || sumC24 > 0 || sumNakit > 0 || sumTrTRY > 0);
+
+      if (!hasAnyBreakdown) {
+        breakdownBox.style.display = 'none';
+        breakdownBox.innerHTML = '';
+        return;
+      }
+
+      breakdownBox.style.display = 'flex';
+      let bHtml = '';
+
+      if (sumSparkasse > 0) {
+        bHtml += `
+          <div class="ctrl-breakdown-row">
+            <span>🏦 Sparkasse</span>
+            <span>€${sumSparkasse.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+        `;
+      }
+      if (sumN26 > 0) {
+        bHtml += `
+          <div class="ctrl-breakdown-row">
+            <span>🏦 N26</span>
+            <span>€${sumN26.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+        `;
+      }
+      if (sumC24 > 0) {
+        bHtml += `
+          <div class="ctrl-breakdown-row">
+            <span>🏦 C24</span>
+            <span>€${sumC24.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+        `;
+      }
+      if (sumNakit > 0) {
+        bHtml += `
+          <div class="ctrl-breakdown-row">
+            <span>💵 Nakit</span>
+            <span>€${sumNakit.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+        `;
+      }
+      if (sumTrTRY > 0) {
+        bHtml += `
+          <div class="ctrl-breakdown-row">
+            <span>🇹🇷 TR Kartları</span>
+            <span>₺${sumTrTRY.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span style="font-size:11px; color:var(--text-dim);">(~€${sumTrEUR.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span></span>
+          </div>
+        `;
+      }
+
+      breakdownBox.innerHTML = bHtml;
     }
 
     function toggleAllControlCheckboxes() {
@@ -1593,7 +1692,7 @@
       const netBuffer = totalIncome - totalRequiredEUR;
       liqNetBufferValue = netBuffer;
 
-      // ÖZET GÖRÜNÜMÜ
+      // SAYFA: ÖZET GÖRÜNÜMÜ (Analitik Bütçe Kartları)
       if (currentLiquidityView === 'summary') {
         let html = `
           <div class="liq-section-title">💳 Kart Harcama</div>
@@ -1657,8 +1756,9 @@
         }
         html += `</div>`;
 
+        // BAŞLIK GÜNCELLENDİ: "Toplam Likidite Raporu"
         html += `
-          <div class="liq-section-title">📊 Toplam Likidite Dengesi</div>
+          <div class="liq-section-title">📊 Toplam Likidite Raporu</div>
           <div class="liq-card" id="liqBalCard" style="border-left: 4px solid var(--accent);">
             <div class="liq-acc-header" onclick="toggleLiqBalanceDetails()">
               <div>
@@ -1689,7 +1789,7 @@
         return;
       }
 
-      // PLAN GÖRÜNÜMÜ
+      // SAYFA: PLAN GÖRÜNÜMÜ
       let html = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding: 2px 2px 8px 2px; border-bottom: 1px solid var(--border);">
           <div style="font-weight:700; font-size:14px;">
@@ -2035,7 +2135,7 @@
           `;
         }
 
-        // 4. KALAN TOPLAM TUTAR (Bekleyen Net Yükümlülük kaldırıldı, sol tarafta Ödeme Bekliyor, sağda tutar)
+        // 4. KALAN TOPLAM TUTAR
         let isPending = totalPendingObligation > 0;
         let colorTheme = isPending ? 'var(--red)' : 'var(--green)';
 
@@ -2058,25 +2158,30 @@
       }
 
       // =========================================================================
-      // AY İÇİ KONTROL: PLAN SAYFASI (CHECKBOX'LI, TEK TEK LİSTELEME)
+      // AY İÇİ KONTROL: PLAN SAYFASI (ÜSTTE TOPLAM + SEÇİLENLERİN HESAP/TR KIRILIMI)
       // =========================================================================
       let html = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding: 2px 2px 8px 2px; border-bottom: 1px solid var(--border);">
-          <div style="font-weight:700; font-size:14px;">
-            Bekleyen Ödemeler: <span id="lblControlLiveTotal" style="color:var(--red); font-size:15px;">€0,00</span>
+        <div style="background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-weight:700; font-size:14px;">
+              Bekleyen Ödemeler: <span id="lblControlLiveTotal" style="color:var(--red); font-size:15px;">€0,00</span>
+            </div>
+            <button type="button" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;" onclick="toggleAllControlCheckboxes()">Tümünü Seç / Kaldır</button>
           </div>
-          <button type="button" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;" onclick="toggleAllControlCheckboxes()">Tümünü Seç / Kaldır</button>
+
+          <!-- SEÇİLENLERİN CANLI BANKA & TR KIRILIM KUTUSU -->
+          <div id="ctrlBreakdownBox" class="ctrl-breakdown-box" style="display:none;"></div>
         </div>
 
         <div id="controlItemsList">
       `;
 
-      // 1. KART (N26) - Sıfırdan büyükse
+      // 1. KART (N26)
       if (remainingCardLimit > 0) {
         html += `
           <label class="template-item">
             <div style="display:flex; align-items:center;">
-              <input type="checkbox" class="chk-control" data-eur="${remainingCardLimit}" onchange="recalcControlTotal()" checked>
+              <input type="checkbox" class="chk-control" data-eur="${remainingCardLimit}" data-try="0" data-account="n26" onchange="recalcControlTotal()" checked>
               <div>
                 <div style="font-weight:600; font-size:13px;">
                   <span class="template-tag tag-card">KART</span>
@@ -2090,16 +2195,24 @@
         `;
       }
 
-      // 2. HESAP (Tüm ödenmemiş diğer giderler tek tek kendi ismiyle)
+      // 2. HESAP (Tüm ödenmemiş diğer giderler tek tek kendi ismi ve banka tipiyle)
       pendingManualItems.forEach(item => {
         let numAmt = parseAmountToNum(item.amount);
         let cleanName = item.merchant || 'Açıklamasız';
+        let rawAcc = (item.card || '').toLowerCase().trim();
+        let accType = 'diger';
+
+        if (rawAcc.includes('sparkasse')) accType = 'sparkasse';
+        else if (rawAcc.includes('n26')) accType = 'n26';
+        else if (rawAcc.includes('c24')) accType = 'c24';
+        else if (rawAcc.includes('nakit') || rawAcc.includes('bar')) accType = 'nakit';
+
         let subInfo = item.card ? `Hesap: ${item.card}` : 'Diğer Gider';
 
         html += `
           <label class="template-item">
             <div style="display:flex; align-items:center;">
-              <input type="checkbox" class="chk-control" data-eur="${numAmt}" onchange="recalcControlTotal()" checked>
+              <input type="checkbox" class="chk-control" data-eur="${numAmt}" data-try="0" data-account="${accType}" onchange="recalcControlTotal()" checked>
               <div>
                 <div style="font-weight:600; font-size:13px;">
                   <span class="template-tag tag-manual">HESAP</span>
@@ -2125,7 +2238,7 @@
         html += `
           <label class="template-item">
             <div style="display:flex; align-items:center;">
-              <input type="checkbox" class="chk-control" data-eur="${amtEUR}" onchange="recalcControlTotal()" checked>
+              <input type="checkbox" class="chk-control" data-eur="${amtEUR}" data-try="${amtTRY}" data-account="tr" onchange="recalcControlTotal()" checked>
               <div>
                 <div style="font-weight:600; font-size:13px;">
                   <span class="template-tag tag-tr">TR KART</span>
