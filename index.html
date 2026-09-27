@@ -1089,7 +1089,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.0.4";
+    const CURRENT_VERSION = "3.0.5";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1302,9 +1302,6 @@
       });
     }
 
-    // =========================================================
-    // KUSURSUZ VE HIZLI DOKUNMA MOTORU (FAB TOUCH)
-    // =========================================================
     let fabTimer = null;
     let isFabLongPress = false;
     let fabStartX = 0;
@@ -1519,7 +1516,7 @@
       recalcSummaryTotal();
     }
 
-    // AY İÇİ KONTROL (PLAN): EN ÜST BAŞLIK VE AYNI ÖZELLİKTE ALT ALTA SIRALANAN HESAPLAR
+    // AY İÇİ KONTROL (PLAN): EN ÜST BAŞLIK VE KUSURSUZ HİZALANAN HESAP SATIRLARI
     function recalcControlTotal() {
       const checkboxes = document.querySelectorAll('.chk-control:checked');
       let liveTotal = 0;
@@ -1560,7 +1557,6 @@
         }
       }
 
-      // Alt alta listelenen satırları aynı başlık özellikleri ve büyüklüğünde güncelle
       const listArea = document.getElementById('ctrlAccountsSummaryLines');
       if (!listArea) return;
 
@@ -1570,7 +1566,7 @@
         linesHtml += `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
             <div style="font-weight:700; font-size:14px;">Sparkasse:</div>
-            <div style="font-weight:700; font-size:15px; color:var(--red);">-€${sumSparkasse.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div style="min-width:140px; text-align:right; font-weight:700; font-size:15px; color:var(--red);">-€${sumSparkasse.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </div>
         `;
       }
@@ -1578,7 +1574,7 @@
         linesHtml += `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
             <div style="font-weight:700; font-size:14px;">N26:</div>
-            <div style="font-weight:700; font-size:15px; color:var(--red);">-€${sumN26.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div style="min-width:140px; text-align:right; font-weight:700; font-size:15px; color:var(--red);">-€${sumN26.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </div>
         `;
       }
@@ -1586,7 +1582,7 @@
         linesHtml += `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
             <div style="font-weight:700; font-size:14px;">C24:</div>
-            <div style="font-weight:700; font-size:15px; color:var(--red);">-€${sumC24.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div style="min-width:140px; text-align:right; font-weight:700; font-size:15px; color:var(--red);">-€${sumC24.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </div>
         `;
       }
@@ -1594,7 +1590,7 @@
         linesHtml += `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
             <div style="font-weight:700; font-size:14px;">Nakit:</div>
-            <div style="font-weight:700; font-size:15px; color:var(--red);">-€${sumNakit.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div style="min-width:140px; text-align:right; font-weight:700; font-size:15px; color:var(--red);">-€${sumNakit.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </div>
         `;
       }
@@ -1602,7 +1598,9 @@
         linesHtml += `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
             <div style="font-weight:700; font-size:14px;">TR:</div>
-            <div style="font-weight:700; font-size:15px; color:var(--red);">-₺${sumTrTRY.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span style="font-size:12px; font-weight:normal; color:var(--text-dim);">(-€${sumTrEUR.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span></div>
+            <div style="min-width:140px; text-align:right;">
+              <span style="font-size:12px; font-weight:normal; color:var(--text-dim); margin-right:4px;">(-₺${sumTrTRY.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span><span style="font-weight:700; font-size:15px; color:var(--red);">-€${sumTrEUR.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
           </div>
         `;
       }
@@ -1727,7 +1725,6 @@
         }
         html += `</div>`;
 
-        // BAŞLIK GÜNCELLENDİ: "Toplam Likidite Raporu"
         html += `
           <div class="liq-section-title">📊 Toplam Likidite Raporu</div>
           <div class="liq-card" id="liqBalCard" style="border-left: 4px solid var(--accent);">
@@ -1986,6 +1983,7 @@
       let hasSecondaryRem = (remNakit > 0 || remC24 > 0 || remOtherManual > 0);
 
       let remWorldEkoTRY = 0, remEnparaTRY = 0, remFreeTRY = 0, remOtherTRY = 0;
+      let fullWorldEkoTRY = 0, fullEnparaTRY = 0, fullFreeTRY = 0, fullOtherTRY = 0;
       let totalRemTrTRY = 0, totalRemTrEUR = 0, totalTrTRYAll = 0, totalTrEURAll = 0, trRateEUR = 0;
 
       let pendingTrItems = [];
@@ -2002,6 +2000,11 @@
         let isWorld = (name.includes('world') || name.includes('eko'));
         let isEnpara = name.includes('enpara');
         let isFree = (name.includes('free') || name.includes('bonus'));
+
+        if (isWorld) fullWorldEkoTRY += amtTRY;
+        else if (isEnpara) fullEnparaTRY += amtTRY;
+        else if (isFree) fullFreeTRY += amtTRY;
+        else fullOtherTRY += amtTRY;
 
         if (isPending) {
           totalRemTrTRY += amtTRY;
@@ -2126,7 +2129,7 @@
       }
 
       // =========================================================================
-      // AY İÇİ KONTROL: PLAN SAYFASI (AYNI ÖZELLİKTE ALT ALTA SIRALANAN BAŞLIK VE HESAPLAR)
+      // AY İÇİ KONTROL: PLAN SAYFASI (HİZALI VE SAĞA YASLI RAKAMLAR)
       // =========================================================================
       let html = `
         <div style="margin-bottom:14px; padding-bottom:6px; border-bottom:1px solid var(--border);">
@@ -2138,7 +2141,7 @@
             <button type="button" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;" onclick="toggleAllControlCheckboxes()">Tümünü Seç / Kaldır</button>
           </div>
 
-          <!-- ALT ALTA AYNI BÜYÜKLÜKTE SIRALANAN HESAPLAR (AYRI BİR KUTU/PENCERE DEĞİL) -->
+          <!-- ALT ALTA HİZALI HESAP SATIRLARI -->
           <div id="ctrlAccountsSummaryLines" style="margin-top:2px;"></div>
         </div>
 
