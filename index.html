@@ -798,6 +798,39 @@
       color: #0f172a;
       box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
     }
+
+    /* Tarihe Kadar Filtreleme Butonu */
+    .btn-ctrl-date-filter {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 0 8px;
+      height: 36px;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      position: relative;
+    }
+    .btn-ctrl-date-filter.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.1);
+    }
+    .btn-ctrl-date-filter input[type="date"] {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -928,11 +961,19 @@
     </div>
   </div>
 
-  <!-- AY İÇİ KONTROL MODALI (İLK AÇILIŞ: ÖZET) -->
+  <!-- AY İÇİ KONTROL MODALI (TARİHE KADAR SEÇİCİ İLE) -->
   <div class="modal" id="modalControl">
     <div class="modal-content">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h3 style="font-size: 16px;">📋 Ay İçi Kontrol</h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:6px;">
+        <h3 style="font-size: 15px; white-space:nowrap;">📋 Ay İçi Kontrol</h3>
+
+        <!-- AY İÇİ KONTROL TARİHE KADAR FİLTRE BUTONU -->
+        <div class="btn-ctrl-date-filter" id="btnCtrlDateFilter">
+          <span id="lblCtrlDateFilter">📅 Tümü</span>
+          <span id="btnCtrlDateClear" style="display:none; margin-left:2px; font-weight:bold; font-size:12px;" onclick="clearControlDateFilter(event)">✕</span>
+          <input type="date" id="ctrlHorizonDateInput" onchange="onControlDateFilterChange(this)">
+        </div>
+
         <div class="mini-view-switcher">
           <button type="button" class="mini-view-btn active" id="btnCtrlViewSummary" onclick="switchControlView('summary')">Özet</button>
           <button type="button" class="mini-view-btn" id="btnCtrlViewPlan" onclick="switchControlView('plan')">Plan</button>
@@ -1089,7 +1130,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.0.9";
+    const CURRENT_VERSION = "3.0.10";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1113,6 +1154,7 @@
     let searchQueryDebts = "";
 
     let isLiqSummaryTRYView = false;
+    let ctrlHorizonDate = null; // YYYY-MM-DD
     
     let maskedState = {
       rem: true, manual: true, tr: true, inc: true,
@@ -1442,6 +1484,55 @@
     }
 
     // =========================================================
+    // AY İÇİ KONTROL: "TARİHE KADAR" FİLTRE MOTORU
+    // =========================================================
+    function onControlDateFilterChange(inputEl) {
+      ctrlHorizonDate = inputEl.value || null;
+      updateControlDateFilterDisplay();
+      renderControlContent();
+    }
+
+    function clearControlDateFilter(event) {
+      if (event) event.stopPropagation();
+      ctrlHorizonDate = null;
+      const inputEl = document.getElementById('ctrlHorizonDateInput');
+      if (inputEl) inputEl.value = '';
+      updateControlDateFilterDisplay();
+      renderControlContent();
+    }
+
+    function updateControlDateFilterDisplay() {
+      const btn = document.getElementById('btnCtrlDateFilter');
+      const lbl = document.getElementById('lblCtrlDateFilter');
+      const clearBtn = document.getElementById('btnCtrlDateClear');
+      if (!btn || !lbl || !clearBtn) return;
+
+      if (ctrlHorizonDate) {
+        const p = ctrlHorizonDate.split('-');
+        lbl.innerText = `📅 ${p[2]}.${p[1]}`;
+        btn.classList.add('active');
+        clearBtn.style.display = 'inline';
+      } else {
+        lbl.innerText = `📅 Tümü`;
+        btn.classList.remove('active');
+        clearBtn.style.display = 'none';
+      }
+    }
+
+    // Harcamanın açıklamasındaki (DD.MM) veya (DD.MM.YYYY) tarihini milisaniyeye çevirir
+    function parseItemPlannedTimestamp(item, defaultYear) {
+      let text = (item.merchant || '') + ' ' + (item.card || '');
+      let m = text.match(/\((\d{1,2})\.(\d{1,2})(?:\.(\d{4}))?\)/);
+      if (m) {
+        let day = parseInt(m[1], 10);
+        let month = parseInt(m[2], 10) - 1;
+        let year = m[3] ? parseInt(m[3], 10) : defaultYear;
+        return new Date(year, month, day, 23, 59, 59).getTime();
+      }
+      return 0; // Tarih belirtilmemişse her zaman dahil et
+    }
+
+    // =========================================================
     // LİKİDİTE PLANLAMASI & AY İÇİ KONTROL MOTORU
     // =========================================================
     let currentLiquidityView = 'summary';
@@ -1476,6 +1567,7 @@
     function openControlModal() {
       hideFabAction();
       currentControlView = 'summary';
+      updateControlDateFilterDisplay();
       updateControlViewSwitcher();
       renderControlContent();
       openModalWithScrollLock('modalControl');
@@ -1988,6 +2080,7 @@
       recalcSummaryTotal();
     }
 
+    // 2. AY İÇİ KONTROL RENDER (ÖZET & PLAN) - TARİHE KADAR ENTEGRELİ (SEÇENEK A)
     function renderControlContent() {
       const container = document.getElementById('controlReportContent');
       if (!currentData) {
@@ -1995,6 +2088,15 @@
         return;
       }
 
+      const activeYear = new Date().getFullYear();
+      let filterMaxTimestamp = null;
+
+      if (ctrlHorizonDate) {
+        const p = ctrlHorizonDate.split('-');
+        filterMaxTimestamp = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10), 23, 59, 59).getTime();
+      }
+
+      // SEÇENEK A: Kart Harcama Limiti Tarih Filtresinden Etkilenmez
       const targetCardLimit = parseAmountToNum(currentData.cardLimit || 0);
       const spentCardTotal = parseAmountToNum(currentData.cardTotal || 0);
       const remainingCardLimit = Math.max(0, targetCardLimit - spentCardTotal);
@@ -2010,14 +2112,31 @@
         let acc = (item.card || '').toLowerCase().trim();
         let isPending = (!item.date || item.date.trim() === "");
 
-        if (acc.includes('sparkasse')) { fullSparkasse += amt; if (isPending) { remSparkasse += amt; totalRemManual += amt; } }
-        else if (acc.includes('n26')) { fullN26 += amt; if (isPending) { remN26 += amt; totalRemManual += amt; } }
-        else if (acc.includes('nakit') || acc.includes('bar')) { fullNakit += amt; if (isPending) { remNakit += amt; totalRemManual += amt; } }
-        else if (acc.includes('c24')) { fullC24 += amt; if (isPending) { remC24 += amt; totalRemManual += amt; } }
-        else { fullOtherManual += amt; if (isPending) { remOtherManual += amt; totalRemManual += amt; } }
+        let itemPlanTs = parseItemPlannedTimestamp(item, activeYear);
+        let isWithinHorizon = (!filterMaxTimestamp || itemPlanTs === 0 || itemPlanTs <= filterMaxTimestamp);
+
+        if (acc.includes('sparkasse')) { 
+          fullSparkasse += amt; 
+          if (isPending && isWithinHorizon) { remSparkasse += amt; totalRemManual += amt; } 
+        } else if (acc.includes('n26')) { 
+          fullN26 += amt; 
+          if (isPending && isWithinHorizon) { remN26 += amt; totalRemManual += amt; } 
+        } else if (acc.includes('nakit') || acc.includes('bar')) { 
+          fullNakit += amt; 
+          if (isPending && isWithinHorizon) { remNakit += amt; totalRemManual += amt; } 
+        } else if (acc.includes('c24')) { 
+          fullC24 += amt; 
+          if (isPending && isWithinHorizon) { remC24 += amt; totalRemManual += amt; } 
+        } else { 
+          fullOtherManual += amt; 
+          if (isPending && isWithinHorizon) { remOtherManual += amt; totalRemManual += amt; } 
+        }
 
         if (isPending && amt > 0) {
-          pendingManualItems.push(item);
+          pendingManualItems.push({
+            item: item,
+            isAutoChecked: isWithinHorizon
+          });
         }
       });
 
@@ -2038,20 +2157,28 @@
         totalTrTRYAll += amtTRY;
         totalTrEURAll += amtEUR;
 
+        let itemPlanTs = parseItemPlannedTimestamp(item, activeYear);
+        let isWithinHorizon = (!filterMaxTimestamp || itemPlanTs === 0 || itemPlanTs <= filterMaxTimestamp);
+
         let isWorld = (name.includes('world') || name.includes('eko'));
         let isEnpara = name.includes('enpara');
         let isFree = (name.includes('free') || name.includes('bonus'));
 
         if (isPending) {
-          totalRemTrTRY += amtTRY;
-          totalRemTrEUR += amtEUR;
-          if (isWorld) remWorldEkoTRY += amtTRY;
-          else if (isEnpara) remEnparaTRY += amtTRY;
-          else if (isFree) remFreeTRY += amtTRY;
-          else remOtherTRY += amtTRY;
+          if (isWithinHorizon) {
+            totalRemTrTRY += amtTRY;
+            totalRemTrEUR += amtEUR;
+            if (isWorld) remWorldEkoTRY += amtTRY;
+            else if (isEnpara) remEnparaTRY += amtTRY;
+            else if (isFree) remFreeTRY += amtTRY;
+            else remOtherTRY += amtTRY;
+          }
 
           if (amtTRY > 0) {
-            pendingTrItems.push(item);
+            pendingTrItems.push({
+              item: item,
+              isAutoChecked: isWithinHorizon
+            });
           }
         }
       });
@@ -2060,10 +2187,12 @@
 
       const totalPendingObligation = remainingCardLimit + totalRemManual + totalRemTrEUR;
 
-      // SAYFA: ÖZET GÖRÜNÜMÜ
+      // =========================================================================
+      // AY İÇİ KONTROL: ÖZET SAYFASI (TARİH FİLTRESİNE GÖRE ANLIK TOPLAM)
+      // =========================================================================
       if (currentControlView === 'summary') {
         let html = `
-          <!-- 1. KART HARCAMA (HER ZAMAN GÖRÜNÜR) -->
+          <!-- 1. KART HARCAMA (SEÇENEK A GEREĞİ HER ZAMAN TAM KORUNUR) -->
           <div class="liq-section-title">💳 Kart Harcama</div>
           <div class="liq-card" style="border-left: 4px solid var(--accent);">
             <div class="liq-row">
@@ -2075,7 +2204,7 @@
 
         if (totalRemManual > 0) {
           html += `
-            <div class="liq-section-title">🏦 Diğer Giderler</div>
+            <div class="liq-section-title">🏦 Diğer Giderler ${ctrlHorizonDate ? '<span style="font-size:10px; color:var(--accent);">(Filtreli)</span>' : ''}</div>
             <div class="liq-card" style="border-left: 4px solid var(--orange);">
           `;
 
@@ -2121,7 +2250,7 @@
 
         if (totalRemTrTRY > 0) {
           html += `
-            <div class="liq-section-title">🇹🇷 TR Ödemeler</div>
+            <div class="liq-section-title">🇹🇷 TR Ödemeler ${ctrlHorizonDate ? '<span style="font-size:10px; color:var(--accent);">(Filtreli)</span>' : ''}</div>
             <div class="liq-card" style="border-left: 4px solid var(--purple);">
           `;
           if (remWorldEkoTRY > 0) html += `<div class="liq-row"><span>💳 World Eko</span><span style="font-weight:600; color:#fff;">₺${remWorldEkoTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
@@ -2145,7 +2274,7 @@
         let colorTheme = isPending ? 'var(--red)' : 'var(--green)';
 
         html += `
-          <div class="liq-section-title">📊 Kalan Toplam Tutar</div>
+          <div class="liq-section-title">📊 Kalan Toplam Tutar ${ctrlHorizonDate ? '<span style="font-size:10px; color:var(--accent);">(Filtreli)</span>' : ''}</div>
           <div class="liq-card" style="border-left: 4px solid ${colorTheme};">
             <div class="liq-row" style="border-bottom:none; padding:6px 0; align-items:center;">
               <span style="font-weight:700; font-size:15px; color:${colorTheme};">
@@ -2162,7 +2291,9 @@
         return;
       }
 
-      // SAYFA: PLAN GÖRÜNÜMÜ
+      // =========================================================================
+      // AY İÇİ KONTROL: PLAN SAYFASI (TARİH FİLTRESİNE GÖRE OTOMATİK TİKLER)
+      // =========================================================================
       let html = `
         <div style="margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border);">
           <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -2179,6 +2310,7 @@
         <div id="controlItemsList">
       `;
 
+      // 1. KART (N26) - SEÇENEK A: Her zaman tikli başlar
       if (remainingCardLimit > 0) {
         html += `
           <label class="template-item">
@@ -2197,7 +2329,10 @@
         `;
       }
 
-      pendingManualItems.forEach(item => {
+      // 2. HESAP (Tarihe göre otomatik seçili veya seçimi kalkmış)
+      pendingManualItems.forEach(entry => {
+        let item = entry.item;
+        let isChecked = entry.isAutoChecked ? 'checked' : '';
         let numAmt = parseAmountToNum(item.amount);
         let cleanName = item.merchant || 'Açıklamasız';
         let rawAcc = (item.card || '').toLowerCase().trim();
@@ -2211,9 +2346,9 @@
         let subInfo = item.card ? `Hesap: ${item.card}` : 'Diğer Gider';
 
         html += `
-          <label class="template-item">
+          <label class="template-item" style="${!entry.isAutoChecked ? 'opacity: 0.6;' : ''}">
             <div style="display:flex; align-items:center;">
-              <input type="checkbox" class="chk-control" data-eur="${numAmt}" data-try="0" data-account="${accType}" onchange="recalcControlTotal()" checked>
+              <input type="checkbox" class="chk-control" data-eur="${numAmt}" data-try="0" data-account="${accType}" onchange="recalcControlTotal()" ${isChecked}>
               <div>
                 <div style="font-weight:600; font-size:13px;">
                   <span class="template-tag tag-manual">HESAP</span>
@@ -2227,7 +2362,10 @@
         `;
       });
 
-      pendingTrItems.forEach(item => {
+      // 3. TR KART (Tarihe göre otomatik seçili veya seçimi kalkmış)
+      pendingTrItems.forEach(entry => {
+        let item = entry.item;
+        let isChecked = entry.isAutoChecked ? 'checked' : '';
         let amtTRY = parseAmountToNum(item.amount);
         let amtEUR = parseAmountToNum(item.eurAmount || 0);
         if (amtEUR === 0 && trRateEUR > 0) {
@@ -2236,9 +2374,9 @@
         let cleanName = item.merchant || 'TR Kart';
 
         html += `
-          <label class="template-item">
+          <label class="template-item" style="${!entry.isAutoChecked ? 'opacity: 0.6;' : ''}">
             <div style="display:flex; align-items:center;">
-              <input type="checkbox" class="chk-control" data-eur="${amtEUR}" data-try="${amtTRY}" data-account="tr" onchange="recalcControlTotal()" checked>
+              <input type="checkbox" class="chk-control" data-eur="${amtEUR}" data-try="${amtTRY}" data-account="tr" onchange="recalcControlTotal()" ${isChecked}>
               <div>
                 <div style="font-weight:600; font-size:13px;">
                   <span class="template-tag tag-tr">TR KART</span>
@@ -2300,7 +2438,6 @@
       }
     }
 
-    // GEÇEN AYDAN AKTAR: ÇİFT RENDER VE SEÇİMİN BOZULMASI SORUNU GİDERİLDİ
     async function openLastMonthTemplateModal() {
       hideFabAction();
       isTemplateModalUserInteracted = false;
@@ -2328,7 +2465,6 @@
             localStorage.setItem('cache_template_name', data.lastMonthName);
             document.getElementById('lblLastMonthTitle').innerText = `${data.lastMonthName} Kayıtları`;
           }
-          // Eğer kullanıcı henüz butona basmadıysa ve önbellekten çizilmediyse çiz
           if (!hasRenderedCache && !isTemplateModalUserInteracted) {
             renderTemplateItems(data.items);
           }
