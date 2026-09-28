@@ -1089,7 +1089,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.0.7";
+    const CURRENT_VERSION = "3.0.8";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1111,7 +1111,6 @@
     let searchQueryBudget = "";
     let searchQueryDebts = "";
 
-    // Likidite Planı interaktif TL/EUR dönüşüm bayrağı
     let isLiqSummaryTRYView = false;
     
     let maskedState = {
@@ -1444,8 +1443,8 @@
     // =========================================================
     // LİKİDİTE PLANLAMASI & AY İÇİ KONTROL MOTORU
     // =========================================================
-    let currentLiquidityView = 'summary'; // İLK AÇILIŞ: ÖZET
-    let currentControlView = 'summary';   // İLK AÇILIŞ: ÖZET
+    let currentLiquidityView = 'summary';
+    let currentControlView = 'summary';
     let liqNetBufferValue = 0;
 
     function openLiquidityModal() {
@@ -1501,7 +1500,6 @@
       document.getElementById(modalId).style.display = 'flex';
     }
 
-    // LİKİDİTE PLANI: İNTERAKTİF TL / EUR DÖNÜŞÜMÜ VE HESAPLAYICISI
     function recalcSummaryTotal() {
       const checkboxes = document.querySelectorAll('.chk-summary:checked');
       let totalEur = 0;
@@ -1534,10 +1532,10 @@
 
       if (onlyTrySelected && isLiqSummaryTRYView) {
         lbl.innerText = "₺" + totalTry.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        lbl.style.color = "var(--accent)"; // "Tümünü Seç / Kaldır" ile aynı renk
+        lbl.style.color = "var(--accent)";
       } else {
         lbl.innerText = "€" + totalEur.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        lbl.style.color = "var(--orange)"; // Standart renk
+        lbl.style.color = "var(--orange)";
       }
     }
 
@@ -1565,7 +1563,6 @@
       recalcSummaryTotal();
     }
 
-    // AY İÇİ KONTROL (PLAN): EN ÜST BAŞLIK VE SOLA YASLI HİZALANAN RAKAMLAR
     function recalcControlTotal() {
       const checkboxes = document.querySelectorAll('.chk-control:checked');
       let liveTotal = 0;
@@ -1663,7 +1660,6 @@
       recalcControlTotal();
     }
 
-    // 1. LİKİDİTE PLANLAMASI RENDER
     function renderLiquidityContent() {
       const container = document.getElementById('liquidityReportContent');
       if (!currentData) {
@@ -1709,7 +1705,6 @@
       const netBuffer = totalIncome - totalRequiredEUR;
       liqNetBufferValue = netBuffer;
 
-      // SAYFA: ÖZET GÖRÜNÜMÜ
       if (currentLiquidityView === 'summary') {
         let html = `
           <div class="liq-section-title">💳 Kart Harcama</div>
@@ -1805,7 +1800,6 @@
         return;
       }
 
-      // SAYFA: PLAN GÖRÜNÜMÜ (TL/EUR TIKLANABİLİR DÖNÜŞÜM ALANI DAHİL)
       let html = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding: 2px 2px 8px 2px; border-bottom: 1px solid var(--border);">
           <div style="font-weight:700; font-size:14px;">
@@ -2031,7 +2025,6 @@
       let hasSecondaryRem = (remNakit > 0 || remC24 > 0 || remOtherManual > 0);
 
       let remWorldEkoTRY = 0, remEnparaTRY = 0, remFreeTRY = 0, remOtherTRY = 0;
-      let fullWorldEkoTRY = 0, fullEnparaTRY = 0, fullFreeTRY = 0, fullOtherTRY = 0;
       let totalRemTrTRY = 0, totalRemTrEUR = 0, totalTrTRYAll = 0, totalTrEURAll = 0, trRateEUR = 0;
 
       let pendingTrItems = [];
@@ -2070,7 +2063,6 @@
       // SAYFA: ÖZET GÖRÜNÜMÜ
       if (currentControlView === 'summary') {
         let html = `
-          <!-- 1. KART HARCAMA (HER ZAMAN GÖRÜNÜR) -->
           <div class="liq-section-title">💳 Kart Harcama</div>
           <div class="liq-card" style="border-left: 4px solid var(--accent);">
             <div class="liq-row">
@@ -2169,12 +2161,9 @@
         return;
       }
 
-      // =========================================================================
-      // AY İÇİ KONTROL: PLAN SAYFASI (SOLA YASLI HİZALANMIŞ YENİ BAŞLIK SATIRLARI)
-      // =========================================================================
+      // SAYFA: PLAN GÖRÜNÜMÜ
       let html = `
         <div style="margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border);">
-          <!-- ANA TOPLAM SATIRI (SOLA YASLI) -->
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:6px;">
               <div style="font-weight:700; font-size:14px;">Bekleyen Ödemeler:</div>
@@ -2183,14 +2172,12 @@
             <button type="button" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;" onclick="toggleAllControlCheckboxes()">Tümünü Seç / Kaldır</button>
           </div>
 
-          <!-- ALT ALTA SIRALANAN VE SOLA YASLI HESAPLAR -->
           <div id="ctrlAccountsSummaryLines" style="margin-top:2px;"></div>
         </div>
 
         <div id="controlItemsList">
       `;
 
-      // 1. KART (N26)
       if (remainingCardLimit > 0) {
         html += `
           <label class="template-item">
@@ -2209,7 +2196,6 @@
         `;
       }
 
-      // 2. HESAP (Tüm ödenmemiş diğer giderler tek tek kendi ismiyle)
       pendingManualItems.forEach(item => {
         let numAmt = parseAmountToNum(item.amount);
         let cleanName = item.merchant || 'Açıklamasız';
@@ -2240,7 +2226,6 @@
         `;
       });
 
-      // 3. TR KART (Tüm ödenmemiş TR ödemeleri tek tek kendi ismiyle)
       pendingTrItems.forEach(item => {
         let amtTRY = parseAmountToNum(item.amount);
         let amtEUR = parseAmountToNum(item.eurAmount || 0);
@@ -2753,6 +2738,7 @@
       });
     }
 
+    // DÜZENLEME MODALINI AÇARKEN: TARİH VARSA PARANTEZLİ BÖLÜMÜ TEMİZLE, TARİH YOKSA (BEKLİYORSA) PARANTEZİ KORU
     function openEditBudgetModal(type, item) {
       resetCurrentSwipe();
       editingBudgetRowIndex = item.rowIndex;
@@ -2767,8 +2753,13 @@
       document.getElementById('mDate').value = parseFormattedDateToInput(item.date);
       document.getElementById('mAmount').value = formatAmountForInput(item.amount);
       
-      let cleanMerchant = (item.merchant || "").replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
-      document.getElementById('mDesc').value = cleanMerchant;
+      let rawMerchant = item.merchant || "";
+      if (item.date && item.date.trim() !== "") {
+        // Zaten ödenmiş bir kayıtsa parantezli tarihi arındır
+        rawMerchant = rawMerchant.replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
+      }
+      // Ödenmemiş/bekleyen kayıtlarda parantezli tarih doğrudan inputa gelir (DB Bilet PP (26.09) gibi)
+      document.getElementById('mDesc').value = rawMerchant;
       document.getElementById('mAccount').value = item.card || "";
 
       openModalWithScrollLock('modalBudget');
@@ -3431,6 +3422,7 @@
       }
     }
 
+    // KAYDEDERKEN: SADECE GERÇEK BİR TARİH GİRİLDİYSE PARANTEZLİ BÖLÜMÜ TEMİZLE, TARİH SEÇİLMEDİYSE (BEKLİYORSA) PARANTEZİ KORU
     async function submitBudgetEntry() {
       const type = modalSelectedType;
       const rawDate = document.getElementById('mDate').value;
@@ -3442,6 +3434,7 @@
 
       let merchantText = document.getElementById('mDesc').value.trim();
 
+      // SADECE ve SADECE tarih girildiyse (ödendi ise) parantezli tarihi arındır:
       if (dateFormatted) {
         merchantText = merchantText.replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
       }
