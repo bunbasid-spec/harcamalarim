@@ -173,6 +173,15 @@
       font-weight: 600;
       outline: none;
       text-align: center;
+      transition: all 0.25s ease;
+    }
+
+    /* GEÇMİŞ AY SEÇİLDİĞİNDE KALINLAŞAN VE DİKKAT ÇEKEN ÇERÇEVE */
+    select.sheet-select.past-month-warning {
+      border: 2px solid var(--orange) !important;
+      color: var(--orange) !important;
+      background: rgba(245, 158, 11, 0.12) !important;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
     }
 
     .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
@@ -476,7 +485,7 @@
     }
     .fab:active { transform: scale(0.92); opacity: 0.9; }
 
-    /* FAB AKSİYON BUTONLARI (Renkleri Güncellendi) */
+    /* FAB AKSİYON BUTONLARI */
     .fab-mini-action {
       position: fixed;
       right: 22px;
@@ -1114,7 +1123,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.1.3";
+    const CURRENT_VERSION = "3.1.4";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -2387,6 +2396,11 @@
         let isEnpara = name.includes('enpara');
         let isFree = (name.includes('free') || name.includes('bonus'));
 
+        if (isWorld) fullWorldEkoTRY += amtTRY;
+        else if (isEnpara) fullEnparaTRY += amtTRY;
+        else if (isFree) fullFreeTRY += amtTRY;
+        else fullOtherTRY += amtTRY;
+
         if (isPending) {
           totalRemTrTRY += amtTRY;
           totalRemTrEUR += amtEUR;
@@ -2834,6 +2848,7 @@
       if (mod === 'budget') {
         fetchInitialData();
       } else {
+        select.classList.remove('past-month-warning');
         select.innerHTML = `
           <option value="active" selected>Aktif Borçlar</option>
           <option value="archive">Arşiv</option>
@@ -2847,8 +2862,16 @@
 
     function onFilterChange() {
       if (currentModule === 'budget') {
-        const sheet = document.getElementById('sheetSelect').value;
+        const select = document.getElementById('sheetSelect');
+        const sheet = select.value;
         if (!sheet) return;
+
+        // GEÇMİŞ AY SEÇİLDİĞİNDE KALIN VE TURUNCU ÇERÇEVE
+        if (sheet !== "Mevcut Ay") {
+          select.classList.add('past-month-warning');
+        } else {
+          select.classList.remove('past-month-warning');
+        }
 
         if (memoryCache[sheet]) {
           renderDashboard(memoryCache[sheet]);
@@ -2899,6 +2922,12 @@
         if (name === activeSheet || name === "Mevcut Ay") opt.selected = true;
         select.appendChild(opt);
       });
+
+      if (select.value !== "Mevcut Ay") {
+        select.classList.add('past-month-warning');
+      } else {
+        select.classList.remove('past-month-warning');
+      }
     }
 
     function formatAmount(val) {
