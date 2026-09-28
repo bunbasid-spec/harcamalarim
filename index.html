@@ -184,6 +184,33 @@
       box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
     }
 
+    /* KALAN BAKİYE ÜSTÜNDEKİ GEÇMİŞ AY UYARI VE DÖNÜŞ ROZETİ */
+    .past-month-banner-container {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 12px;
+      animation: fadeIn 0.25s ease;
+    }
+    .past-month-banner-pill {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid var(--orange);
+      color: var(--orange);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+    }
+    .past-month-banner-pill:active {
+      transform: scale(0.97);
+      opacity: 0.85;
+    }
+
     .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
     
     .summary-card { 
@@ -505,7 +532,7 @@
     }
     #btnPastMonthReportAction {
       bottom: 305px;
-      background: #475569; /* GRİ */
+      background: #475569;
       color: #fff;
     }
     #btnControlAction {
@@ -525,7 +552,7 @@
     }
     #btnLastMonthAction {
       bottom: 105px;
-      background: var(--purple); /* MOR */
+      background: var(--purple);
       color: #fff;
     }
 
@@ -832,6 +859,16 @@
 
     <!-- 1. BÜTÇE MODÜLÜ GÖRÜNÜMÜ -->
     <div id="viewBudget">
+
+      <!-- KALAN BAKİYE ÜSTÜNDEKİ GEÇMİŞ AY UYARI VE DÖNÜŞ ROZETİ -->
+      <div class="past-month-banner-container" id="pastMonthBannerContainer">
+        <div class="past-month-banner-pill" onclick="resetToCurrentMonth()">
+          <span>⚠️</span>
+          <span id="pastMonthBannerText">Ağustos 2026 İnceleniyor</span>
+          <span style="text-decoration: underline; margin-left: 2px;">Bugüne Dön ↩</span>
+        </div>
+      </div>
+
       <div class="summary-grid">
         <div class="summary-card rem clickable" onclick="toggleMask('rem')">
           <div class="summary-title">Kalan Bakiye</div>
@@ -1123,7 +1160,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.1.4";
+    const CURRENT_VERSION = "3.1.5";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1481,6 +1518,15 @@
       } else {
         searchQueryDebts = document.getElementById('liveSearchInputDebts').value.trim().toLowerCase();
         renderDebtsList();
+      }
+    }
+
+    // MEVCUT AYA TEK DOKUNUŞLA DÖNÜŞ (ROZETE TIKLANINCA)
+    function resetToCurrentMonth() {
+      const select = document.getElementById('sheetSelect');
+      if (select && select.value !== "Mevcut Ay") {
+        select.value = "Mevcut Ay";
+        onFilterChange();
       }
     }
 
@@ -2639,24 +2685,45 @@
       }
     }
 
+    // 3. ÖNERİ: GEÇMİŞ AYDAYKEN FAB TIKLANIRSA GÜVENLİK UYARISI
     function handleFabClick() {
       hideFabAction();
       closeAllComboboxes();
-      editingBudgetRowIndex = null;
+
       if (currentModule === 'budget') {
-        document.getElementById('lblModalBudgetTitle').innerText = 'Kayıt Ekle';
-        document.getElementById('btnBudgetSubmit').innerText = 'Kaydet';
-        document.getElementById('budgetTypeSwitcher').style.display = 'flex';
-        document.getElementById('mDate').value = (activeBudgetTab === 'card') ? new Date().toISOString().split('T')[0] : '';
-        document.getElementById('mAmount').value = '';
-        document.getElementById('mDesc').value = '';
-        document.getElementById('mAccount').value = '';
-        setModalType(activeBudgetTab || 'card');
-        openModalWithScrollLock('modalBudget');
+        const select = document.getElementById('sheetSelect');
+        const currentSelectedMonth = select ? select.value : "Mevcut Ay";
+
+        // Eğer geçmiş bir ay seçiliyse kullanıcıyı uyar ve yönlendir
+        if (currentSelectedMonth !== "Mevcut Ay") {
+          const confirmSwitch = confirm(`Şu an geçmiş bir aydasınız (${currentSelectedMonth}).\n\nMevcut Ay'a dönüp yeni bir harcama/gelir eklemek istiyor musunuz?`);
+          if (confirmSwitch) {
+            resetToCurrentMonth();
+            setTimeout(() => {
+              openBudgetAddModal();
+            }, 300);
+          }
+          return;
+        }
+
+        openBudgetAddModal();
       } else {
         document.getElementById('mDebtDate').value = new Date().toISOString().split('T')[0];
         openModalWithScrollLock('modalDebt');
       }
+    }
+
+    function openBudgetAddModal() {
+      editingBudgetRowIndex = null;
+      document.getElementById('lblModalBudgetTitle').innerText = 'Kayıt Ekle';
+      document.getElementById('btnBudgetSubmit').innerText = 'Kaydet';
+      document.getElementById('budgetTypeSwitcher').style.display = 'flex';
+      document.getElementById('mDate').value = (activeBudgetTab === 'card') ? new Date().toISOString().split('T')[0] : '';
+      document.getElementById('mAmount').value = '';
+      document.getElementById('mDesc').value = '';
+      document.getElementById('mAccount').value = '';
+      setModalType(activeBudgetTab || 'card');
+      openModalWithScrollLock('modalBudget');
     }
 
     async function openLastMonthTemplateModal() {
@@ -2849,6 +2916,7 @@
         fetchInitialData();
       } else {
         select.classList.remove('past-month-warning');
+        document.getElementById('pastMonthBannerContainer').style.display = 'none';
         select.innerHTML = `
           <option value="active" selected>Aktif Borçlar</option>
           <option value="archive">Arşiv</option>
@@ -2866,11 +2934,17 @@
         const sheet = select.value;
         if (!sheet) return;
 
-        // GEÇMİŞ AY SEÇİLDİĞİNDE KALIN VE TURUNCU ÇERÇEVE
+        const bannerContainer = document.getElementById('pastMonthBannerContainer');
+        const bannerText = document.getElementById('pastMonthBannerText');
+
+        // GEÇMİŞ AY UYARI VE ÇERÇEVE KONTROLÜ
         if (sheet !== "Mevcut Ay") {
           select.classList.add('past-month-warning');
+          bannerText.innerText = `${sheet} İnceleniyor`;
+          bannerContainer.style.display = 'flex';
         } else {
           select.classList.remove('past-month-warning');
+          bannerContainer.style.display = 'none';
         }
 
         if (memoryCache[sheet]) {
@@ -2923,10 +2997,16 @@
         select.appendChild(opt);
       });
 
+      const bannerContainer = document.getElementById('pastMonthBannerContainer');
+      const bannerText = document.getElementById('pastMonthBannerText');
+
       if (select.value !== "Mevcut Ay") {
         select.classList.add('past-month-warning');
+        bannerText.innerText = `${select.value} İnceleniyor`;
+        bannerContainer.style.display = 'flex';
       } else {
         select.classList.remove('past-month-warning');
+        bannerContainer.style.display = 'none';
       }
     }
 
