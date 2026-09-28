@@ -1089,7 +1089,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.0.8";
+    const CURRENT_VERSION = "3.0.9";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1097,6 +1097,7 @@
     let debtsData = null;
     let settingsData = { manualKime: [], manualHesap: [], gelirNereden: [], trNereye: [], cardList: [] };
     let loadedTemplateItems = [];
+    let isTemplateModalUserInteracted = false;
     
     let activeBudgetTab = 'card';
     let activeDebtTab = 'debt';
@@ -1987,7 +1988,6 @@
       recalcSummaryTotal();
     }
 
-    // 2. AY İÇİ KONTROL RENDER
     function renderControlContent() {
       const container = document.getElementById('controlReportContent');
       if (!currentData) {
@@ -2063,6 +2063,7 @@
       // SAYFA: ÖZET GÖRÜNÜMÜ
       if (currentControlView === 'summary') {
         let html = `
+          <!-- 1. KART HARCAMA (HER ZAMAN GÖRÜNÜR) -->
           <div class="liq-section-title">💳 Kart Harcama</div>
           <div class="liq-card" style="border-left: 4px solid var(--accent);">
             <div class="liq-row">
@@ -2299,14 +2300,18 @@
       }
     }
 
+    // GEÇEN AYDAN AKTAR: ÇİFT RENDER VE SEÇİMİN BOZULMASI SORUNU GİDERİLDİ
     async function openLastMonthTemplateModal() {
       hideFabAction();
+      isTemplateModalUserInteracted = false;
       const container = document.getElementById('templateItemsContainer');
       const cachedName = localStorage.getItem('cache_template_name') || 'Geçen Ay';
       document.getElementById('lblLastMonthTitle').innerText = `${cachedName} Kayıtları`;
 
+      let hasRenderedCache = false;
       if (loadedTemplateItems && loadedTemplateItems.length > 0) {
         renderTemplateItems(loadedTemplateItems);
+        hasRenderedCache = true;
       } else {
         container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-dim);">Geçen ayın kayıtları yükleniyor...</div>';
       }
@@ -2323,7 +2328,10 @@
             localStorage.setItem('cache_template_name', data.lastMonthName);
             document.getElementById('lblLastMonthTitle').innerText = `${data.lastMonthName} Kayıtları`;
           }
-          renderTemplateItems(data.items);
+          // Eğer kullanıcı henüz butona basmadıysa ve önbellekten çizilmediyse çiz
+          if (!hasRenderedCache && !isTemplateModalUserInteracted) {
+            renderTemplateItems(data.items);
+          }
         }
       } catch (e) {}
     }
@@ -2357,6 +2365,7 @@
     }
 
     function toggleAllTemplateCheckboxes() {
+      isTemplateModalUserInteracted = true;
       const checkboxes = document.querySelectorAll('.chk-template');
       const allChecked = Array.from(checkboxes).every(c => c.checked);
       checkboxes.forEach(c => c.checked = !allChecked);
@@ -2738,7 +2747,6 @@
       });
     }
 
-    // DÜZENLEME MODALINI AÇARKEN: TARİH VARSA PARANTEZLİ BÖLÜMÜ TEMİZLE, TARİH YOKSA (BEKLİYORSA) PARANTEZİ KORU
     function openEditBudgetModal(type, item) {
       resetCurrentSwipe();
       editingBudgetRowIndex = item.rowIndex;
@@ -2755,10 +2763,8 @@
       
       let rawMerchant = item.merchant || "";
       if (item.date && item.date.trim() !== "") {
-        // Zaten ödenmiş bir kayıtsa parantezli tarihi arındır
         rawMerchant = rawMerchant.replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
       }
-      // Ödenmemiş/bekleyen kayıtlarda parantezli tarih doğrudan inputa gelir (DB Bilet PP (26.09) gibi)
       document.getElementById('mDesc').value = rawMerchant;
       document.getElementById('mAccount').value = item.card || "";
 
@@ -3422,7 +3428,6 @@
       }
     }
 
-    // KAYDEDERKEN: SADECE GERÇEK BİR TARİH GİRİLDİYSE PARANTEZLİ BÖLÜMÜ TEMİZLE, TARİH SEÇİLMEDİYSE (BEKLİYORSA) PARANTEZİ KORU
     async function submitBudgetEntry() {
       const type = modalSelectedType;
       const rawDate = document.getElementById('mDate').value;
@@ -3434,7 +3439,6 @@
 
       let merchantText = document.getElementById('mDesc').value.trim();
 
-      // SADECE ve SADECE tarih girildiyse (ödendi ise) parantezli tarihi arındır:
       if (dateFormatted) {
         merchantText = merchantText.replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
       }
