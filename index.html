@@ -476,7 +476,7 @@
     }
     .fab:active { transform: scale(0.92); opacity: 0.9; }
 
-    /* FAB AKSİYON BUTONLARI (5 Buton Sıralı) */
+    /* FAB AKSİYON BUTONLARI (Renkleri ve Sıraları Güncellendi) */
     .fab-mini-action {
       position: fixed;
       right: 22px;
@@ -899,7 +899,7 @@
     <div id="listContainer"></div>
   </div>
 
-  <!-- BASILI TUTUNCA ÇIKAN 5 AKSİYON BUTONU -->
+  <!-- BASILI TUTUNCA ÇIKAN 5 AKSİYON BUTONU (Renkler ve Sıralar Güncellendi) -->
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
   </button>
@@ -1114,7 +1114,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.1.0";
+    const CURRENT_VERSION = "3.1.1";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1140,6 +1140,7 @@
 
     let isLiqSummaryTRYView = false;
     let pastReportIncomeTotal = 0;
+    let pastReportNetBalance = 0;
     
     let maskedState = {
       rem: true, manual: true, tr: true, inc: true,
@@ -1475,14 +1476,13 @@
     }
 
     // =========================================================
-    // GEÇMİŞ AY RAPORU MOTORU (YENİ MODÜL)
+    // GEÇMİŞ AY RAPORU MOTORU
     // =========================================================
     function openPastMonthReportModal() {
       hideFabAction();
       const pastSelect = document.getElementById('pastReportSheetSelect');
       pastSelect.innerHTML = '';
 
-      // Sadece geçmiş ayları listele (Mevcut Ay hariç)
       const pastMonths = availableSheets.filter(s => s !== "Mevcut Ay");
 
       if (pastMonths.length === 0) {
@@ -1541,7 +1541,6 @@
       const targetCardLimit = parseAmountToNum(data.cardLimit || 0);
       const actualCardSpent = parseAmountToNum(data.cardTotal || 0);
 
-      // Diğer Giderler Kırılımı (Olmayan bankalar asla listelenmez)
       let sumSparkasse = 0, sumN26 = 0, sumNakit = 0, sumC24 = 0, sumOtherManual = 0, totalManual = 0;
       (data.manualItems || []).forEach(item => {
         let amt = parseAmountToNum(item.amount);
@@ -1554,7 +1553,6 @@
         else sumOtherManual += amt;
       });
 
-      // TR Ödemeleri Kırılımı (Olmayan kartlar asla listelenmez)
       let sumWorldEko = 0, sumEnpara = 0, sumFree = 0, sumOtherTR = 0, totalTrTRY = 0, totalTrEUR = 0;
       (data.trItems || []).forEach(item => {
         let amtTRY = parseAmountToNum(item.amount);
@@ -1568,15 +1566,14 @@
         else sumOtherTR += amtTRY;
       });
 
-      // Gelirler Kırılımı
       let totalIncome = 0;
       let incomeItemsList = data.incomeItems || [];
       incomeItemsList.forEach(item => { totalIncome += parseAmountToNum(item.amount); });
       pastReportIncomeTotal = totalIncome;
 
-      // Toplam Gerçekleşen Ödemeler & Net Durum
       const totalPaidExpenses = actualCardSpent + totalManual + totalTrEUR;
       const netFinalBalance = totalIncome - totalPaidExpenses;
+      pastReportNetBalance = netFinalBalance;
 
       let html = `
         <!-- 1. KART HARCAMA PENCERESİ -->
@@ -1643,16 +1640,16 @@
       }
       html += `</div>`;
 
-      // 4. YEŞİL GELİR PENCERESİ (GİZLİ TUTAR / DETAY AÇILIR)
+      // 4. GELİRLER PENCERESİ (+ işareti kaldırıldı, tutarlar beyaz, buton mavi)
       html += `
         <div class="liq-section-title">💰 Gelirler</div>
-        <div class="liq-card" id="pastIncomeCard" style="border-left: 4px solid var(--green);">
+        <div class="liq-card" style="border-left: 4px solid var(--green);">
           <div class="liq-acc-header" onclick="togglePastIncomeDetails()">
             <div>
               <div style="font-size:11px; color:var(--text-dim); font-weight:600;">Toplam Gelir</div>
               <div id="pastIncomeDisplay" class="masked" style="font-weight:700; font-size:16px; margin-top:2px; color:var(--green);">••••••</div>
             </div>
-            <div id="pastIncomeArrow" style="font-size:12px; color:var(--green); font-weight:bold;">Detay ▼</div>
+            <div id="pastIncomeArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Detay ▼</div>
           </div>
 
           <div id="pastIncomeBody" style="display:none; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
@@ -1666,7 +1663,7 @@
           html += `
             <div class="liq-row">
               <span>${inc.merchant || 'Açıklamasız'}</span>
-              <span style="font-weight:600; color:var(--green);">+€${num.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+              <span style="font-weight:600; color:#fff;">€${num.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
           `;
         });
@@ -1679,22 +1676,32 @@
       }
       html += `</div></div>`;
 
-      // 5. EN ALT TOPLAM LİKİDİTE RAPORU PENCERESİ
+      // 5. TOPLAM LİKİDİTE RAPORU PENCERESİ (Tutar Gizli, Detay Mavi)
       const isNetPos = netFinalBalance >= 0;
       html += `
         <div class="liq-section-title">📊 Toplam Likidite Raporu</div>
-        <div class="liq-card" style="border-left: 4px solid ${isNetPos ? 'var(--green)' : 'var(--red)'};">
-          <div class="liq-row">
-            <span>Toplam Yapılan Harcama</span>
-            <span style="font-weight:600; color:#fff;">€${totalPaidExpenses.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+        <div class="liq-card" id="pastLiqBalCard" style="border-left: 4px solid var(--accent);">
+          <div class="liq-acc-header" onclick="togglePastLiqBalanceDetails()">
+            <div>
+              <div style="font-size:11px; color:var(--text-dim); font-weight:600;">Net Kalan</div>
+              <div id="pastLiqNetDisplay" class="masked" style="font-weight:700; font-size:16px; margin-top:2px;">••••••</div>
+            </div>
+            <div id="pastLiqBalArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Detay ▼</div>
           </div>
-          <div class="liq-row">
-            <span>Toplam Gelir</span>
-            <span style="font-weight:600; color:#fff;">€${totalIncome.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-          </div>
-          <div class="liq-row total-row" style="color: ${isNetPos ? 'var(--green)' : 'var(--red)'};">
-            <span>Net Kalan</span>
-            <span>${isNetPos ? '+' : ''}€${netFinalBalance.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+
+          <div id="pastLiqBalBody" style="display:none; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
+            <div class="liq-row">
+              <span>Toplam Yapılan Harcama</span>
+              <span style="font-weight:600; color:#fff;">€${totalPaidExpenses.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
+            <div class="liq-row">
+              <span>Toplam Gelir</span>
+              <span style="font-weight:600; color:#fff;">€${totalIncome.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
+            <div class="liq-row total-row" style="color: ${isNetPos ? 'var(--green)' : 'var(--red)'};">
+              <span>Net Kalan</span>
+              <span>${isNetPos ? '+' : ''}€${netFinalBalance.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
           </div>
         </div>
       `;
@@ -1711,12 +1718,36 @@
         body.style.display = 'block';
         arrow.innerText = 'Gizle ▲';
         display.classList.remove('masked');
-        display.innerText = `+€${pastReportIncomeTotal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        display.innerText = `€${pastReportIncomeTotal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
       } else {
         body.style.display = 'none';
         arrow.innerText = 'Detay ▼';
         display.classList.add('masked');
         display.innerText = '••••••';
+      }
+    }
+
+    function togglePastLiqBalanceDetails() {
+      const body = document.getElementById('pastLiqBalBody');
+      const arrow = document.getElementById('pastLiqBalArrow');
+      const display = document.getElementById('pastLiqNetDisplay');
+      const card = document.getElementById('pastLiqBalCard');
+
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        arrow.innerText = 'Gizle ▲';
+        display.classList.remove('masked');
+        const isPos = pastReportNetBalance >= 0;
+        display.innerText = `${isPos ? '+' : ''}€${pastReportNetBalance.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        display.style.color = isPos ? 'var(--green)' : 'var(--red)';
+        card.style.borderLeftColor = isPos ? 'var(--green)' : 'var(--red)';
+      } else {
+        body.style.display = 'none';
+        arrow.innerText = 'Detay ▼';
+        display.classList.add('masked');
+        display.innerText = '••••••';
+        display.style.color = '';
+        card.style.borderLeftColor = 'var(--accent)';
       }
     }
 
