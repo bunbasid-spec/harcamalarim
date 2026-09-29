@@ -536,7 +536,7 @@
       font-size: 11px;
       font-weight: 600;
       padding: 5px 12px;
-      pointer-events: none; /* Tıklanamaz, sadece bilgi */
+      pointer-events: none;
       box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     }
     #btnPastMonthReportAction {
@@ -775,6 +775,7 @@
       border-radius: 4px;
       margin-right: 6px;
       display: inline-block;
+      white-space: nowrap;
     }
     .tag-card { background: rgba(56, 189, 248, 0.2); color: var(--accent); }
     .tag-manual { background: rgba(245, 158, 11, 0.2); color: var(--orange); }
@@ -820,7 +821,100 @@
       user-select: none;
     }
 
-    /* TAKVİMDE 2 SATIRLI VE MÜKEMMEL HİZALANMIŞ ELEMANLAR */
+    /* MINI GÖRÜNÜM DEĞİŞTİRİCİLER */
+    .mini-view-switcher {
+      display: flex;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 3px;
+      height: 36px;
+      width: 140px;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+    .mini-view-switcher.three-way {
+      width: 200px;
+    }
+    .mini-view-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--text-dim);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 0 4px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+    .mini-view-btn.active {
+      background: var(--orange);
+      color: #0f172a;
+      box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
+    }
+
+    /* AJANDA / TAKVİM DÜZENİ */
+    .calendar-timeline-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      overflow: hidden;
+      transition: border-color 0.2s ease;
+    }
+    .calendar-day-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .calendar-day-header:active {
+      background: rgba(255,255,255,0.03);
+    }
+    .calendar-day-badge {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .calendar-day-num {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .calendar-day-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+    .calendar-day-total {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--red);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .calendar-day-body {
+      display: none;
+      padding: 4px 14px 10px 14px;
+      border-top: 1px dashed rgba(255,255,255,0.07);
+      background: rgba(0, 0, 0, 0.15);
+    }
+    .calendar-day-body.open {
+      display: block;
+      animation: fadeIn 0.15s ease;
+    }
+
+    /* TAKVİM SATIRINDA KUSURSUZ SOL-SAĞ HİZALAMA */
     .cal-item-row {
       display: flex;
       justify-content: space-between;
@@ -834,10 +928,15 @@
     .cal-item-left {
       display: flex;
       align-items: flex-start;
-      gap: 6px;
-      max-width: 62%;
+      gap: 8px;
+      max-width: 65%;
+      min-width: 0;
     }
-    .cal-item-content {
+    .cal-item-tag-box {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .cal-item-col {
       display: flex;
       flex-direction: column;
       gap: 2px;
@@ -848,10 +947,12 @@
       font-size: 13px;
       color: #fff;
       word-break: break-word;
+      line-height: 1.25;
     }
     .cal-item-sub {
       font-size: 11px;
       color: var(--text-dim);
+      line-height: 1.2;
     }
     .cal-item-right {
       display: flex;
@@ -861,6 +962,8 @@
       gap: 2px;
       white-space: nowrap;
       text-align: right;
+      flex-shrink: 0;
+      padding-left: 6px;
     }
     .cal-item-primary-amt {
       font-weight: 700;
@@ -980,7 +1083,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.1.8
+    Sürüm 3.1.9
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1019,8 +1122,8 @@
   <!-- LİKİDİTE PLANLAMASI MODALI (ÖZET | TAKVİM | PLAN - LOGOSUZ TEK SATIR BAŞLIK) -->
   <div class="modal" id="modalLiquidity">
     <div class="modal-content">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h3 style="font-size: 15px; white-space: nowrap;">Likidite Planlaması</h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px;">
+        <h3 style="font-size: 15px; white-space: nowrap; margin: 0;">Likidite Planlaması</h3>
         <div class="mini-view-switcher three-way">
           <button type="button" class="mini-view-btn active" id="btnLiqViewSummary" onclick="switchLiquidityView('summary')">Özet</button>
           <button type="button" class="mini-view-btn" id="btnLiqViewCalendar" onclick="switchLiquidityView('calendar')">Takvim</button>
@@ -1039,8 +1142,8 @@
   <!-- AY İÇİ KONTROL MODALI (ÖZET | PLAN) -->
   <div class="modal" id="modalControl">
     <div class="modal-content">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h3 style="font-size: 16px;">📋 Ay İçi Kontrol</h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px;">
+        <h3 style="font-size: 16px; margin: 0;">📋 Ay İçi Kontrol</h3>
         <div class="mini-view-switcher">
           <button type="button" class="mini-view-btn active" id="btnCtrlViewSummary" onclick="switchControlView('summary')">Özet</button>
           <button type="button" class="mini-view-btn" id="btnCtrlViewPlan" onclick="switchControlView('plan')">Plan</button>
@@ -1197,7 +1300,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.1.8";
+    const CURRENT_VERSION = "3.1.9";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -2192,7 +2295,7 @@
       }
 
       // ==========================================
-      // 2. GÖRÜNÜM: TAKVİM (2 SATIRLI & HİZALI DÜZEN)
+      // 2. GÖRÜNÜM: TAKVİM (KUSURSUZ SOL VE SAĞ HİZALAMA)
       // ==========================================
       if (currentLiquidityView === 'calendar') {
         let allItemsForCalendar = [];
@@ -2285,23 +2388,15 @@
               `;
             }
 
-            // Etiket genişliğine göre alt satırdaki metni tam üstteki açıklama metninin altına hizalama
-            let subIndentStyle = 'padding-left: 0px;';
-            if (it.typeTag === 'KART') subIndentStyle = 'padding-left: 45px;';
-            else if (it.typeTag === 'HESAP') subIndentStyle = 'padding-left: 50px;';
-            else if (it.typeTag === 'TR KART') subIndentStyle = 'padding-left: 60px;';
-
             calHtml += `
               <div class="cal-item-row">
                 <div class="cal-item-left">
-                  <div class="cal-item-content">
-                    <div>
-                      <span class="template-tag ${tagClass}">${it.typeTag}</span>
-                      <span class="cal-item-desc">${itemDesc}</span>
-                    </div>
-                    <div class="cal-item-sub" style="${subIndentStyle}">
-                      ${itemAccount}
-                    </div>
+                  <div class="cal-item-tag-box">
+                    <span class="template-tag ${tagClass}">${it.typeTag}</span>
+                  </div>
+                  <div class="cal-item-col">
+                    <div class="cal-item-desc">${itemDesc}</div>
+                    <div class="cal-item-sub">${itemAccount}</div>
                   </div>
                 </div>
                 <div class="cal-item-right">
