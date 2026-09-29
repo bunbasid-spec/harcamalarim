@@ -905,7 +905,7 @@
       font-weight: 600;
     }
 
-    /* AJANDA / TAKVİM DÜZENİ */
+    /* AJANDA DÜZENİ */
     .calendar-timeline-card {
       background: var(--bg);
       border: 1px solid var(--border);
@@ -1127,7 +1127,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.2.2
+    Sürüm 3.2.3
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1352,7 +1352,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.2.2";
+    const CURRENT_VERSION = "3.2.3";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -2251,25 +2251,26 @@
       btn.innerText = anyOpen ? "Tümünü Kapat ▲" : "Tümünü Aç ▼";
     }
 
-    // TÜMÜNÜ AÇ / TÜMÜNÜ KAPAT ANA FONKSİYONU (CSS .open TABANLI - HİÇBİR ZAMAN KİLİTLENMEZ)
+    // TÜMÜNÜ AÇ / TÜMÜNÜ KAPAT ANA FONKSİYONU (DÜZELTİLDİ: AÇIK VARSA MUTLAKA HEPSİNİ KAPATIR)
     function toggleAllCalendarBodies(moduleType) {
       const bodies = document.querySelectorAll(`[id^="${moduleType}-cal-day-body-"]`);
       if (bodies.length === 0) return;
 
-      const anyClosed = Array.from(bodies).some(b => !b.classList.contains('open'));
+      // Ekranda açık tek bir kutu bile varsa hepsini kapat, hiçbiri açık değilse hepsini aç
+      const anyOpen = Array.from(bodies).some(b => b.classList.contains('open'));
 
       bodies.forEach(b => {
-        b.style.display = ''; // Inline stil ezmesini tamamen kaldırır
-        if (anyClosed) {
-          b.classList.add('open');
-        } else {
+        b.style.display = ''; // Inline stil kalıntılarını sil
+        if (anyOpen) {
           b.classList.remove('open');
+        } else {
+          b.classList.add('open');
         }
       });
 
       const btn = document.getElementById(`${moduleType}-btn-toggle-all`);
       if (btn) {
-        btn.innerText = anyClosed ? "Tümünü Kapat ▲" : "Tümünü Aç ▼";
+        btn.innerText = anyOpen ? "Tümünü Aç ▼" : "Tümünü Kapat ▲";
       }
     }
 
@@ -2432,7 +2433,7 @@
       });
       html += `</div>`;
 
-      // KISALTILMIŞ METİN VE TÜMÜNÜ AÇ/KAPAT BUTONU (TEK SATIR FERAH DÜZEN)
+      // KISALTILMIŞ METİN VE TÜMÜNÜ AÇ/KAPAT BUTONU (TEK SATIRDA FERAHÇA DURUR)
       html += `
         <div style="display:flex; justify-content:space-between; align-items:center; margin: 4px 2px 10px 2px;">
           <div style="font-size:12px; color:var(--text-dim); font-weight:600;">
@@ -2904,6 +2905,107 @@
     }
 
     // =========================================================
+    // AY İÇİ KONTROL RECALC & SEÇİM FONKSİYONLARI (DÜZELTİLDİ)
+    // =========================================================
+    function recalcControlTotal() {
+      const checkboxes = document.querySelectorAll('.chk-control:checked');
+      let liveTotal = 0;
+
+      let sumSparkasse = 0;
+      let sumN26 = 0;
+      let sumC24 = 0;
+      let sumNakit = 0;
+      let sumTrTRY = 0;
+      let sumTrEUR = 0;
+
+      checkboxes.forEach(c => {
+        let eurVal = parseFloat(c.getAttribute('data-eur') || 0);
+        let tryVal = parseFloat(c.getAttribute('data-try') || 0);
+        let accType = c.getAttribute('data-account') || '';
+
+        liveTotal += eurVal;
+
+        if (accType === 'sparkasse') sumSparkasse += eurVal;
+        else if (accType === 'n26') sumN26 += eurVal;
+        else if (accType === 'c24') sumC24 += eurVal;
+        else if (accType === 'nakit') sumNakit += eurVal;
+        else if (accType === 'tr') {
+          sumTrTRY += tryVal;
+          sumTrEUR += eurVal;
+        }
+      });
+
+      const lbl = document.getElementById('lblControlLiveTotal');
+      if (lbl) {
+        let formatted = "€" + liveTotal.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (liveTotal > 0) {
+          lbl.innerText = "-" + formatted;
+          lbl.style.color = "var(--red)";
+        } else {
+          lbl.innerText = "€0,00";
+          lbl.style.color = "var(--green)";
+        }
+      }
+
+      const listArea = document.getElementById('ctrlAccountsSummaryLines');
+      if (!listArea) return;
+
+      let linesHtml = '';
+
+      if (sumSparkasse > 0) {
+        linesHtml += `
+          <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+            <div style="font-weight:700; font-size:14px; min-width:40px;">Sparkasse:</div>
+            <div style="font-weight:700; font-size:15px; color:var(--red);">-€${sumSparkasse.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          </div>
+        `;
+      }
+      if (sumN26 > 0) {
+        linesHtml += `
+          <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+            <div style="font-weight:700; font-size:14px; min-width:40px;">N26:</div>
+            <div style="font-weight:700; font-size:15px; color:var(--red);">-€${sumN26.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          </div>
+        `;
+      }
+      if (sumC24 > 0) {
+        linesHtml += `
+          <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+            <div style="font-weight:700; font-size:14px; min-width:40px;">C24:</div>
+            <div style="font-weight:700; font-size:15px; color:var(--red);">-€${sumC24.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          </div>
+        `;
+      }
+      if (sumNakit > 0) {
+        linesHtml += `
+          <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+            <div style="font-weight:700; font-size:14px; min-width:40px;">Nakit:</div>
+            <div style="font-weight:700; font-size:15px; color:var(--red);">-€${sumNakit.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          </div>
+        `;
+      }
+      if (sumTrTRY > 0) {
+        linesHtml += `
+          <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+            <div style="font-weight:700; font-size:14px; min-width:40px;">TR:</div>
+            <div style="font-weight:700; font-size:15px; color:var(--red);">-€${sumTrEUR.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div style="font-size:12px; font-weight:normal; color:var(--text-dim);">(-₺${sumTrTRY.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</div>
+          </div>
+        `;
+      }
+
+      listArea.innerHTML = linesHtml;
+    }
+
+    function toggleAllControlCheckboxes() {
+      const checkboxes = document.querySelectorAll('.chk-control');
+      if (checkboxes.length === 0) return;
+      const allChecked = Array.from(checkboxes).every(c => c.checked);
+      checkboxes.forEach(c => c.checked = !allChecked);
+      recalcControlTotal();
+    }
+
+    // =========================================================
     // AY İÇİ KONTROL RENDER (ÖZET | AJANDA | PLAN)
     // =========================================================
     function renderControlContent() {
@@ -3175,6 +3277,8 @@
 
       html += `</div>`;
       container.innerHTML = html;
+      
+      // DOM çizildikten sonra toplamı hemen tetikle (0 euro kalma hatasını önler)
       recalcControlTotal();
     }
 
