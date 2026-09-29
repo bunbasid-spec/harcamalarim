@@ -820,6 +820,9 @@
       height: 36px;
       width: 140px;
     }
+    .mini-view-switcher.three-way {
+      width: 210px;
+    }
     .mini-view-btn {
       flex: 1;
       border: none;
@@ -839,6 +842,61 @@
       background: var(--orange);
       color: #0f172a;
       box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
+    }
+
+    /* AJANDA / TAKVİM GÖRÜNÜMÜ STILLERI */
+    .calendar-timeline-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      overflow: hidden;
+      transition: border-color 0.2s ease;
+    }
+    .calendar-day-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .calendar-day-header:active {
+      background: rgba(255,255,255,0.03);
+    }
+    .calendar-day-badge {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .calendar-day-num {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .calendar-day-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+    .calendar-day-total {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--red);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .calendar-day-body {
+      display: none;
+      padding: 4px 14px 12px 14px;
+      border-top: 1px dashed rgba(255,255,255,0.07);
+      background: rgba(0, 0, 0, 0.15);
+    }
+    .calendar-day-body.open {
+      display: block;
+      animation: fadeIn 0.15s ease;
     }
   </style>
 </head>
@@ -860,7 +918,7 @@
     <!-- 1. BÜTÇE MODÜLÜ GÖRÜNÜMÜ -->
     <div id="viewBudget">
 
-      <!-- KALAN BAKİYE ÜSTÜNDEKİ GEÇMİŞ AY UYARI VE DÖNÜŞ ROZETİ -->
+      <!-- KALAN BAKİYE ÜSTÜNDEKİ GEÇMİŞ AY UYARI VE DÖNÜŞ ROZETİ (OKSUZ SADE METİN) -->
       <div class="past-month-banner-container" id="pastMonthBannerContainer">
         <div class="past-month-banner-pill" onclick="resetToCurrentMonth()">
           <span>⚠️</span>
@@ -999,14 +1057,15 @@
     </div>
   </div>
 
-  <!-- AY İÇİ KONTROL MODALI (İLK AÇILIŞ: ÖZET) -->
+  <!-- AY İÇİ KONTROL MODALI (3 SEKMELİ: ÖZET | PLAN | TAKVİM) -->
   <div class="modal" id="modalControl">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
         <h3 style="font-size: 16px;">📋 Ay İçi Kontrol</h3>
-        <div class="mini-view-switcher">
+        <div class="mini-view-switcher three-way">
           <button type="button" class="mini-view-btn active" id="btnCtrlViewSummary" onclick="switchControlView('summary')">Özet</button>
           <button type="button" class="mini-view-btn" id="btnCtrlViewPlan" onclick="switchControlView('plan')">Plan</button>
+          <button type="button" class="mini-view-btn" id="btnCtrlViewCalendar" onclick="switchControlView('calendar')">Takvim</button>
         </div>
       </div>
 
@@ -1160,7 +1219,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.1.5";
+    const CURRENT_VERSION = "3.1.6";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1889,10 +1948,12 @@
     function updateControlViewSwitcher() {
       const btnPlan = document.getElementById('btnCtrlViewPlan');
       const btnSummary = document.getElementById('btnCtrlViewSummary');
-      if (!btnPlan || !btnSummary) return;
+      const btnCal = document.getElementById('btnCtrlViewCalendar');
+      if (!btnPlan || !btnSummary || !btnCal) return;
 
       btnSummary.classList.toggle('active', currentControlView === 'summary');
       btnPlan.classList.toggle('active', currentControlView === 'plan');
+      btnCal.classList.toggle('active', currentControlView === 'calendar');
     }
 
     function openModalWithScrollLock(modalId) {
@@ -2387,6 +2448,54 @@
       recalcSummaryTotal();
     }
 
+    // TAKVİM / AJANDA İÇİN TARİH VE GÜN ADI ÇÖZÜCÜ
+    const TR_DAY_NAMES = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
+
+    function extractDayAndDateInfo(item) {
+      let rawDate = (item.date || '').trim();
+      let dayNum = 0;
+      let dateObj = null;
+
+      if (rawDate) {
+        let p = rawDate.split(".");
+        if (p.length === 3) {
+          dayNum = parseInt(p[0]);
+          dateObj = new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+        }
+      }
+
+      // Eğer resmi tarih yoksa açıklama sonundaki parantezi kontrol et: DB Bilet PP (26.09)
+      if (!dayNum) {
+        let match = (item.merchant || '').match(/\((\d{1,2})\.(\d{1,2})\)/);
+        if (match) {
+          dayNum = parseInt(match[1]);
+          let monthIndex = parseInt(match[2]) - 1;
+          let year = new Date().getFullYear();
+          dateObj = new Date(year, monthIndex, dayNum);
+        }
+      }
+
+      if (!dayNum) return null;
+
+      let dayStr = dayNum.toString().padStart(2, '0');
+      let dayName = dateObj ? TR_DAY_NAMES[dateObj.getDay()] : "";
+
+      return {
+        dayNum: dayNum,
+        dayStr: dayStr,
+        dayName: dayName,
+        dateObj: dateObj
+      };
+    }
+
+    function toggleCalendarDayBody(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.toggle('open');
+      }
+    }
+
+    // AY İÇİ KONTROL RENDER (ÖZET, PLAN VE YENİ TAKVİM GÖRÜNÜMÜ)
     function renderControlContent() {
       const container = document.getElementById('controlReportContent');
       if (!currentData) {
@@ -2424,7 +2533,6 @@
       let hasSecondaryRem = (remNakit > 0 || remC24 > 0 || remOtherManual > 0);
 
       let remWorldEkoTRY = 0, remEnparaTRY = 0, remFreeTRY = 0, remOtherTRY = 0;
-      let fullWorldEkoTRY = 0, fullEnparaTRY = 0, fullFreeTRY = 0, fullOtherTRY = 0;
       let totalRemTrTRY = 0, totalRemTrEUR = 0, totalTrTRYAll = 0, totalTrEURAll = 0, trRateEUR = 0;
 
       let pendingTrItems = [];
@@ -2442,11 +2550,6 @@
         let isEnpara = name.includes('enpara');
         let isFree = (name.includes('free') || name.includes('bonus'));
 
-        if (isWorld) fullWorldEkoTRY += amtTRY;
-        else if (isEnpara) fullEnparaTRY += amtTRY;
-        else if (isFree) fullFreeTRY += amtTRY;
-        else fullOtherTRY += amtTRY;
-
         if (isPending) {
           totalRemTrTRY += amtTRY;
           totalRemTrEUR += amtEUR;
@@ -2462,13 +2565,13 @@
       });
 
       if (totalTrTRYAll > 0 && totalTrEURAll > 0) trRateEUR = totalTrEURAll / totalTrTRYAll;
-
       const totalPendingObligation = remainingCardLimit + totalRemManual + totalRemTrEUR;
 
-      // SAYFA: ÖZET GÖRÜNÜMÜ
+      // ==========================================
+      // 1. GÖRÜNÜM: ÖZET
+      // ==========================================
       if (currentControlView === 'summary') {
         let html = `
-          <!-- 1. KART HARCAMA (HER ZAMAN GÖRÜNÜR) -->
           <div class="liq-section-title">💳 Kart Harcama</div>
           <div class="liq-card" style="border-left: 4px solid var(--accent);">
             <div class="liq-row">
@@ -2567,125 +2670,209 @@
         return;
       }
 
-      // SAYFA: PLAN GÖRÜNÜMÜ
-      let html = `
-        <div style="margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border);">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <div style="font-weight:700; font-size:14px;">Bekleyen Ödemeler:</div>
-              <div id="lblControlLiveTotal" style="font-weight:700; font-size:15px; color:var(--red);">€0,00</div>
+      // ==========================================
+      // 2. GÖRÜNÜM: PLAN
+      // ==========================================
+      if (currentControlView === 'plan') {
+        let html = `
+          <div style="margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <div style="font-weight:700; font-size:14px;">Bekleyen Ödemeler:</div>
+                <div id="lblControlLiveTotal" style="font-weight:700; font-size:15px; color:var(--red);">€0,00</div>
+              </div>
+              <button type="button" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;" onclick="toggleAllControlCheckboxes()">Tümünü Seç / Kaldır</button>
             </div>
-            <button type="button" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;" onclick="toggleAllControlCheckboxes()">Tümünü Seç / Kaldır</button>
+
+            <div id="ctrlAccountsSummaryLines" style="margin-top:2px;"></div>
           </div>
 
-          <div id="ctrlAccountsSummaryLines" style="margin-top:2px;"></div>
-        </div>
+          <div id="controlItemsList">
+        `;
 
-        <div id="controlItemsList">
+        if (remainingCardLimit > 0) {
+          html += `
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-control" data-eur="${remainingCardLimit}" data-try="0" data-account="n26" onchange="recalcControlTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-card">KART</span>
+                    N26
+                  </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Kart Harcama Limiti: €${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+                </div>
+              </div>
+              <div style="font-weight:700; font-size:14px; color:#fff;">€${remainingCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </label>
+          `;
+        }
+
+        pendingManualItems.forEach(item => {
+          let numAmt = parseAmountToNum(item.amount);
+          let cleanName = item.merchant || 'Açıklamasız';
+          let rawAcc = (item.card || '').toLowerCase().trim();
+          let accType = 'diger';
+
+          if (rawAcc.includes('sparkasse')) accType = 'sparkasse';
+          else if (rawAcc.includes('n26')) accType = 'n26';
+          else if (rawAcc.includes('c24')) accType = 'c24';
+          else if (rawAcc.includes('nakit') || rawAcc.includes('bar')) accType = 'nakit';
+
+          let subInfo = item.card ? `Hesap: ${item.card}` : 'Diğer Gider';
+
+          html += `
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-control" data-eur="${numAmt}" data-try="0" data-account="${accType}" onchange="recalcControlTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-manual">HESAP</span>
+                    ${cleanName}
+                  </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">${subInfo}</div>
+                </div>
+              </div>
+              <div style="font-weight:700; font-size:14px; color:#fff;">€${numAmt.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </label>
+          `;
+        });
+
+        pendingTrItems.forEach(item => {
+          let amtTRY = parseAmountToNum(item.amount);
+          let amtEUR = parseAmountToNum(item.eurAmount || 0);
+          if (amtEUR === 0 && trRateEUR > 0) {
+            amtEUR = amtTRY * trRateEUR;
+          }
+          let cleanName = item.merchant || 'TR Kart';
+
+          html += `
+            <label class="template-item">
+              <div style="display:flex; align-items:center;">
+                <input type="checkbox" class="chk-control" data-eur="${amtEUR}" data-try="${amtTRY}" data-account="tr" onchange="recalcControlTotal()" checked>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">
+                    <span class="template-tag tag-tr">TR KART</span>
+                    ${cleanName}
+                  </div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">₺${amtTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                </div>
+              </div>
+              <div style="font-weight:700; font-size:14px; color:#fff;">€${amtEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </label>
+          `;
+        });
+
+        html += `</div>`;
+        container.innerHTML = html;
+        recalcControlTotal();
+        return;
+      }
+
+      // ==========================================
+      // 3. GÖRÜNÜM: TAKVİM / AJANDA (YENİ)
+      // ==========================================
+      let allItemsForCalendar = [];
+
+      (currentData.cardItems || []).forEach(it => {
+        allItemsForCalendar.push({ ...it, srcType: 'card', typeTag: 'KART' });
+      });
+      (currentData.manualItems || []).forEach(it => {
+        allItemsForCalendar.push({ ...it, srcType: 'manual', typeTag: 'HESAP' });
+      });
+      (currentData.trItems || []).forEach(it => {
+        let eurVal = parseAmountToNum(it.eurAmount || 0);
+        let tryVal = parseAmountToNum(it.amount || 0);
+        if (eurVal === 0 && trRateEUR > 0) eurVal = tryVal * trRateEUR;
+        allItemsForCalendar.push({ ...it, srcType: 'tr', typeTag: 'TR KART', eurVal: eurVal });
+      });
+
+      // Günlere göre harcamaları grupla
+      let dayGroups = {};
+
+      allItemsForCalendar.forEach(it => {
+        let dInfo = extractDayAndDateInfo(it);
+        if (!dInfo) return; // Tarihi tespit edilemeyenler atlanır
+
+        let key = dInfo.dayNum;
+        if (!dayGroups[key]) {
+          dayGroups[key] = {
+            dayNum: dInfo.dayNum,
+            dayStr: dInfo.dayStr,
+            dayName: dInfo.dayName,
+            totalEur: 0,
+            items: []
+          };
+        }
+
+        let numAmt = (it.srcType === 'tr') ? (it.eurVal || 0) : parseAmountToNum(it.amount);
+        dayGroups[key].totalEur += numAmt;
+        dayGroups[key].items.push({ ...it, calculatedEur: numAmt });
+      });
+
+      let sortedDays = Object.values(dayGroups).sort((a, b) => a.dayNum - b.dayNum);
+
+      if (sortedDays.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-dim);">Bu ay için tarihli ödeme bulunamadı.</div>';
+        return;
+      }
+
+      let calHtml = `
+        <div style="font-size:12px; color:var(--text-dim); margin-bottom:12px;">
+          📅 Gün bazında planlanan ve gerçekleşen ödeme akışı:
+        </div>
       `;
 
-      if (remainingCardLimit > 0) {
-        html += `
-          <label class="template-item">
-            <div style="display:flex; align-items:center;">
-              <input type="checkbox" class="chk-control" data-eur="${remainingCardLimit}" data-try="0" data-account="n26" onchange="recalcControlTotal()" checked>
-              <div>
-                <div style="font-weight:600; font-size:13px;">
-                  <span class="template-tag tag-card">KART</span>
-                  N26
-                </div>
-                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Kart Harcama Limiti: €${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+      sortedDays.forEach((group, gIdx) => {
+        let bodyId = `cal-day-body-${gIdx}`;
+        let formattedTotal = "€" + group.totalEur.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        calHtml += `
+          <div class="calendar-timeline-card">
+            <div class="calendar-day-header" onclick="toggleCalendarDayBody('${bodyId}')">
+              <div class="calendar-day-badge">
+                <span class="calendar-day-num">${group.dayStr}</span>
+                <span class="calendar-day-name">(${group.dayName})</span>
+              </div>
+              <div class="calendar-day-total">
+                <span>-${formattedTotal}</span>
+                <span style="font-size:10px; color:var(--text-dim);">▼</span>
               </div>
             </div>
-            <div style="font-weight:700; font-size:14px; color:#fff;">€${remainingCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-          </label>
+
+            <div class="calendar-day-body" id="${bodyId}">
         `;
-      }
 
-      pendingManualItems.forEach(item => {
-        let numAmt = parseAmountToNum(item.amount);
-        let cleanName = item.merchant || 'Açıklamasız';
-        let rawAcc = (item.card || '').toLowerCase().trim();
-        let accType = 'diger';
+        group.items.forEach(it => {
+          let tagClass = `tag-${it.srcType}`;
+          let itemAmtDisplay = formatAmount(it.amount);
+          let extraEurSub = (it.srcType === 'tr' && it.calculatedEur > 0)
+            ? ` (~€${it.calculatedEur.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
+            : '';
 
-        if (rawAcc.includes('sparkasse')) accType = 'sparkasse';
-        else if (rawAcc.includes('n26')) accType = 'n26';
-        else if (rawAcc.includes('c24')) accType = 'c24';
-        else if (rawAcc.includes('nakit') || rawAcc.includes('bar')) accType = 'nakit';
-
-        let subInfo = item.card ? `Hesap: ${item.card}` : 'Diğer Gider';
-
-        html += `
-          <label class="template-item">
-            <div style="display:flex; align-items:center;">
-              <input type="checkbox" class="chk-control" data-eur="${numAmt}" data-try="0" data-account="${accType}" onchange="recalcControlTotal()" checked>
+          calHtml += `
+            <div class="liq-row" style="padding:6px 0;">
               <div>
-                <div style="font-weight:600; font-size:13px;">
-                  <span class="template-tag tag-manual">HESAP</span>
-                  ${cleanName}
-                </div>
-                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">${subInfo}</div>
+                <span class="template-tag ${tagClass}">${it.typeTag}</span>
+                <span style="font-weight:600; font-size:13px;">${it.merchant || 'Açıklamasız'}</span>
+                ${it.card ? `<span style="font-size:11px; color:var(--text-dim);"> • ${it.card}</span>` : ''}
+              </div>
+              <div style="font-weight:700; font-size:13px; color:var(--red);">
+                -${itemAmtDisplay}${extraEurSub}
               </div>
             </div>
-            <div style="font-weight:700; font-size:14px; color:#fff;">€${numAmt.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-          </label>
-        `;
-      });
+          `;
+        });
 
-      pendingTrItems.forEach(item => {
-        let amtTRY = parseAmountToNum(item.amount);
-        let amtEUR = parseAmountToNum(item.eurAmount || 0);
-        if (amtEUR === 0 && trRateEUR > 0) {
-          amtEUR = amtTRY * trRateEUR;
-        }
-        let cleanName = item.merchant || 'TR Kart';
-
-        html += `
-          <label class="template-item">
-            <div style="display:flex; align-items:center;">
-              <input type="checkbox" class="chk-control" data-eur="${amtEUR}" data-try="${amtTRY}" data-account="tr" onchange="recalcControlTotal()" checked>
-              <div>
-                <div style="font-weight:600; font-size:13px;">
-                  <span class="template-tag tag-tr">TR KART</span>
-                  ${cleanName}
-                </div>
-                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">₺${amtTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-              </div>
+        calHtml += `
             </div>
-            <div style="font-weight:700; font-size:14px; color:#fff;">€${amtEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-          </label>
+          </div>
         `;
       });
 
-      html += `</div>`;
-      container.innerHTML = html;
-      recalcControlTotal();
+      container.innerHTML = calHtml;
     }
 
-    function toggleLiqBalanceDetails() {
-      const body = document.getElementById('liqBalBody');
-      const arrow = document.getElementById('liqBalArrow');
-      const display = document.getElementById('liqNetDisplay');
-      const card = document.getElementById('liqBalCard');
-
-      if (body.style.display === 'none') {
-        body.style.display = 'block';
-        arrow.innerText = 'Gizle ▲';
-        display.classList.remove('masked');
-        display.innerText = `${liqNetBufferValue >= 0 ? '+' : ''}€${liqNetBufferValue.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-        display.style.color = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
-        card.style.borderLeftColor = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
-      } else {
-        body.style.display = 'none';
-        arrow.innerText = 'Detay ▼';
-        display.classList.add('masked');
-        display.innerText = '••••••';
-        display.style.color = '';
-        card.style.borderLeftColor = 'var(--accent)';
-      }
-    }
-
-    // 3. ÖNERİ: GEÇMİŞ AYDAYKEN FAB TIKLANIRSA GÜVENLİK UYARISI
     function handleFabClick() {
       hideFabAction();
       closeAllComboboxes();
@@ -2694,7 +2881,6 @@
         const select = document.getElementById('sheetSelect');
         const currentSelectedMonth = select ? select.value : "Mevcut Ay";
 
-        // Eğer geçmiş bir ay seçiliyse kullanıcıyı uyar ve yönlendir
         if (currentSelectedMonth !== "Mevcut Ay") {
           const confirmSwitch = confirm(`Şu an geçmiş bir aydasınız (${currentSelectedMonth}).\n\nMevcut Ay'a dönüp yeni bir harcama/gelir eklemek istiyor musunuz?`);
           if (confirmSwitch) {
@@ -2937,7 +3123,6 @@
         const bannerContainer = document.getElementById('pastMonthBannerContainer');
         const bannerText = document.getElementById('pastMonthBannerText');
 
-        // GEÇMİŞ AY UYARI VE ÇERÇEVE KONTROLÜ
         if (sheet !== "Mevcut Ay") {
           select.classList.add('past-month-warning');
           bannerText.innerText = `${sheet} İnceleniyor`;
