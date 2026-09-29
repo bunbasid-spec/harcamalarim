@@ -955,7 +955,7 @@
       background: rgba(0, 0, 0, 0.15);
     }
     .calendar-day-body.open {
-      display: block;
+      display: block !important;
       animation: fadeIn 0.15s ease;
     }
 
@@ -1127,7 +1127,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.2.1
+    Sürüm 3.2.2
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1147,7 +1147,7 @@
 
   <button class="fab" id="mainFab"><span>+</span></button>
 
-  <!-- GEÇMİŞ AY RAPORU MODALI (2 SATIRLI ESNEK BAŞLIK - TAŞMA YAPMAZ) -->
+  <!-- GEÇMİŞ AY RAPORU MODALI -->
   <div class="modal" id="modalPastMonthReport">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -1352,7 +1352,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.2.1";
+    const CURRENT_VERSION = "3.2.2";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1839,7 +1839,7 @@
 
       // GEÇMİŞ AY AJANDA GÖRÜNÜMÜ
       if (currentPastReportView === 'calendar') {
-        renderGenericCalendarView(container, data, 'past', selectedFiltersPast, false);
+        renderGenericCalendarView(container, data, 'past', selectedFiltersPast, false, "Gerçekleşen ödeme akışı:");
         return;
       }
 
@@ -2232,27 +2232,38 @@
       };
     }
 
-    function toggleCalendarDayBody(id) {
+    // TEK BİR GÜNÜN DETAYINI AÇ/KAPAT VE ÜST BUTONU SENKRONİZE ET
+    function toggleCalendarDayBody(id, moduleType) {
       const el = document.getElementById(id);
       if (el) {
         el.classList.toggle('open');
       }
+      updateToggleAllButtonState(moduleType);
     }
 
-    // TÜMÜNÜ AÇ / TÜMÜNÜ KAPAT FONKSİYONU
+    // TÜMÜNÜ AÇ / TÜMÜNÜ KAPAT BUTONU DURUM GÜNCELLEYİCİSİ
+    function updateToggleAllButtonState(moduleType) {
+      const bodies = document.querySelectorAll(`[id^="${moduleType}-cal-day-body-"]`);
+      const btn = document.getElementById(`${moduleType}-btn-toggle-all`);
+      if (!btn || bodies.length === 0) return;
+
+      const anyOpen = Array.from(bodies).some(b => b.classList.contains('open'));
+      btn.innerText = anyOpen ? "Tümünü Kapat ▲" : "Tümünü Aç ▼";
+    }
+
+    // TÜMÜNÜ AÇ / TÜMÜNÜ KAPAT ANA FONKSİYONU (CSS .open TABANLI - HİÇBİR ZAMAN KİLİTLENMEZ)
     function toggleAllCalendarBodies(moduleType) {
       const bodies = document.querySelectorAll(`[id^="${moduleType}-cal-day-body-"]`);
       if (bodies.length === 0) return;
 
-      const anyClosed = Array.from(bodies).some(b => b.style.display !== 'block' && !b.classList.contains('open'));
+      const anyClosed = Array.from(bodies).some(b => !b.classList.contains('open'));
 
       bodies.forEach(b => {
+        b.style.display = ''; // Inline stil ezmesini tamamen kaldırır
         if (anyClosed) {
           b.classList.add('open');
-          b.style.display = 'block';
         } else {
           b.classList.remove('open');
-          b.style.display = 'none';
         }
       });
 
@@ -2286,7 +2297,7 @@
       }
     }
 
-    function renderGenericCalendarView(container, data, moduleType, filterSet, onlyPending = false) {
+    function renderGenericCalendarView(container, data, moduleType, filterSet, onlyPending = false, flowTitleText = "Gün bazında ödeme akışı:") {
       let trRateEUR = 0;
       let totalTrTRYAll = 0, totalTrEURAll = 0;
       (data.trItems || []).forEach(it => {
@@ -2343,7 +2354,7 @@
         });
       }
 
-      // Filtreleme: Eğer filtre seti boşsa tümü gelir; doluysa içindekilerden herhangi birine uyanlar gelir
+      // Filtreleme mantığı
       let filteredItems = allItems.filter(it => {
         if (filterSet.size === 0) return true;
         return filterSet.has(it.filterAccount) || filterSet.has(it.filterCategory);
@@ -2379,7 +2390,7 @@
 
       let html = '';
 
-      // AY İÇİ KONTROL MODÜLÜ TAKVİMİNİN EN ÜSTÜNDEKİ SABİT KART KOTASI ŞERİDİ (LOGOSUZ VE SADE)
+      // AY İÇİ KONTROL MODÜLÜ TAKVİMİNİN EN ÜSTÜNDEKİ SABİT KART KOTASI ŞERİDİ
       if (onlyPending) {
         const targetCardLimit = parseAmountToNum(data.cardLimit || 0);
         const spentCardTotal = parseAmountToNum(data.cardTotal || 0);
@@ -2393,14 +2404,14 @@
         `;
       }
 
-      // FİLTRE LİSTESİ HAZIRLIĞI (OLMAYANLAR GİZLENİR, SEÇİLENLER BAŞA GELİR, LOGOSUZDUR)
+      // FİLTRE LİSTESİ (KART VE TR KISALTMALARI UYGULANDI, LOGOLAR KALKTI)
       const filterMetadata = {
         sparkasse: "Sparkasse",
         n26: "N26",
         c24: "C24",
         nakit: "Nakit",
-        tr: "TR Kartlar",
-        card: "Kart Harcaması",
+        tr: "TR",
+        card: "Kart",
         income: "Gelir",
         other: "Diğer"
       };
@@ -2421,13 +2432,13 @@
       });
       html += `</div>`;
 
-      // BİLGİ SATIRI & TÜMÜNÜ AÇ/KAPAT BUTONU
+      // KISALTILMIŞ METİN VE TÜMÜNÜ AÇ/KAPAT BUTONU (TEK SATIR FERAH DÜZEN)
       html += `
         <div style="display:flex; justify-content:space-between; align-items:center; margin: 4px 2px 10px 2px;">
-          <div style="font-size:12px; color:var(--text-dim);">
-            Gün bazında planlanan ve gerçekleşen ödeme akışı:
+          <div style="font-size:12px; color:var(--text-dim); font-weight:600;">
+            ${flowTitleText}
           </div>
-          <button type="button" id="${moduleType}-btn-toggle-all" style="background:transparent; border:none; color:var(--accent); font-size:11px; font-weight:700; cursor:pointer;" onclick="toggleAllCalendarBodies('${moduleType}')">
+          <button type="button" id="${moduleType}-btn-toggle-all" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer; padding: 2px 0;" onclick="toggleAllCalendarBodies('${moduleType}')">
             Tümünü Aç ▼
           </button>
         </div>
@@ -2448,7 +2459,7 @@
 
         html += `
           <div class="calendar-timeline-card">
-            <div class="calendar-day-header" onclick="toggleCalendarDayBody('${bodyId}')">
+            <div class="calendar-day-header" onclick="toggleCalendarDayBody('${bodyId}', '${moduleType}')">
               <div class="calendar-day-badge">
                 <span class="calendar-day-num">${group.dayStr}</span>
                 <span class="calendar-day-name">(${group.dayName})</span>
@@ -2524,7 +2535,7 @@
 
       // 1. AJANDA GÖRÜNÜMÜ
       if (currentLiquidityView === 'calendar') {
-        renderGenericCalendarView(container, currentData, 'liq', selectedFiltersLiq, false);
+        renderGenericCalendarView(container, currentData, 'liq', selectedFiltersLiq, false, "Planlanan ödeme akışı:");
         return;
       }
 
@@ -2902,9 +2913,9 @@
         return;
       }
 
-      // 1. AJANDA GÖRÜNÜMÜ (SADECE ÖDENMEMİŞLER)
+      // 1. AJANDA GÖRÜNÜMÜ
       if (currentControlView === 'calendar') {
-        renderGenericCalendarView(container, currentData, 'ctrl', selectedFiltersCtrl, true);
+        renderGenericCalendarView(container, currentData, 'ctrl', selectedFiltersCtrl, true, "Beklenen ödeme akışı:");
         return;
       }
 
