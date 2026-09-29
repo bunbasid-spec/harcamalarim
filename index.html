@@ -510,7 +510,7 @@
     }
     .fab:active { transform: scale(0.92); opacity: 0.9; }
 
-    /* FAB AKSİYON BUTONLARI */
+    /* FAB AKSİYON BUTONLARI & SÜRÜM ROZETİ */
     .fab-mini-action {
       position: fixed;
       right: 22px;
@@ -527,6 +527,17 @@
       z-index: 60;
       cursor: pointer;
       animation: popUp 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    #badgeVersionAction {
+      bottom: 355px;
+      background: #1e293b;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 12px;
+      pointer-events: none; /* Tıklanamaz, sadece bilgi */
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     }
     #btnPastMonthReportAction {
       bottom: 305px;
@@ -763,6 +774,7 @@
       padding: 2px 6px;
       border-radius: 4px;
       margin-right: 6px;
+      display: inline-block;
     }
     .tag-card { background: rgba(56, 189, 248, 0.2); color: var(--accent); }
     .tag-manual { background: rgba(245, 158, 11, 0.2); color: var(--orange); }
@@ -808,117 +820,58 @@
       user-select: none;
     }
 
-    .mini-view-switcher {
-      display: flex;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 3px;
-      gap: 3px;
-      height: 36px;
-      width: 140px;
-    }
-    .mini-view-switcher.three-way {
-      width: 215px;
-    }
-    .mini-view-btn {
-      flex: 1;
-      border: none;
-      background: transparent;
-      color: var(--text-dim);
-      font-size: 12px;
-      font-weight: 600;
-      padding: 0;
-      border-radius: 6px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-    }
-    .mini-view-btn.active {
-      background: var(--orange);
-      color: #0f172a;
-      box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
-    }
-
-    /* AJANDA / TAKVİM GÖRÜNÜMÜ STILLERI */
-    .calendar-timeline-card {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      margin-bottom: 8px;
-      overflow: hidden;
-      transition: border-color 0.2s ease;
-    }
-    .calendar-day-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 14px;
-      cursor: pointer;
-      user-select: none;
-    }
-    .calendar-day-header:active {
-      background: rgba(255,255,255,0.03);
-    }
-    .calendar-day-badge {
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
-    }
-    .calendar-day-num {
-      font-size: 20px;
-      font-weight: 800;
-      color: var(--accent);
-      line-height: 1;
-    }
-    .calendar-day-name {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-dim);
-    }
-    .calendar-day-total {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--red);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .calendar-day-body {
-      display: none;
-      padding: 4px 14px 12px 14px;
-      border-top: 1px dashed rgba(255,255,255,0.07);
-      background: rgba(0, 0, 0, 0.15);
-    }
-    .calendar-day-body.open {
-      display: block;
-      animation: fadeIn 0.15s ease;
-    }
-
+    /* TAKVİMDE 2 SATIRLI VE MÜKEMMEL HİZALANMIŞ ELEMANLAR */
     .cal-item-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 7px 0;
-      border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+      padding: 8px 0;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
     }
     .cal-item-row:last-child {
       border-bottom: none;
     }
-    .cal-item-info {
+    .cal-item-left {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      max-width: 62%;
+    }
+    .cal-item-content {
       display: flex;
       flex-direction: column;
       gap: 2px;
-      max-width: 60%;
+      min-width: 0;
     }
-    .cal-item-amounts {
+    .cal-item-desc {
+      font-weight: 600;
+      font-size: 13px;
+      color: #fff;
+      word-break: break-word;
+    }
+    .cal-item-sub {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .cal-item-right {
       display: flex;
-      align-items: baseline;
-      justify-content: flex-end;
-      gap: 6px;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 2px;
       white-space: nowrap;
+      text-align: right;
+    }
+    .cal-item-primary-amt {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--red);
+      font-variant-numeric: tabular-nums;
+    }
+    .cal-item-secondary-amt {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-variant-numeric: tabular-nums;
     }
   </style>
 </head>
@@ -1025,7 +978,10 @@
     <div id="listContainer"></div>
   </div>
 
-  <!-- BASILI TUTUNCA ÇIKAN 5 AKSİYON BUTONU -->
+  <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
+  <div id="badgeVersionAction" class="fab-mini-action">
+    Sürüm 3.1.8
+  </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
   </button>
@@ -1060,11 +1016,11 @@
     </div>
   </div>
 
-  <!-- LİKİDİTE PLANLAMASI MODALI (ÖZET | TAKVİM | PLAN) -->
+  <!-- LİKİDİTE PLANLAMASI MODALI (ÖZET | TAKVİM | PLAN - LOGOSUZ TEK SATIR BAŞLIK) -->
   <div class="modal" id="modalLiquidity">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h3 style="font-size: 16px;">🔮 Likidite Planlaması</h3>
+        <h3 style="font-size: 15px; white-space: nowrap;">Likidite Planlaması</h3>
         <div class="mini-view-switcher three-way">
           <button type="button" class="mini-view-btn active" id="btnLiqViewSummary" onclick="switchLiquidityView('summary')">Özet</button>
           <button type="button" class="mini-view-btn" id="btnLiqViewCalendar" onclick="switchLiquidityView('calendar')">Takvim</button>
@@ -1241,7 +1197,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.1.7";
+    const CURRENT_VERSION = "3.1.8";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1517,6 +1473,7 @@
     }
 
     function showFabAction() {
+      document.getElementById('badgeVersionAction').style.display = 'flex';
       document.getElementById('btnPastMonthReportAction').style.display = 'flex';
       document.getElementById('btnControlAction').style.display = 'flex';
       document.getElementById('btnToggleSearchAction').style.display = 'flex';
@@ -1532,6 +1489,7 @@
     }
 
     function hideFabAction() {
+      document.getElementById('badgeVersionAction').style.display = 'none';
       document.getElementById('btnPastMonthReportAction').style.display = 'none';
       document.getElementById('btnControlAction').style.display = 'none';
       document.getElementById('btnToggleSearchAction').style.display = 'none';
@@ -2234,7 +2192,7 @@
       }
 
       // ==========================================
-      // 2. GÖRÜNÜM: TAKVİM (YENİ VE 2 SATIRLI DÜZEN)
+      // 2. GÖRÜNÜM: TAKVİM (2 SATIRLI & HİZALI DÜZEN)
       // ==========================================
       if (currentLiquidityView === 'calendar') {
         let allItemsForCalendar = [];
@@ -2317,28 +2275,36 @@
               let tryDisplay = formatAmount(it.amount);
               let eurDisplay = "€" + (it.calculatedEur || 0).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
               amountsHtml = `
-                <span style="font-size:11px; color:var(--text-dim);">(-${tryDisplay})</span>
-                <span style="font-weight:700; font-size:13px; color:var(--red); font-variant-numeric:tabular-nums;">-${eurDisplay}</span>
+                <div class="cal-item-primary-amt">-${eurDisplay}</div>
+                <div class="cal-item-secondary-amt">(-${tryDisplay})</div>
               `;
             } else {
               let eurDisplay = formatAmount(it.amount);
               amountsHtml = `
-                <span style="font-weight:700; font-size:13px; color:var(--red); font-variant-numeric:tabular-nums;">-${eurDisplay}</span>
+                <div class="cal-item-primary-amt">-${eurDisplay}</div>
               `;
             }
 
+            // Etiket genişliğine göre alt satırdaki metni tam üstteki açıklama metninin altına hizalama
+            let subIndentStyle = 'padding-left: 0px;';
+            if (it.typeTag === 'KART') subIndentStyle = 'padding-left: 45px;';
+            else if (it.typeTag === 'HESAP') subIndentStyle = 'padding-left: 50px;';
+            else if (it.typeTag === 'TR KART') subIndentStyle = 'padding-left: 60px;';
+
             calHtml += `
               <div class="cal-item-row">
-                <div class="cal-item-info">
-                  <div>
-                    <span class="template-tag ${tagClass}">${it.typeTag}</span>
-                    <span style="font-weight:600; font-size:13px; color:#fff;">${itemDesc}</span>
-                  </div>
-                  <div style="font-size:11px; color:var(--text-dim); padding-left:2px;">
-                    ${itemAccount}
+                <div class="cal-item-left">
+                  <div class="cal-item-content">
+                    <div>
+                      <span class="template-tag ${tagClass}">${it.typeTag}</span>
+                      <span class="cal-item-desc">${itemDesc}</span>
+                    </div>
+                    <div class="cal-item-sub" style="${subIndentStyle}">
+                      ${itemAccount}
+                    </div>
                   </div>
                 </div>
-                <div class="cal-item-amounts">
+                <div class="cal-item-right">
                   ${amountsHtml}
                 </div>
               </div>
@@ -2812,7 +2778,7 @@
       recalcControlTotal();
     }
 
-    // LİKİDİTE PLANLAMASI İÇİNDEKİ NET KALAN DETAYINI AÇIP KAPATAN FONKSİYON (DÜZELTİLDİ)
+    // LİKİDİTE PLANLAMASI İÇİNDEKİ NET KALAN DETAYINI AÇIP KAPATAN FONKSİYON
     function toggleLiqBalanceDetails() {
       const body = document.getElementById('liqBalBody');
       const arrow = document.getElementById('liqBalArrow');
