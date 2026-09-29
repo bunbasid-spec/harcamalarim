@@ -869,7 +869,7 @@
       overflow-x: auto;
       white-space: nowrap;
       padding: 2px 0 10px 0;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       -webkit-overflow-scrolling: touch;
     }
     .filter-chip {
@@ -878,7 +878,7 @@
       color: var(--text-dim);
       font-size: 11px;
       font-weight: 600;
-      padding: 5px 11px;
+      padding: 5px 12px;
       border-radius: 14px;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -891,7 +891,7 @@
       color: var(--accent);
     }
 
-    /* SABİT BİLGİ ŞERİDİ (AY İÇİ KONTROL KART KOTASI İÇİN) */
+    /* SABİT BİLGİ ŞERİDİ */
     .static-info-banner {
       background: rgba(56, 189, 248, 0.08);
       border: 1px solid rgba(56, 189, 248, 0.3);
@@ -959,7 +959,7 @@
       animation: fadeIn 0.15s ease;
     }
 
-    /* TAKVİM SATIRINDA KUSURSUZ SOL-SAĞ HİZALAMA */
+    /* AJANDA SATIRINDA KUSURSUZ SOL-SAĞ HİZALAMA */
     .cal-item-row {
       display: flex;
       justify-content: space-between;
@@ -1127,7 +1127,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.2.0
+    Sürüm 3.2.1
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1147,17 +1147,18 @@
 
   <button class="fab" id="mainFab"><span>+</span></button>
 
-  <!-- GEÇMİŞ AY RAPORU MODALI (LOGOSUZ BAŞLIK, ÖZET & TAKVİM SEÇİCİ) -->
+  <!-- GEÇMİŞ AY RAPORU MODALI (2 SATIRLI ESNEK BAŞLIK - TAŞMA YAPMAZ) -->
   <div class="modal" id="modalPastMonthReport">
     <div class="modal-content">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px;">
-        <h3 style="font-size: 15px; margin: 0; white-space: nowrap;">Geçmiş Ay Raporu</h3>
-        <div style="display:flex; align-items:center; gap:6px;">
-          <div class="mini-view-switcher two-way" style="width:130px; height:32px;">
-            <button type="button" class="mini-view-btn active" id="btnPastViewSummary" onclick="switchPastReportView('summary')">Özet</button>
-            <button type="button" class="mini-view-btn" id="btnPastViewCalendar" onclick="switchPastReportView('calendar')">Takvim</button>
-          </div>
-          <select id="pastReportSheetSelect" class="sheet-select" style="width:120px; height:32px; font-size:12px;" onchange="onPastReportSheetChange()"></select>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h3 style="font-size: 16px; margin: 0;">Geçmiş Ay Raporu</h3>
+        <select id="pastReportSheetSelect" class="sheet-select" style="width:130px; height:32px; font-size:12px; padding:0 6px;" onchange="onPastReportSheetChange()"></select>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+        <div class="mini-view-switcher two-way" style="width:140px; height:32px;">
+          <button type="button" class="mini-view-btn active" id="btnPastViewSummary" onclick="switchPastReportView('summary')">Özet</button>
+          <button type="button" class="mini-view-btn" id="btnPastViewCalendar" onclick="switchPastReportView('calendar')">Ajanda</button>
         </div>
       </div>
 
@@ -1169,14 +1170,14 @@
     </div>
   </div>
 
-  <!-- LİKİDİTE PLANLAMASI MODALI (LOGOSUZ BAŞLIK, ÖZET | TAKVİM | PLAN) -->
+  <!-- LİKİDİTE PLANLAMASI MODALI (ÖZET | AJANDA | PLAN) -->
   <div class="modal" id="modalLiquidity">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px;">
         <h3 style="font-size: 15px; white-space: nowrap; margin: 0;">Likidite Planlaması</h3>
         <div class="mini-view-switcher three-way">
           <button type="button" class="mini-view-btn active" id="btnLiqViewSummary" onclick="switchLiquidityView('summary')">Özet</button>
-          <button type="button" class="mini-view-btn" id="btnLiqViewCalendar" onclick="switchLiquidityView('calendar')">Takvim</button>
+          <button type="button" class="mini-view-btn" id="btnLiqViewCalendar" onclick="switchLiquidityView('calendar')">Ajanda</button>
           <button type="button" class="mini-view-btn" id="btnLiqViewPlan" onclick="switchLiquidityView('plan')">Plan</button>
         </div>
       </div>
@@ -1189,14 +1190,14 @@
     </div>
   </div>
 
-  <!-- AY İÇİ KONTROL MODALI (LOGOSUZ BAŞLIK, ÖZET | TAKVİM | PLAN) -->
+  <!-- AY İÇİ KONTROL MODALI (ÖZET | AJANDA | PLAN) -->
   <div class="modal" id="modalControl">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px;">
         <h3 style="font-size: 15px; white-space: nowrap; margin: 0;">Ay İçi Kontrol</h3>
         <div class="mini-view-switcher three-way">
           <button type="button" class="mini-view-btn active" id="btnCtrlViewSummary" onclick="switchControlView('summary')">Özet</button>
-          <button type="button" class="mini-view-btn" id="btnCtrlViewCalendar" onclick="switchControlView('calendar')">Takvim</button>
+          <button type="button" class="mini-view-btn" id="btnCtrlViewCalendar" onclick="switchControlView('calendar')">Ajanda</button>
           <button type="button" class="mini-view-btn" id="btnCtrlViewPlan" onclick="switchControlView('plan')">Plan</button>
         </div>
       </div>
@@ -1351,7 +1352,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.2.0";
+    const CURRENT_VERSION = "3.2.1";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1380,14 +1381,15 @@
     let pastReportNetBalance = 0;
     let liqNetBufferValue = 0;
 
-    // AKTİF TAKVİM FİLTRELERİ (HER MODÜL İÇİN AYRI)
+    // MODÜL GÖRÜNÜMLERİ
     let currentLiquidityView = 'summary';
     let currentControlView = 'summary';
     let currentPastReportView = 'summary';
 
-    let activeFilterLiq = 'ALL';
-    let activeFilterCtrl = 'ALL';
-    let activeFilterPast = 'ALL';
+    // ÇOKLU SEÇİLEBİLEN FİLTRE SETLERİ (SET VERİ YAPISI)
+    let selectedFiltersLiq = new Set();
+    let selectedFiltersCtrl = new Set();
+    let selectedFiltersPast = new Set();
     
     let maskedState = {
       rem: true, manual: true, tr: true, inc: true,
@@ -1835,13 +1837,13 @@
       const container = document.getElementById('pastReportContent');
       if (!data) return;
 
-      // GEÇMİŞ AY TAKVİM GÖRÜNÜMÜ
+      // GEÇMİŞ AY AJANDA GÖRÜNÜMÜ
       if (currentPastReportView === 'calendar') {
-        renderGenericCalendarView(container, data, 'past', activeFilterPast, false);
+        renderGenericCalendarView(container, data, 'past', selectedFiltersPast, false);
         return;
       }
 
-      // GEÇMİŞ AY ÖZET GÖRÜNÜMÜ (AYNEN KORUNDU)
+      // GEÇMİŞ AY ÖZET GÖRÜNÜMÜ
       const targetCardLimit = parseAmountToNum(data.cardLimit || 0);
       const actualCardSpent = parseAmountToNum(data.cardTotal || 0);
 
@@ -2237,13 +2239,44 @@
       }
     }
 
+    // TÜMÜNÜ AÇ / TÜMÜNÜ KAPAT FONKSİYONU
+    function toggleAllCalendarBodies(moduleType) {
+      const bodies = document.querySelectorAll(`[id^="${moduleType}-cal-day-body-"]`);
+      if (bodies.length === 0) return;
+
+      const anyClosed = Array.from(bodies).some(b => b.style.display !== 'block' && !b.classList.contains('open'));
+
+      bodies.forEach(b => {
+        if (anyClosed) {
+          b.classList.add('open');
+          b.style.display = 'block';
+        } else {
+          b.classList.remove('open');
+          b.style.display = 'none';
+        }
+      });
+
+      const btn = document.getElementById(`${moduleType}-btn-toggle-all`);
+      if (btn) {
+        btn.innerText = anyClosed ? "Tümünü Kapat ▲" : "Tümünü Aç ▼";
+      }
+    }
+
     // =========================================================
-    // MERKEZİ AKILLI TAKVİM OLUŞTURUCU (HER 3 MODÜL İÇİN)
+    // ÇOKLU SEÇİLEBİLİR VE BAŞA GELEN AKILLI FİLTRE MOTORU
     // =========================================================
-    function setCalendarFilter(moduleType, filterValue) {
-      if (moduleType === 'liq') activeFilterLiq = filterValue;
-      else if (moduleType === 'ctrl') activeFilterCtrl = filterValue;
-      else if (moduleType === 'past') activeFilterPast = filterValue;
+    function toggleCalendarFilterKey(moduleType, key) {
+      let filterSet = (moduleType === 'liq') ? selectedFiltersLiq : ((moduleType === 'ctrl') ? selectedFiltersCtrl : selectedFiltersPast);
+
+      if (key === 'ALL') {
+        filterSet.clear();
+      } else {
+        if (filterSet.has(key)) {
+          filterSet.delete(key);
+        } else {
+          filterSet.add(key);
+        }
+      }
 
       if (moduleType === 'liq') renderLiquidityContent();
       else if (moduleType === 'ctrl') renderControlContent();
@@ -2253,7 +2286,7 @@
       }
     }
 
-    function renderGenericCalendarView(container, data, moduleType, activeFilter, onlyPending = false) {
+    function renderGenericCalendarView(container, data, moduleType, filterSet, onlyPending = false) {
       let trRateEUR = 0;
       let totalTrTRYAll = 0, totalTrEURAll = 0;
       (data.trItems || []).forEach(it => {
@@ -2263,15 +2296,17 @@
       if (totalTrTRYAll > 0 && totalTrEURAll > 0) trRateEUR = totalTrEURAll / totalTrTRYAll;
 
       let allItems = [];
+      let availableFilterKeys = new Set();
 
-      // 1. Kart Harcamaları (Sadece geçmiş ve mevcut ay likiditede görünür; ay içi kontrolde bekleyen kart olmadığı için takvime girmez)
+      // 1. Kart Harcamaları (N26 Kart Harcaması ayrı kategoridir)
       if (!onlyPending) {
         (data.cardItems || []).forEach(it => {
-          allItems.push({ ...it, srcType: 'card', typeTag: 'KART', isIncome: false, filterCategory: 'CARD', filterAccount: 'n26' });
+          allItems.push({ ...it, srcType: 'card', typeTag: 'KART', isIncome: false, filterCategory: 'card', filterAccount: 'card' });
+          availableFilterKeys.add('card');
         });
       }
 
-      // 2. Diğer Giderler / Hesaplar
+      // 2. Diğer Giderler / Hesaplar (N26 Kart Harcaması kesinlikle buraya girmez)
       (data.manualItems || []).forEach(it => {
         let isPending = (!it.date || it.date.trim() === "");
         if (onlyPending && !isPending) return;
@@ -2279,11 +2314,12 @@
         let acc = (it.card || '').toLowerCase().trim();
         let filterAcc = 'other';
         if (acc.includes('sparkasse')) filterAcc = 'sparkasse';
-        else if (acc.includes('n26')) filterAcc = 'n26';
+        else if (acc.includes('n26')) filterAcc = 'n26'; // Sadece N26 Banka Hesabı
         else if (acc.includes('c24')) filterAcc = 'c24';
         else if (acc.includes('nakit') || acc.includes('bar')) filterAcc = 'nakit';
 
-        allItems.push({ ...it, srcType: 'manual', typeTag: 'HESAP', isIncome: false, filterCategory: 'MANUAL', filterAccount: filterAcc });
+        allItems.push({ ...it, srcType: 'manual', typeTag: 'HESAP', isIncome: false, filterCategory: 'manual', filterAccount: filterAcc });
+        availableFilterKeys.add(filterAcc);
       });
 
       // 3. TR Ödemeleri
@@ -2295,26 +2331,22 @@
         let tryVal = parseAmountToNum(it.amount || 0);
         if (eurVal === 0 && trRateEUR > 0) eurVal = tryVal * trRateEUR;
 
-        allItems.push({ ...it, srcType: 'tr', typeTag: 'TR KART', isIncome: false, eurVal: eurVal, tryVal: tryVal, filterCategory: 'TR', filterAccount: 'tr' });
+        allItems.push({ ...it, srcType: 'tr', typeTag: 'TR KART', isIncome: false, eurVal: eurVal, tryVal: tryVal, filterCategory: 'tr', filterAccount: 'tr' });
+        availableFilterKeys.add('tr');
       });
 
-      // 4. Gelirler (Sadece Likidite ve Geçmiş Ayda görünür; Ay İçi Kontrol'de sadece borç/ödeme vardır)
+      // 4. Gelirler
       if (!onlyPending) {
         (data.incomeItems || []).forEach(it => {
-          allItems.push({ ...it, srcType: 'income', typeTag: 'GELİR', isIncome: true, filterCategory: 'INCOME', filterAccount: 'income' });
+          allItems.push({ ...it, srcType: 'income', typeTag: 'GELİR', isIncome: true, filterCategory: 'income', filterAccount: 'income' });
+          availableFilterKeys.add('income');
         });
       }
 
-      // AKILLI FİLTRELEME
+      // Filtreleme: Eğer filtre seti boşsa tümü gelir; doluysa içindekilerden herhangi birine uyanlar gelir
       let filteredItems = allItems.filter(it => {
-        if (activeFilter === 'ALL') return true;
-        if (activeFilter === 'sparkasse') return it.filterAccount === 'sparkasse';
-        if (activeFilter === 'n26') return it.filterAccount === 'n26';
-        if (activeFilter === 'c24') return it.filterAccount === 'c24';
-        if (activeFilter === 'tr') return it.filterCategory === 'TR';
-        if (activeFilter === 'card') return it.filterCategory === 'CARD';
-        if (activeFilter === 'income') return it.filterCategory === 'INCOME';
-        return true;
+        if (filterSet.size === 0) return true;
+        return filterSet.has(it.filterAccount) || filterSet.has(it.filterCategory);
       });
 
       // Günlere göre harcamaları grupla
@@ -2347,7 +2379,7 @@
 
       let html = '';
 
-      // AY İÇİ KONTROL MODÜLÜ TAKVİMİNİN EN ÜSTÜNDEKİ SABİT KART KOTASI ŞERİDİ
+      // AY İÇİ KONTROL MODÜLÜ TAKVİMİNİN EN ÜSTÜNDEKİ SABİT KART KOTASI ŞERİDİ (LOGOSUZ VE SADE)
       if (onlyPending) {
         const targetCardLimit = parseAmountToNum(data.cardLimit || 0);
         const spentCardTotal = parseAmountToNum(data.cardTotal || 0);
@@ -2355,29 +2387,51 @@
 
         html += `
           <div class="static-info-banner">
-            <span style="color:var(--text);">Kalan Kart Harcama Kotası</span>
+            <span style="color:var(--text);">Kalan Kart Harcama Kotası:</span>
             <span style="color:var(--accent); font-weight:700;">€${remainingCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} <span style="font-size:10px; font-weight:normal; color:var(--text-dim);">(Limit: €${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})})</span></span>
           </div>
         `;
       }
 
-      // YATAY KAYAN AKILLI FİLTRE ÇİPLERİ
-      html += `
-        <div class="filter-chip-bar">
-          <div class="filter-chip ${activeFilter === 'ALL' ? 'active' : ''}" onclick="setCalendarFilter('${moduleType}', 'ALL')">Tümü</div>
-          <div class="filter-chip ${activeFilter === 'sparkasse' ? 'active' : ''}" onclick="setCalendarFilter('${moduleType}', 'sparkasse')">🏦 Sparkasse</div>
-          <div class="filter-chip ${activeFilter === 'n26' ? 'active' : ''}" onclick="setCalendarFilter('${moduleType}', 'n26')">🏦 N26</div>
-          <div class="filter-chip ${activeFilter === 'c24' ? 'active' : ''}" onclick="setCalendarFilter('${moduleType}', 'c24')">🏦 C24</div>
-          <div class="filter-chip ${activeFilter === 'tr' ? 'active' : ''}" onclick="setCalendarFilter('${moduleType}', 'tr')">🇹🇷 TR Kartlar</div>
-      `;
+      // FİLTRE LİSTESİ HAZIRLIĞI (OLMAYANLAR GİZLENİR, SEÇİLENLER BAŞA GELİR, LOGOSUZDUR)
+      const filterMetadata = {
+        sparkasse: "Sparkasse",
+        n26: "N26",
+        c24: "C24",
+        nakit: "Nakit",
+        tr: "TR Kartlar",
+        card: "Kart Harcaması",
+        income: "Gelir",
+        other: "Diğer"
+      };
 
-      if (!onlyPending) {
-        html += `
-          <div class="filter-chip ${activeFilter === 'card' ? 'active' : ''}" onclick="setCalendarFilter('${moduleType}', 'card')">💳 Kart Harcama</div>
-          <div class="filter-chip ${activeFilter === 'income' ? 'active' : ''}" onclick="setCalendarFilter('${moduleType}', 'income')">💰 Gelir</div>
-        `;
-      }
+      let existingKeys = Object.keys(filterMetadata).filter(k => availableFilterKeys.has(k));
+
+      // Seçili olanları başa al, seçili olmayanları sonraya diz
+      let selectedKeysArr = existingKeys.filter(k => filterSet.has(k));
+      let unselectedKeysArr = existingKeys.filter(k => !filterSet.has(k));
+      let orderedFilterKeys = [...selectedKeysArr, ...unselectedKeysArr];
+
+      html += `<div class="filter-chip-bar">`;
+      html += `<div class="filter-chip ${filterSet.size === 0 ? 'active' : ''}" onclick="toggleCalendarFilterKey('${moduleType}', 'ALL')">Tümü</div>`;
+
+      orderedFilterKeys.forEach(k => {
+        let isAct = filterSet.has(k);
+        html += `<div class="filter-chip ${isAct ? 'active' : ''}" onclick="toggleCalendarFilterKey('${moduleType}', '${k}')">${filterMetadata[k]}</div>`;
+      });
       html += `</div>`;
+
+      // BİLGİ SATIRI & TÜMÜNÜ AÇ/KAPAT BUTONU
+      html += `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin: 4px 2px 10px 2px;">
+          <div style="font-size:12px; color:var(--text-dim);">
+            Gün bazında planlanan ve gerçekleşen ödeme akışı:
+          </div>
+          <button type="button" id="${moduleType}-btn-toggle-all" style="background:transparent; border:none; color:var(--accent); font-size:11px; font-weight:700; cursor:pointer;" onclick="toggleAllCalendarBodies('${moduleType}')">
+            Tümünü Aç ▼
+          </button>
+        </div>
+      `;
 
       if (sortedDays.length === 0) {
         html += `<div style="text-align:center; padding:30px; color:var(--text-dim);">${onlyPending ? 'Ödeme bekleyen tarihli borç bulunamadı.' : 'Filtreye uygun tarihli hareket bulunamadı.'}</div>`;
@@ -2459,7 +2513,7 @@
     }
 
     // =========================================================
-    // LİKİDİTE PLANLAMASI RENDER (ÖZET | TAKVİM | PLAN)
+    // LİKİDİTE PLANLAMASI RENDER (ÖZET | AJANDA | PLAN)
     // =========================================================
     function renderLiquidityContent() {
       const container = document.getElementById('liquidityReportContent');
@@ -2468,9 +2522,9 @@
         return;
       }
 
-      // 1. TAKVİM GÖRÜNÜMÜ
+      // 1. AJANDA GÖRÜNÜMÜ
       if (currentLiquidityView === 'calendar') {
-        renderGenericCalendarView(container, currentData, 'liq', activeFilterLiq, false);
+        renderGenericCalendarView(container, currentData, 'liq', selectedFiltersLiq, false);
         return;
       }
 
@@ -2510,7 +2564,6 @@
       let incomeItemsList = currentData.incomeItems || [];
       incomeItemsList.forEach(item => { totalIncome += parseAmountToNum(item.amount); });
 
-      // Fiilen Harcanan Kart + Diğer + TR ile net nakit hesabı
       const totalPaidExpenses = actualCardSpent + totalManual + totalTrEUR;
       const netBuffer = totalIncome - totalPaidExpenses;
       liqNetBufferValue = netBuffer;
@@ -2579,7 +2632,7 @@
         }
         html += `</div>`;
 
-        // GELİRLER PENCERESİ (YEŞİL, GİZLİ TUTARLI & DETAY AÇILIR)
+        // GELİRLER PENCERESİ
         html += `
           <div class="liq-section-title">💰 Gelirler</div>
           <div class="liq-card" style="border-left: 4px solid var(--green);">
@@ -2839,58 +2892,8 @@
       recalcSummaryTotal();
     }
 
-    function toggleLiqIncomeDetails() {
-      const body = document.getElementById('liqIncomeBody');
-      const arrow = document.getElementById('liqIncomeArrow');
-      const display = document.getElementById('liqIncomeDisplay');
-
-      let totalIncome = 0;
-      (currentData.incomeItems || []).forEach(item => { totalIncome += parseAmountToNum(item.amount); });
-
-      if (body.style.display === 'none') {
-        body.style.display = 'block';
-        arrow.innerText = 'Gizle ▲';
-        display.classList.remove('masked');
-        display.innerText = `€${totalIncome.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-      } else {
-        body.style.display = 'none';
-        arrow.innerText = 'Detay ▼';
-        display.classList.add('masked');
-        display.innerText = '••••••';
-      }
-    }
-
-    function toggleLiqBalanceDetails() {
-      const body = document.getElementById('liqBalBody');
-      const arrow = document.getElementById('liqBalArrow');
-      const display = document.getElementById('liqNetDisplay');
-      const card = document.getElementById('liqBalCard');
-
-      if (!body) return;
-
-      if (body.style.display === 'none' || body.style.display === '') {
-        body.style.display = 'block';
-        if (arrow) arrow.innerText = 'Gizle ▲';
-        if (display) {
-          display.classList.remove('masked');
-          display.innerText = `${liqNetBufferValue >= 0 ? '+' : ''}€${liqNetBufferValue.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-          display.style.color = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
-        }
-        if (card) card.style.borderLeftColor = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
-      } else {
-        body.style.display = 'none';
-        if (arrow) arrow.innerText = 'Detay ▼';
-        if (display) {
-          display.classList.add('masked');
-          display.innerText = '••••••';
-          display.style.color = '';
-        }
-        if (card) card.style.borderLeftColor = 'var(--accent)';
-      }
-    }
-
     // =========================================================
-    // AY İÇİ KONTROL RENDER (ÖZET | TAKVİM | PLAN)
+    // AY İÇİ KONTROL RENDER (ÖZET | AJANDA | PLAN)
     // =========================================================
     function renderControlContent() {
       const container = document.getElementById('controlReportContent');
@@ -2899,9 +2902,9 @@
         return;
       }
 
-      // 1. TAKVİM GÖRÜNÜMÜ (SADECE ÖDENMEMİŞLER VE KOTASI ŞERİTLİ)
+      // 1. AJANDA GÖRÜNÜMÜ (SADECE ÖDENMEMİŞLER)
       if (currentControlView === 'calendar') {
-        renderGenericCalendarView(container, currentData, 'ctrl', activeFilterCtrl, true);
+        renderGenericCalendarView(container, currentData, 'ctrl', selectedFiltersCtrl, true);
         return;
       }
 
@@ -3162,6 +3165,56 @@
       html += `</div>`;
       container.innerHTML = html;
       recalcControlTotal();
+    }
+
+    function toggleLiqIncomeDetails() {
+      const body = document.getElementById('liqIncomeBody');
+      const arrow = document.getElementById('liqIncomeArrow');
+      const display = document.getElementById('liqIncomeDisplay');
+
+      let totalIncome = 0;
+      (currentData.incomeItems || []).forEach(item => { totalIncome += parseAmountToNum(item.amount); });
+
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        arrow.innerText = 'Gizle ▲';
+        display.classList.remove('masked');
+        display.innerText = `€${totalIncome.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      } else {
+        body.style.display = 'none';
+        arrow.innerText = 'Detay ▼';
+        display.classList.add('masked');
+        display.innerText = '••••••';
+      }
+    }
+
+    function toggleLiqBalanceDetails() {
+      const body = document.getElementById('liqBalBody');
+      const arrow = document.getElementById('liqBalArrow');
+      const display = document.getElementById('liqNetDisplay');
+      const card = document.getElementById('liqBalCard');
+
+      if (!body) return;
+
+      if (body.style.display === 'none' || body.style.display === '') {
+        body.style.display = 'block';
+        if (arrow) arrow.innerText = 'Gizle ▲';
+        if (display) {
+          display.classList.remove('masked');
+          display.innerText = `${liqNetBufferValue >= 0 ? '+' : ''}€${liqNetBufferValue.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+          display.style.color = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
+        }
+        if (card) card.style.borderLeftColor = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
+      } else {
+        body.style.display = 'none';
+        if (arrow) arrow.innerText = 'Detay ▼';
+        if (display) {
+          display.classList.add('masked');
+          display.innerText = '••••••';
+          display.style.color = '';
+        }
+        if (card) card.style.borderLeftColor = 'var(--accent)';
+      }
     }
 
     function handleFabClick() {
