@@ -182,6 +182,12 @@
       background: rgba(245, 158, 11, 0.12) !important;
       box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
     }
+    select.sheet-select.next-month-theme {
+      border: 2px solid var(--purple) !important;
+      color: var(--purple) !important;
+      background: rgba(168, 85, 247, 0.12) !important;
+      box-shadow: 0 0 10px rgba(168, 85, 247, 0.25);
+    }
 
     .past-month-banner-container {
       display: none;
@@ -203,6 +209,12 @@
       gap: 6px;
       cursor: pointer;
       box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+    }
+    .past-month-banner-pill.next-theme {
+      background: rgba(168, 85, 247, 0.15) !important;
+      border: 1px solid var(--purple) !important;
+      color: var(--purple) !important;
+      box-shadow: 0 2px 8px rgba(168, 85, 247, 0.2) !important;
     }
     .past-month-banner-pill:active {
       transform: scale(0.97);
@@ -1067,12 +1079,12 @@
     <!-- 1. BÜTÇE MODÜLÜ GÖRÜNÜMÜ -->
     <div id="viewBudget">
 
-      <!-- KALAN BAKİYE ÜSTÜNDEKİ GEÇMİŞ AY UYARI VE DÖNÜŞ ROZETİ -->
+      <!-- KALAN BAKİYE ÜSTÜNDEKİ UYARI VE DÖNÜŞ ROZETİ (GEÇMİŞ AY & GELECEK AY DESTEKLİ) -->
       <div class="past-month-banner-container" id="pastMonthBannerContainer">
-        <div class="past-month-banner-pill" onclick="resetToCurrentMonth()">
-          <span>⚠️</span>
+        <div class="past-month-banner-pill" id="pastMonthBannerPill" onclick="resetToCurrentMonth()">
+          <span id="bannerIcon">⚠️</span>
           <span id="pastMonthBannerText">Ağustos 2026 İnceleniyor</span>
-          <span style="text-decoration: underline; margin-left: 2px;">Bugüne Dön</span>
+          <span style="text-decoration: underline; margin-left: 2px;">Mevcut Ay'a Dön</span>
         </div>
       </div>
 
@@ -1154,7 +1166,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.2.6
+    Sürüm 3.2.7
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1283,18 +1295,18 @@
     </div>
   </div>
 
-  <!-- GEÇEN AYDAN AKTARMA MODALI -->
+  <!-- GEÇEN AYDAN / MEVCUT AYDAN AKTARMA MODALI -->
   <div class="modal" id="modalLastMonth">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h3 style="font-size: 16px;" id="lblLastMonthTitle">Geçen Aydan Aktar</h3>
+        <h3 style="font-size: 16px;" id="lblLastMonthTitle">Kayıtları Aktar</h3>
         <button type="button" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;" onclick="toggleAllTemplateCheckboxes()">Tümünü Seç / Kaldır</button>
       </div>
 
       <div id="templateItemsContainer" style="max-height: 50vh; overflow-y: auto; margin-bottom: 14px;"></div>
 
       <div class="modal-actions">
-        <button type="button" class="btn-submit" style="background: var(--purple); color: #fff;" onclick="submitLastMonthImport()">Seçilenleri Yeni Aya Ekle</button>
+        <button type="button" class="btn-submit" id="btnTemplateSubmit" style="background: var(--purple); color: #fff;" onclick="submitLastMonthImport()">Seçilenleri Ekle</button>
         <button type="button" class="btn-cancel" onclick="closeModal('modalLastMonth')">Vazgeç</button>
       </div>
     </div>
@@ -1379,7 +1391,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.2.6";
+    const CURRENT_VERSION = "3.2.7";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1763,17 +1775,19 @@
 
     // =========================================================
     // GEÇMİŞ AY RAPORU & DOĞRUDAN LİNK/NAVİGASYON MOTORU
+    // (GELECEK AY ARTIK KESİNLİKLE LİSTEDE ÇIKMAZ)
     // =========================================================
     function openPastMonthReportModal() {
       hideFabAction();
       currentPastReportView = 'summary';
-      selectedFiltersPast.clear(); // Her açılışta filtre sıfırlanır
+      selectedFiltersPast.clear();
       updatePastReportViewSwitcher();
 
       const pastSelect = document.getElementById('pastReportSheetSelect');
       pastSelect.innerHTML = '';
 
-      const pastMonths = availableSheets.filter(s => s !== "Mevcut Ay");
+      // Gelecek Ay ve Mevcut Ay hariç tutulur
+      const pastMonths = availableSheets.filter(s => s !== "Mevcut Ay" && s !== "Gelecek Ay");
 
       if (pastMonths.length === 0) {
         pastSelect.innerHTML = '<option value="">Geçmiş ay yok</option>';
@@ -1797,7 +1811,7 @@
     function switchPastReportView(view) {
       currentPastReportView = view;
       if (view === 'calendar') {
-        selectedFiltersPast.clear(); // Ajandaya geçerken daima "Tümü" seçili gelsin
+        selectedFiltersPast.clear();
       }
       updatePastReportViewSwitcher();
       const selectedSheet = document.getElementById('pastReportSheetSelect').value;
@@ -1868,13 +1882,11 @@
       const container = document.getElementById('pastReportContent');
       if (!data) return;
 
-      // GEÇMİŞ AY AJANDA GÖRÜNÜMÜ
       if (currentPastReportView === 'calendar') {
         renderGenericCalendarView(container, data, 'past', selectedFiltersPast, false, "Gerçekleşen ödeme akışı:");
         return;
       }
 
-      // GEÇMİŞ AY ÖZET GÖRÜNÜMÜ (EN ÜSTE DAYALI VE GİZLİ BAŞLAR)
       const targetCardLimit = parseAmountToNum(data.cardLimit || 0);
       const actualCardSpent = parseAmountToNum(data.cardTotal || 0);
 
@@ -1983,7 +1995,7 @@
       }
       html += `</div>`;
 
-      // 4. GELİRLER PENCERESİ (GİZLİ BAŞLAR)
+      // 4. GELİRLER PENCERESİ
       html += `
         <div class="liq-section-title">💰 Gelirler</div>
         <div class="liq-card" id="pastIncomeCard" style="border-left: 4px solid var(--green);">
@@ -2022,7 +2034,7 @@
       }
       html += `</div></div>`;
 
-      // 5. TOPLAM LİKİDİTE RAPORU PENCERESİ (GİZLİ BAŞLAR)
+      // 5. TOPLAM LİKİDİTE RAPORU PENCERESİ
       const isNetPos = netFinalBalance >= 0;
       const netThemeColor = isNetPos ? 'var(--green)' : 'var(--red)';
 
@@ -2058,7 +2070,7 @@
       `;
 
       container.innerHTML = html;
-      container.scrollTop = 0; // En üste dayalı açılır
+      container.scrollTop = 0;
     }
 
     function togglePastIncomeDetails() {
@@ -2109,7 +2121,7 @@
     function openLiquidityModal() {
       hideFabAction();
       currentLiquidityView = 'summary';
-      selectedFiltersLiq.clear(); // Her açılışta filtre sıfırlanır
+      selectedFiltersLiq.clear();
       isLiqSummaryTRYView = false;
       updateLiquidityViewSwitcher();
       renderLiquidityContent();
@@ -2119,7 +2131,7 @@
     function switchLiquidityView(view) {
       currentLiquidityView = view;
       if (view === 'calendar') {
-        selectedFiltersLiq.clear(); // Ajandaya geçerken daima "Tümü" seçili gelsin
+        selectedFiltersLiq.clear();
       }
       isLiqSummaryTRYView = false;
       updateLiquidityViewSwitcher();
@@ -2140,7 +2152,7 @@
     function openControlModal() {
       hideFabAction();
       currentControlView = 'summary';
-      selectedFiltersCtrl.clear(); // Her açılışta filtre sıfırlanır
+      selectedFiltersCtrl.clear();
       updateControlViewSwitcher();
       renderControlContent();
       openModalWithScrollLock('modalControl');
@@ -2149,7 +2161,7 @@
     function switchControlView(view) {
       currentControlView = view;
       if (view === 'calendar') {
-        selectedFiltersCtrl.clear(); // Ajandaya geçerken daima "Tümü" seçili gelsin
+        selectedFiltersCtrl.clear();
       }
       updateControlViewSwitcher();
       renderControlContent();
@@ -2170,7 +2182,7 @@
       document.body.classList.add('modal-open');
       document.getElementById(modalId).style.display = 'flex';
       const mContent = document.getElementById(modalId).querySelector('.modal-content');
-      if (mContent) mContent.scrollTop = 0; // Sayfa en üste dayalı başlar
+      if (mContent) mContent.scrollTop = 0;
     }
 
     function recalcSummaryTotal() {
@@ -2274,7 +2286,6 @@
       };
     }
 
-    // TEK BİR GÜNÜN DETAYINI AÇ/KAPAT
     function toggleCalendarDayBody(id, moduleType) {
       const el = document.getElementById(id);
       if (el) {
@@ -2283,7 +2294,6 @@
       updateToggleAllButtonState(moduleType);
     }
 
-    // TÜMÜNÜ AÇ / TÜMÜNÜ KAPAT BUTON METNİ GÜNCELLEYİCİ
     function updateToggleAllButtonState(moduleType) {
       const bodies = document.querySelectorAll(`[id^="${moduleType}-cal-day-body-"]`);
       const btn = document.getElementById(`${moduleType}-btn-toggle-all`);
@@ -2293,7 +2303,6 @@
       btn.innerText = anyOpen ? "Tümünü Kapat ▲" : "Tümünü Aç ▼";
     }
 
-    // TÜMÜNÜ AÇ / TÜMÜNÜ KAPAT ANA FONKSİYONU
     function toggleAllCalendarBodies(moduleType) {
       const bodies = document.querySelectorAll(`[id^="${moduleType}-cal-day-body-"]`);
       if (bodies.length === 0) return;
@@ -2315,9 +2324,6 @@
       }
     }
 
-    // =========================================================
-    // ÇOKLU SEÇİLEBİLİR VE BAŞA GELEN AKILLI FİLTRE MOTORU
-    // =========================================================
     function toggleCalendarFilterKey(moduleType, key) {
       let filterSet = (moduleType === 'liq') ? selectedFiltersLiq : ((moduleType === 'ctrl') ? selectedFiltersCtrl : selectedFiltersPast);
 
@@ -2339,9 +2345,6 @@
       }
     }
 
-    // =========================================================
-    // MERKEZİ AKILLI AJANDA VE DÜZELTİLMİŞ DİNAMİK ALT TOPLAM ÇİZİCİ
-    // =========================================================
     function renderGenericCalendarView(container, data, moduleType, filterSet, onlyPending = false, flowTitleText = "Gün bazında ödeme akışı:") {
       let trRateEUR = 0;
       let totalTrTRYAll = 0, totalTrEURAll = 0;
@@ -2354,7 +2357,6 @@
       let allItems = [];
       let availableFilterKeys = new Set();
 
-      // 1. Kart Harcamaları (N26 Kart Harcaması ayrı kategoridir)
       if (!onlyPending) {
         (data.cardItems || []).forEach(it => {
           allItems.push({ ...it, srcType: 'card', typeTag: 'KART', isIncome: false, filterCategory: 'card', filterAccount: 'card' });
@@ -2362,7 +2364,6 @@
         });
       }
 
-      // 2. Diğer Giderler / Hesaplar (N26 Kart Harcaması kesinlikle buraya girmez)
       (data.manualItems || []).forEach(it => {
         let isPending = (!it.date || it.date.trim() === "");
         if (onlyPending && !isPending) return;
@@ -2378,7 +2379,6 @@
         availableFilterKeys.add(filterAcc);
       });
 
-      // 3. TR Ödemeleri
       (data.trItems || []).forEach(it => {
         let isPending = (!it.date || it.date.trim() === "");
         if (onlyPending && !isPending) return;
@@ -2391,7 +2391,6 @@
         availableFilterKeys.add('tr');
       });
 
-      // 4. Gelirler
       if (!onlyPending) {
         (data.incomeItems || []).forEach(it => {
           allItems.push({ ...it, srcType: 'income', typeTag: 'GELİR', isIncome: true, filterCategory: 'income', filterAccount: 'income' });
@@ -2399,13 +2398,11 @@
         });
       }
 
-      // Filtreleme mantığı
       let filteredItems = allItems.filter(it => {
         if (filterSet.size === 0) return true;
         return filterSet.has(it.filterAccount) || filterSet.has(it.filterCategory);
       });
 
-      // Günlere göre grupla ve alt toplamları topla
       let dayGroups = {};
       let sumTotalExpenseEUR = 0;
       let sumTotalIncomeEUR = 0;
@@ -2446,7 +2443,6 @@
 
       let html = '';
 
-      // AY İÇİ KONTROL SABİT KART KOTASI ŞERİDİ
       if (onlyPending) {
         const targetCardLimit = parseAmountToNum(data.cardLimit || 0);
         const spentCardTotal = parseAmountToNum(data.cardTotal || 0);
@@ -2460,7 +2456,6 @@
         `;
       }
 
-      // FİLTRE LİSTESİ
       const filterMetadata = {
         sparkasse: "Sparkasse",
         n26: "N26",
@@ -2486,7 +2481,6 @@
       });
       html += `</div>`;
 
-      // AKIŞ BAŞLIĞI VE TÜMÜNÜ AÇ/KAPAT
       html += `
         <div style="display:flex; justify-content:space-between; align-items:center; margin: 4px 2px 10px 2px;">
           <div style="font-size:12px; color:var(--text-dim); font-weight:600;">
@@ -2504,7 +2498,6 @@
         return;
       }
 
-      // GÜN KARTLARI
       sortedDays.forEach((group, gIdx) => {
         let bodyId = `${moduleType}-cal-day-body-${gIdx}`;
         let isNetPositive = group.netEur >= 0;
@@ -2575,9 +2568,7 @@
         `;
       });
 
-      // =========================================================
-      // DÜZELTİLMİŞ DİNAMİK AJANDA ALT TOPLAM KARTI
-      // =========================================================
+      // DİNAMİK AJANDA ALT TOPLAMI
       let isAllSelected = (filterSet.size === 0);
       let isOnlyIncomeSelected = (filterSet.size === 1 && filterSet.has('income'));
       let isOnlyTRSelected = (filterSet.size === 1 && filterSet.has('tr'));
@@ -2587,7 +2578,6 @@
       let subBreakdownHtml = '';
 
       if (isAllSelected) {
-        // Tümü seçiliyken: Ana rakam NET BAKİYE
         let netAllEUR = sumTotalIncomeEUR - sumTotalExpenseEUR;
         let isNetPositive = netAllEUR >= 0;
         let netColor = isNetPositive ? 'var(--green)' : 'var(--red)';
@@ -2609,7 +2599,6 @@
           `;
         }
       } else if (isOnlyIncomeSelected) {
-        // Sadece Gelir seçiliyse: Yeşil pozitif toplam
         sumTitle = "Toplam (Gelir):";
         mainAmountHtml = `
           <span style="font-size:16px; font-weight:800; color:var(--green); font-variant-numeric:tabular-nums;">
@@ -2617,7 +2606,6 @@
           </span>
         `;
       } else {
-        // Belirli bir hesap veya birden fazla gider kategorisi seçiliyse
         if (filterSet.size === 1) {
           let singleKey = Array.from(filterSet)[0];
           sumTitle = `Toplam (${filterMetadata[singleKey] || ''}):`;
@@ -2625,7 +2613,6 @@
 
         let netFiltered = sumTotalIncomeEUR - sumTotalExpenseEUR;
         if (sumTotalIncomeEUR > 0 && sumTotalExpenseEUR > 0) {
-          // Filtrelenenler arasında hem gelir hem gider varsa
           let isNetPos = netFiltered >= 0;
           let color = isNetPos ? 'var(--green)' : 'var(--red)';
           mainAmountHtml = `
@@ -2640,7 +2627,6 @@
             </span>
           `;
         } else {
-          // Sadece gider varsa kırmızı eksi
           mainAmountHtml = `
             <span style="font-size:16px; font-weight:800; color:var(--red); font-variant-numeric:tabular-nums;">
               -€${sumTotalExpenseEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
@@ -2648,7 +2634,6 @@
           `;
         }
 
-        // TR filtresi seçiliyse altına TL toplamını ekle
         if (isOnlyTRSelected && sumTotalTRY > 0) {
           mainAmountHtml += `
             <span style="font-size:11px; color:var(--text-dim); font-variant-numeric:tabular-nums; margin-top:1px;">
@@ -2683,7 +2668,6 @@
         return;
       }
 
-      // 1. AJANDA GÖRÜNÜMÜ
       if (currentLiquidityView === 'calendar') {
         renderGenericCalendarView(container, currentData, 'liq', selectedFiltersLiq, false, "Planlanan ödeme akışı:");
         return;
@@ -2729,7 +2713,6 @@
       const netBuffer = totalIncome - totalPaidExpenses;
       liqNetBufferValue = netBuffer;
 
-      // 2. ÖZET GÖRÜNÜMÜ (EN ÜSTE DAYALI VE GİZLİ BAŞLAR)
       if (currentLiquidityView === 'summary') {
         let html = `
           <div class="liq-section-title">💳 Kart Harcama</div>
@@ -2793,7 +2776,7 @@
         }
         html += `</div>`;
 
-        // GELİRLER PENCERESİ (GİZLİ BAŞLAR)
+        // GELİRLER PENCERESİ
         html += `
           <div class="liq-section-title">💰 Gelirler</div>
           <div class="liq-card" style="border-left: 4px solid var(--green);">
@@ -2829,7 +2812,7 @@
         }
         html += `</div></div>`;
 
-        // TOPLAM LİKİDİTE RAPORU PENCERESİ (GİZLİ BAŞLAR)
+        // TOPLAM LİKİDİTE RAPORU PENCERESİ
         const isNetPos = netBuffer >= 0;
         const netThemeColor = isNetPos ? 'var(--green)' : 'var(--red)';
 
@@ -2862,7 +2845,7 @@
         `;
 
         container.innerHTML = html;
-        container.scrollTop = 0; // En üste dayalı açılır
+        container.scrollTop = 0;
         return;
       }
 
@@ -3165,7 +3148,6 @@
         return;
       }
 
-      // 1. AJANDA GÖRÜNÜMÜ
       if (currentControlView === 'calendar') {
         renderGenericCalendarView(container, currentData, 'ctrl', selectedFiltersCtrl, true, "Beklenen ödeme akışı:");
         return;
@@ -3234,7 +3216,6 @@
       if (totalTrTRYAll > 0 && totalTrEURAll > 0) trRateEUR = totalTrEURAll / totalTrTRYAll;
       const totalPendingObligation = remainingCardLimit + totalRemManual + totalRemTrEUR;
 
-      // 2. ÖZET GÖRÜNÜMÜ (EN ÜSTE DAYALI BAŞLAR)
       if (currentControlView === 'summary') {
         let html = `
           <div class="liq-section-title">💳 Kart Harcama</div>
@@ -3332,11 +3313,10 @@
         `;
 
         container.innerHTML = html;
-        container.scrollTop = 0; // En üste dayalı açılır
+        container.scrollTop = 0;
         return;
       }
 
-      // 3. PLAN GÖRÜNÜMÜ
       let html = `
         <div style="margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border);">
           <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -3428,8 +3408,6 @@
 
       html += `</div>`;
       container.innerHTML = html;
-      
-      // Toplamı tetikle
       recalcControlTotal();
     }
 
@@ -3483,6 +3461,9 @@
       }
     }
 
+    // =========================================================
+    // FAB BUTON MOTORU (GELECEK AY'A DA TAM EKLEME YETKİSİ)
+    // =========================================================
     function handleFabClick() {
       hideFabAction();
       closeAllComboboxes();
@@ -3491,7 +3472,8 @@
         const select = document.getElementById('sheetSelect');
         const currentSelectedMonth = select ? select.value : "Mevcut Ay";
 
-        if (currentSelectedMonth !== "Mevcut Ay") {
+        // Hem Mevcut Ay hem de Gelecek Ay için doğrudan ekleme açılır
+        if (currentSelectedMonth !== "Mevcut Ay" && currentSelectedMonth !== "Gelecek Ay") {
           const confirmSwitch = confirm(`Şu an geçmiş bir aydasınız (${currentSelectedMonth}).\n\nMevcut Ay'a dönüp yeni bir harcama/gelir eklemek istiyor musunuz?`);
           if (confirmSwitch) {
             resetToCurrentMonth();
@@ -3522,27 +3504,56 @@
       openModalWithScrollLock('modalBudget');
     }
 
+    // =========================================================
+    // ŞABLON AKTARIMI (GELECEK AY'DAYSA MEVCUT AY'DAN ÇEKER)
+    // =========================================================
     async function openLastMonthTemplateModal() {
       hideFabAction();
       isTemplateModalUserInteracted = false;
       const container = document.getElementById('templateItemsContainer');
-      const cachedName = localStorage.getItem('cache_template_name') || 'Geçen Ay';
-      document.getElementById('lblLastMonthTitle').innerText = `${cachedName} Kayıtları`;
+      const select = document.getElementById('sheetSelect');
+      const currentActiveSheet = select ? select.value : "Mevcut Ay";
+
+      let sourceTitle = "Geçen Ay Kayıtları";
+      let targetText = "Seçilenleri Ekle";
+
+      if (currentActiveSheet === "Gelecek Ay") {
+        sourceTitle = "Mevcut Ay Kayıtları";
+        targetText = "Seçilenleri Gelecek Ay'a Ekle";
+      }
+
+      document.getElementById('lblLastMonthTitle').innerText = sourceTitle;
+      document.getElementById('btnTemplateSubmit').innerText = targetText;
 
       let hasRenderedCache = false;
-      if (loadedTemplateItems && loadedTemplateItems.length > 0) {
+      if (loadedTemplateItems && loadedTemplateItems.length > 0 && currentActiveSheet !== "Gelecek Ay") {
         renderTemplateItems(loadedTemplateItems);
         hasRenderedCache = true;
       } else {
-        container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-dim);">Geçen ayın kayıtları yükleniyor...</div>';
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-dim);">Kayıtlar yükleniyor...</div>';
       }
       
       openModalWithScrollLock('modalLastMonth');
 
       try {
-        const res = await fetch(`${API_URL}?action=getLastMonthTemplate`);
+        // Eğer Gelecek Ay'daysak mevcut aydan, değilsek bir önceki aydan çeker
+        const reqAction = (currentActiveSheet === "Gelecek Ay") 
+          ? `${API_URL}?action=getDashboardData&sheet=${encodeURIComponent("Mevcut Ay")}`
+          : `${API_URL}?action=getLastMonthTemplate`;
+
+        const res = await fetch(reqAction);
         const data = await res.json();
-        if (data && data.items && data.items.length > 0) {
+
+        if (currentActiveSheet === "Gelecek Ay" && data) {
+          // Mevcut ayın verilerini şablon öğelerine dönüştür
+          let items = [];
+          (data.cardItems || []).forEach(it => items.push({ ...it, type: 'card', typeName: 'KART' }));
+          (data.manualItems || []).forEach(it => items.push({ ...it, type: 'manual', typeName: 'HESAP' }));
+          (data.trItems || []).forEach(it => items.push({ ...it, type: 'tr', typeName: 'TR KART' }));
+          (data.incomeItems || []).forEach(it => items.push({ ...it, type: 'income', typeName: 'GELİR' }));
+          loadedTemplateItems = items;
+          renderTemplateItems(items);
+        } else if (data && data.items && data.items.length > 0) {
           loadedTemplateItems = data.items;
           localStorage.setItem('cache_template_items', JSON.stringify(data.items));
           if (data.lastMonthName) {
@@ -3603,14 +3614,17 @@
         return loadedTemplateItems[idx];
       });
 
+      const select = document.getElementById('sheetSelect');
+      const targetSheet = (select && select.value === "Gelecek Ay") ? "Gelecek Ay" : "Mevcut Ay";
+
       closeModal('modalLastMonth');
-      const sheet = "Mevcut Ay";
-      delete memoryCache[sheet];
+      delete memoryCache[targetSheet];
 
       await fetch(API_URL, {
         method: 'POST',
         body: JSON.stringify({
           action: 'importLastMonthItems',
+          sheet: targetSheet,
           items: selectedItems
         })
       });
@@ -3640,7 +3654,7 @@
 
       card.addEventListener('touchstart', startPress, { passive: true });
       card.addEventListener('touchend', cancelPress);
-      card.addEventListener('touchmove', cancelPress);
+      card.addEventListener('touchmove', cancelPress, { passive: true });
 
       card.addEventListener('mousedown', startPress);
       card.addEventListener('mouseup', cancelPress);
@@ -3711,7 +3725,7 @@
       if (mod === 'budget') {
         fetchInitialData();
       } else {
-        select.classList.remove('past-month-warning');
+        select.classList.remove('past-month-warning', 'next-month-theme');
         document.getElementById('pastMonthBannerContainer').style.display = 'none';
         select.innerHTML = `
           <option value="active" selected>Aktif Borçlar</option>
@@ -3724,6 +3738,9 @@
       }
     }
 
+    // =========================================================
+    // FİLTRE DEĞİŞİMİ (GELECEK AY MOR TEMA VE ROZET DESTEĞİ)
+    // =========================================================
     function onFilterChange() {
       if (currentModule === 'budget') {
         const select = document.getElementById('sheetSelect');
@@ -3731,14 +3748,26 @@
         if (!sheet) return;
 
         const bannerContainer = document.getElementById('pastMonthBannerContainer');
+        const bannerPill = document.getElementById('pastMonthBannerPill');
         const bannerText = document.getElementById('pastMonthBannerText');
+        const bannerIcon = document.getElementById('bannerIcon');
 
-        if (sheet !== "Mevcut Ay") {
+        // Stil ve Uyarı Kontrolü
+        select.classList.remove('past-month-warning', 'next-month-theme');
+        bannerPill.classList.remove('next-theme');
+
+        if (sheet === "Gelecek Ay") {
+          select.classList.add('next-month-theme');
+          bannerIcon.innerText = "🔮";
+          bannerText.innerText = "Gelecek Ay Hazırlığı";
+          bannerPill.classList.add('next-theme');
+          bannerContainer.style.display = 'flex';
+        } else if (sheet !== "Mevcut Ay") {
           select.classList.add('past-month-warning');
+          bannerIcon.innerText = "⚠️";
           bannerText.innerText = `${sheet} İnceleniyor`;
           bannerContainer.style.display = 'flex';
         } else {
-          select.classList.remove('past-month-warning');
           bannerContainer.style.display = 'none';
         }
 
@@ -3792,17 +3821,7 @@
         select.appendChild(opt);
       });
 
-      const bannerContainer = document.getElementById('pastMonthBannerContainer');
-      const bannerText = document.getElementById('pastMonthBannerText');
-
-      if (select.value !== "Mevcut Ay") {
-        select.classList.add('past-month-warning');
-        bannerText.innerText = `${select.value} İnceleniyor`;
-        bannerContainer.style.display = 'flex';
-      } else {
-        select.classList.remove('past-month-warning');
-        bannerContainer.style.display = 'none';
-      }
+      onFilterChange();
     }
 
     function formatAmount(val) {
@@ -3878,6 +3897,9 @@
       return isNaN(num) ? 0 : num;
     }
 
+    // =========================================================
+    // LİSTE RENDER (HEM MEVCUT AY HEM GELECEK AY TAM YETKİLİ)
+    // =========================================================
     function renderBudgetList() {
       const container = document.getElementById('listContainer');
       const badge = document.getElementById('budgetSearchSumBadge');
@@ -3885,11 +3907,11 @@
       if (!currentData || currentModule !== 'budget') return;
 
       const select = document.getElementById('sheetSelect');
-      const isCurrentMonth = (select && select.value === "Mevcut Ay");
+      const isCurrentOrNext = (select && (select.value === "Mevcut Ay" || select.value === "Gelecek Ay"));
 
       let rawItems = [];
       let isIncome = false;
-      let canManage = isCurrentMonth;
+      let canManage = isCurrentOrNext; // Gelecek Ay'da da silme/düzenleme tam açık
 
       if (activeBudgetTab === 'card') rawItems = currentData.cardItems || [];
       else if (activeBudgetTab === 'manual') rawItems = currentData.manualItems || [];
