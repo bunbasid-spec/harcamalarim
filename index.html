@@ -1020,6 +1020,33 @@
       color: var(--text-dim);
       font-variant-numeric: tabular-nums;
     }
+
+    /* DİNAMİK AJANDA ALT TOPLAM KARTI */
+    .calendar-summary-bottom-card {
+      background: #141d2b;
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    }
+    .calendar-summary-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .calendar-summary-amounts {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
   </style>
 </head>
 <body>
@@ -1127,7 +1154,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.2.3
+    Sürüm 3.2.5
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1352,7 +1379,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.2.3";
+    const CURRENT_VERSION = "3.2.5";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1386,7 +1413,7 @@
     let currentControlView = 'summary';
     let currentPastReportView = 'summary';
 
-    // ÇOKLU SEÇİLEBİLEN FİLTRE SETLERİ (SET VERİ YAPISI)
+    // ÇOKLU SEÇİLEBİLEN FİLTRE SETLERİ
     let selectedFiltersLiq = new Set();
     let selectedFiltersCtrl = new Set();
     let selectedFiltersPast = new Set();
@@ -2251,16 +2278,15 @@
       btn.innerText = anyOpen ? "Tümünü Kapat ▲" : "Tümünü Aç ▼";
     }
 
-    // TÜMÜNÜ AÇ / TÜMÜNÜ KAPAT ANA FONKSİYONU (DÜZELTİLDİ: AÇIK VARSA MUTLAKA HEPSİNİ KAPATIR)
+    // TÜMÜNÜ AÇ / TÜMÜNÜ KAPAT ANA FONKSİYONU
     function toggleAllCalendarBodies(moduleType) {
       const bodies = document.querySelectorAll(`[id^="${moduleType}-cal-day-body-"]`);
       if (bodies.length === 0) return;
 
-      // Ekranda açık tek bir kutu bile varsa hepsini kapat, hiçbiri açık değilse hepsini aç
       const anyOpen = Array.from(bodies).some(b => b.classList.contains('open'));
 
       bodies.forEach(b => {
-        b.style.display = ''; // Inline stil kalıntılarını sil
+        b.style.display = '';
         if (anyOpen) {
           b.classList.remove('open');
         } else {
@@ -2298,6 +2324,9 @@
       }
     }
 
+    // =========================================================
+    // MERKEZİ AKILLI AJANDA VE DİNAMİK ALT TOPLAM ÇİZİCİ
+    // =========================================================
     function renderGenericCalendarView(container, data, moduleType, filterSet, onlyPending = false, flowTitleText = "Gün bazında ödeme akışı:") {
       let trRateEUR = 0;
       let totalTrTRYAll = 0, totalTrEURAll = 0;
@@ -2326,7 +2355,7 @@
         let acc = (it.card || '').toLowerCase().trim();
         let filterAcc = 'other';
         if (acc.includes('sparkasse')) filterAcc = 'sparkasse';
-        else if (acc.includes('n26')) filterAcc = 'n26'; // Sadece N26 Banka Hesabı
+        else if (acc.includes('n26')) filterAcc = 'n26';
         else if (acc.includes('c24')) filterAcc = 'c24';
         else if (acc.includes('nakit') || acc.includes('bar')) filterAcc = 'nakit';
 
@@ -2361,8 +2390,12 @@
         return filterSet.has(it.filterAccount) || filterSet.has(it.filterCategory);
       });
 
-      // Günlere göre harcamaları grupla
+      // Günlere göre grupla ve alt toplamları topla
       let dayGroups = {};
+      let sumTotalExpenseEUR = 0;
+      let sumTotalIncomeEUR = 0;
+      let sumTotalTRY = 0;
+
       filteredItems.forEach(it => {
         let dInfo = extractDayAndDateInfo(it);
         if (!dInfo) return;
@@ -2381,9 +2414,16 @@
         let numAmt = (it.srcType === 'tr') ? (it.eurVal || 0) : parseAmountToNum(it.amount);
         if (it.isIncome) {
           dayGroups[key].netEur += numAmt;
+          sumTotalIncomeEUR += numAmt;
         } else {
           dayGroups[key].netEur -= numAmt;
+          sumTotalExpenseEUR += numAmt;
         }
+
+        if (it.srcType === 'tr') {
+          sumTotalTRY += (it.tryVal || parseAmountToNum(it.amount));
+        }
+
         dayGroups[key].items.push({ ...it, calculatedEur: numAmt });
       });
 
@@ -2391,7 +2431,7 @@
 
       let html = '';
 
-      // AY İÇİ KONTROL MODÜLÜ TAKVİMİNİN EN ÜSTÜNDEKİ SABİT KART KOTASI ŞERİDİ
+      // AY İÇİ KONTROL SABİT KART KOTASI ŞERİDİ
       if (onlyPending) {
         const targetCardLimit = parseAmountToNum(data.cardLimit || 0);
         const spentCardTotal = parseAmountToNum(data.cardTotal || 0);
@@ -2405,7 +2445,7 @@
         `;
       }
 
-      // FİLTRE LİSTESİ (KART VE TR KISALTMALARI UYGULANDI, LOGOLAR KALKTI)
+      // FİLTRE LİSTESİ
       const filterMetadata = {
         sparkasse: "Sparkasse",
         n26: "N26",
@@ -2418,8 +2458,6 @@
       };
 
       let existingKeys = Object.keys(filterMetadata).filter(k => availableFilterKeys.has(k));
-
-      // Seçili olanları başa al, seçili olmayanları sonraya diz
       let selectedKeysArr = existingKeys.filter(k => filterSet.has(k));
       let unselectedKeysArr = existingKeys.filter(k => !filterSet.has(k));
       let orderedFilterKeys = [...selectedKeysArr, ...unselectedKeysArr];
@@ -2433,7 +2471,7 @@
       });
       html += `</div>`;
 
-      // KISALTILMIŞ METİN VE TÜMÜNÜ AÇ/KAPAT BUTONU (TEK SATIRDA FERAHÇA DURUR)
+      // AKIŞ BAŞLIĞI VE TÜMÜNÜ AÇ/KAPAT
       html += `
         <div style="display:flex; justify-content:space-between; align-items:center; margin: 4px 2px 10px 2px;">
           <div style="font-size:12px; color:var(--text-dim); font-weight:600;">
@@ -2451,6 +2489,7 @@
         return;
       }
 
+      // GÜN KARTLARI
       sortedDays.forEach((group, gIdx) => {
         let bodyId = `${moduleType}-cal-day-body-${gIdx}`;
         let isNetPositive = group.netEur >= 0;
@@ -2520,6 +2559,57 @@
           </div>
         `;
       });
+
+      // =========================================================
+      // DİNAMİK AJANDA ALT TOPLAM KARTI (STICKY SUMMARY BAR)
+      // =========================================================
+      let sumTitle = "Filtrelenen Toplam:";
+      let isAllSelected = (filterSet.size === 0);
+
+      if (isAllSelected) {
+        sumTitle = "Ajanda Genel Toplamı:";
+      } else if (filterSet.size === 1) {
+        let singleKey = Array.from(filterSet)[0];
+        sumTitle = `Toplam (${filterMetadata[singleKey] || ''}):`;
+      }
+
+      html += `
+        <div class="calendar-summary-bottom-card">
+          <div class="calendar-summary-title">
+            <span>${sumTitle}</span>
+      `;
+
+      if (isAllSelected && sumTotalIncomeEUR > 0) {
+        let netCalVal = sumTotalIncomeEUR - sumTotalExpenseEUR;
+        let isNetCalPos = netCalVal >= 0;
+        html += `
+            <span style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-top:2px;">
+              Gelir: <b style="color:var(--green);">+€${sumTotalIncomeEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b> • 
+              Net: <b style="color:${isNetCalPos ? 'var(--green)' : 'var(--red)'};">${isNetCalPos ? '+' : ''}€${netCalVal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b>
+            </span>
+        `;
+      }
+      html += `</div>`;
+
+      html += `
+          <div class="calendar-summary-amounts">
+            <span style="font-size:15px; font-weight:800; color:var(--red); font-variant-numeric:tabular-nums;">
+              -€${sumTotalExpenseEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            </span>
+      `;
+
+      if (sumTotalTRY > 0) {
+        html += `
+            <span style="font-size:11px; color:var(--text-dim); font-variant-numeric:tabular-nums;">
+              (-₺${sumTotalTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})})
+            </span>
+        `;
+      }
+
+      html += `
+          </div>
+        </div>
+      `;
 
       container.innerHTML = html;
     }
@@ -2905,7 +2995,7 @@
     }
 
     // =========================================================
-    // AY İÇİ KONTROL RECALC & SEÇİM FONKSİYONLARI (DÜZELTİLDİ)
+    // AY İÇİ KONTROL RECALC & SEÇİM FONKSİYONLARI
     // =========================================================
     function recalcControlTotal() {
       const checkboxes = document.querySelectorAll('.chk-control:checked');
@@ -3277,8 +3367,6 @@
 
       html += `</div>`;
       container.innerHTML = html;
-      
-      // DOM çizildikten sonra toplamı hemen tetikle (0 euro kalma hatasını önler)
       recalcControlTotal();
     }
 
