@@ -1026,7 +1026,7 @@
       background: #141d2b;
       border: 1px solid var(--accent);
       border-radius: 10px;
-      padding: 10px 14px;
+      padding: 11px 14px;
       margin-top: 12px;
       display: flex;
       justify-content: space-between;
@@ -1154,7 +1154,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.2.5
+    Sürüm 3.2.6
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1176,7 +1176,7 @@
 
   <!-- GEÇMİŞ AY RAPORU MODALI -->
   <div class="modal" id="modalPastMonthReport">
-    <div class="modal-content">
+    <div class="modal-content" id="pastReportModalContent">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <h3 style="font-size: 16px; margin: 0;">Geçmiş Ay Raporu</h3>
         <select id="pastReportSheetSelect" class="sheet-select" style="width:130px; height:32px; font-size:12px; padding:0 6px;" onchange="onPastReportSheetChange()"></select>
@@ -1199,7 +1199,7 @@
 
   <!-- LİKİDİTE PLANLAMASI MODALI (ÖZET | AJANDA | PLAN) -->
   <div class="modal" id="modalLiquidity">
-    <div class="modal-content">
+    <div class="modal-content" id="liquidityModalContent">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px;">
         <h3 style="font-size: 15px; white-space: nowrap; margin: 0;">Likidite Planlaması</h3>
         <div class="mini-view-switcher three-way">
@@ -1219,7 +1219,7 @@
 
   <!-- AY İÇİ KONTROL MODALI (ÖZET | AJANDA | PLAN) -->
   <div class="modal" id="modalControl">
-    <div class="modal-content">
+    <div class="modal-content" id="controlModalContent">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px;">
         <h3 style="font-size: 15px; white-space: nowrap; margin: 0;">Ay İçi Kontrol</h3>
         <div class="mini-view-switcher three-way">
@@ -1379,7 +1379,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.2.5";
+    const CURRENT_VERSION = "3.2.6";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1413,7 +1413,7 @@
     let currentControlView = 'summary';
     let currentPastReportView = 'summary';
 
-    // ÇOKLU SEÇİLEBİLEN FİLTRE SETLERİ
+    // ÇOKLU SEÇİLEBİLEN FİLTRE SETLERİ (AÇILIŞTA DAİMA SIFIRLANIR)
     let selectedFiltersLiq = new Set();
     let selectedFiltersCtrl = new Set();
     let selectedFiltersPast = new Set();
@@ -1767,6 +1767,7 @@
     function openPastMonthReportModal() {
       hideFabAction();
       currentPastReportView = 'summary';
+      selectedFiltersPast.clear(); // Her açılışta filtre sıfırlanır
       updatePastReportViewSwitcher();
 
       const pastSelect = document.getElementById('pastReportSheetSelect');
@@ -1795,6 +1796,9 @@
 
     function switchPastReportView(view) {
       currentPastReportView = view;
+      if (view === 'calendar') {
+        selectedFiltersPast.clear(); // Ajandaya geçerken daima "Tümü" seçili gelsin
+      }
       updatePastReportViewSwitcher();
       const selectedSheet = document.getElementById('pastReportSheetSelect').value;
       if (selectedSheet && memoryCache[selectedSheet]) {
@@ -1870,7 +1874,7 @@
         return;
       }
 
-      // GEÇMİŞ AY ÖZET GÖRÜNÜMÜ
+      // GEÇMİŞ AY ÖZET GÖRÜNÜMÜ (EN ÜSTE DAYALI VE GİZLİ BAŞLAR)
       const targetCardLimit = parseAmountToNum(data.cardLimit || 0);
       const actualCardSpent = parseAmountToNum(data.cardTotal || 0);
 
@@ -1979,7 +1983,7 @@
       }
       html += `</div>`;
 
-      // 4. GELİRLER PENCERESİ
+      // 4. GELİRLER PENCERESİ (GİZLİ BAŞLAR)
       html += `
         <div class="liq-section-title">💰 Gelirler</div>
         <div class="liq-card" id="pastIncomeCard" style="border-left: 4px solid var(--green);">
@@ -2018,7 +2022,7 @@
       }
       html += `</div></div>`;
 
-      // 5. TOPLAM LİKİDİTE RAPORU PENCERESİ
+      // 5. TOPLAM LİKİDİTE RAPORU PENCERESİ (GİZLİ BAŞLAR)
       const isNetPos = netFinalBalance >= 0;
       const netThemeColor = isNetPos ? 'var(--green)' : 'var(--red)';
 
@@ -2054,6 +2058,7 @@
       `;
 
       container.innerHTML = html;
+      container.scrollTop = 0; // En üste dayalı açılır
     }
 
     function togglePastIncomeDetails() {
@@ -2104,6 +2109,7 @@
     function openLiquidityModal() {
       hideFabAction();
       currentLiquidityView = 'summary';
+      selectedFiltersLiq.clear(); // Her açılışta filtre sıfırlanır
       isLiqSummaryTRYView = false;
       updateLiquidityViewSwitcher();
       renderLiquidityContent();
@@ -2112,6 +2118,9 @@
 
     function switchLiquidityView(view) {
       currentLiquidityView = view;
+      if (view === 'calendar') {
+        selectedFiltersLiq.clear(); // Ajandaya geçerken daima "Tümü" seçili gelsin
+      }
       isLiqSummaryTRYView = false;
       updateLiquidityViewSwitcher();
       renderLiquidityContent();
@@ -2131,6 +2140,7 @@
     function openControlModal() {
       hideFabAction();
       currentControlView = 'summary';
+      selectedFiltersCtrl.clear(); // Her açılışta filtre sıfırlanır
       updateControlViewSwitcher();
       renderControlContent();
       openModalWithScrollLock('modalControl');
@@ -2138,6 +2148,9 @@
 
     function switchControlView(view) {
       currentControlView = view;
+      if (view === 'calendar') {
+        selectedFiltersCtrl.clear(); // Ajandaya geçerken daima "Tümü" seçili gelsin
+      }
       updateControlViewSwitcher();
       renderControlContent();
     }
@@ -2156,6 +2169,8 @@
     function openModalWithScrollLock(modalId) {
       document.body.classList.add('modal-open');
       document.getElementById(modalId).style.display = 'flex';
+      const mContent = document.getElementById(modalId).querySelector('.modal-content');
+      if (mContent) mContent.scrollTop = 0; // Sayfa en üste dayalı başlar
     }
 
     function recalcSummaryTotal() {
@@ -2259,7 +2274,7 @@
       };
     }
 
-    // TEK BİR GÜNÜN DETAYINI AÇ/KAPAT VE ÜST BUTONU SENKRONİZE ET
+    // TEK BİR GÜNÜN DETAYINI AÇ/KAPAT
     function toggleCalendarDayBody(id, moduleType) {
       const el = document.getElementById(id);
       if (el) {
@@ -2268,7 +2283,7 @@
       updateToggleAllButtonState(moduleType);
     }
 
-    // TÜMÜNÜ AÇ / TÜMÜNÜ KAPAT BUTONU DURUM GÜNCELLEYİCİSİ
+    // TÜMÜNÜ AÇ / TÜMÜNÜ KAPAT BUTON METNİ GÜNCELLEYİCİ
     function updateToggleAllButtonState(moduleType) {
       const bodies = document.querySelectorAll(`[id^="${moduleType}-cal-day-body-"]`);
       const btn = document.getElementById(`${moduleType}-btn-toggle-all`);
@@ -2325,7 +2340,7 @@
     }
 
     // =========================================================
-    // MERKEZİ AKILLI AJANDA VE DİNAMİK ALT TOPLAM ÇİZİCİ
+    // MERKEZİ AKILLI AJANDA VE DÜZELTİLMİŞ DİNAMİK ALT TOPLAM ÇİZİCİ
     // =========================================================
     function renderGenericCalendarView(container, data, moduleType, filterSet, onlyPending = false, flowTitleText = "Gün bazında ödeme akışı:") {
       let trRateEUR = 0;
@@ -2561,52 +2576,96 @@
       });
 
       // =========================================================
-      // DİNAMİK AJANDA ALT TOPLAM KARTI (STICKY SUMMARY BAR)
+      // DÜZELTİLMİŞ DİNAMİK AJANDA ALT TOPLAM KARTI
       // =========================================================
-      let sumTitle = "Filtrelenen Toplam:";
       let isAllSelected = (filterSet.size === 0);
+      let isOnlyIncomeSelected = (filterSet.size === 1 && filterSet.has('income'));
+      let isOnlyTRSelected = (filterSet.size === 1 && filterSet.has('tr'));
+
+      let sumTitle = "Filtrelenen Toplam:";
+      let mainAmountHtml = '';
+      let subBreakdownHtml = '';
 
       if (isAllSelected) {
+        // Tümü seçiliyken: Ana rakam NET BAKİYE
+        let netAllEUR = sumTotalIncomeEUR - sumTotalExpenseEUR;
+        let isNetPositive = netAllEUR >= 0;
+        let netColor = isNetPositive ? 'var(--green)' : 'var(--red)';
+        let netSign = isNetPositive ? '+' : '-';
+
         sumTitle = "Ajanda Genel Toplamı:";
-      } else if (filterSet.size === 1) {
-        let singleKey = Array.from(filterSet)[0];
-        sumTitle = `Toplam (${filterMetadata[singleKey] || ''}):`;
+        mainAmountHtml = `
+          <span style="font-size:16px; font-weight:800; color:${netColor}; font-variant-numeric:tabular-nums;">
+            ${netSign}€${Math.abs(netAllEUR).toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+          </span>
+        `;
+
+        if (sumTotalIncomeEUR > 0 || sumTotalExpenseEUR > 0) {
+          subBreakdownHtml = `
+            <span style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-top:2px;">
+              Gelir: <b style="color:var(--green);">+€${sumTotalIncomeEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b> • 
+              Gider: <b style="color:var(--red);">-€${sumTotalExpenseEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b>
+            </span>
+          `;
+        }
+      } else if (isOnlyIncomeSelected) {
+        // Sadece Gelir seçiliyse: Yeşil pozitif toplam
+        sumTitle = "Toplam (Gelir):";
+        mainAmountHtml = `
+          <span style="font-size:16px; font-weight:800; color:var(--green); font-variant-numeric:tabular-nums;">
+            +€${sumTotalIncomeEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+          </span>
+        `;
+      } else {
+        // Belirli bir hesap veya birden fazla gider kategorisi seçiliyse
+        if (filterSet.size === 1) {
+          let singleKey = Array.from(filterSet)[0];
+          sumTitle = `Toplam (${filterMetadata[singleKey] || ''}):`;
+        }
+
+        let netFiltered = sumTotalIncomeEUR - sumTotalExpenseEUR;
+        if (sumTotalIncomeEUR > 0 && sumTotalExpenseEUR > 0) {
+          // Filtrelenenler arasında hem gelir hem gider varsa
+          let isNetPos = netFiltered >= 0;
+          let color = isNetPos ? 'var(--green)' : 'var(--red)';
+          mainAmountHtml = `
+            <span style="font-size:16px; font-weight:800; color:${color}; font-variant-numeric:tabular-nums;">
+              ${isNetPos ? '+' : '-'}€${Math.abs(netFiltered).toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            </span>
+          `;
+          subBreakdownHtml = `
+            <span style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-top:2px;">
+              Gelir: <b style="color:var(--green);">+€${sumTotalIncomeEUR.toLocaleString("de-DE", {minimumFractionDigits: 2})}</b> • 
+              Gider: <b style="color:var(--red);">-€${sumTotalExpenseEUR.toLocaleString("de-DE", {minimumFractionDigits: 2})}</b>
+            </span>
+          `;
+        } else {
+          // Sadece gider varsa kırmızı eksi
+          mainAmountHtml = `
+            <span style="font-size:16px; font-weight:800; color:var(--red); font-variant-numeric:tabular-nums;">
+              -€${sumTotalExpenseEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            </span>
+          `;
+        }
+
+        // TR filtresi seçiliyse altına TL toplamını ekle
+        if (isOnlyTRSelected && sumTotalTRY > 0) {
+          mainAmountHtml += `
+            <span style="font-size:11px; color:var(--text-dim); font-variant-numeric:tabular-nums; margin-top:1px;">
+              (-₺${sumTotalTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})})
+            </span>
+          `;
+        }
       }
 
       html += `
         <div class="calendar-summary-bottom-card">
           <div class="calendar-summary-title">
             <span>${sumTitle}</span>
-      `;
-
-      if (isAllSelected && sumTotalIncomeEUR > 0) {
-        let netCalVal = sumTotalIncomeEUR - sumTotalExpenseEUR;
-        let isNetCalPos = netCalVal >= 0;
-        html += `
-            <span style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-top:2px;">
-              Gelir: <b style="color:var(--green);">+€${sumTotalIncomeEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b> • 
-              Net: <b style="color:${isNetCalPos ? 'var(--green)' : 'var(--red)'};">${isNetCalPos ? '+' : ''}€${netCalVal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b>
-            </span>
-        `;
-      }
-      html += `</div>`;
-
-      html += `
+            ${subBreakdownHtml}
+          </div>
           <div class="calendar-summary-amounts">
-            <span style="font-size:15px; font-weight:800; color:var(--red); font-variant-numeric:tabular-nums;">
-              -€${sumTotalExpenseEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-            </span>
-      `;
-
-      if (sumTotalTRY > 0) {
-        html += `
-            <span style="font-size:11px; color:var(--text-dim); font-variant-numeric:tabular-nums;">
-              (-₺${sumTotalTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})})
-            </span>
-        `;
-      }
-
-      html += `
+            ${mainAmountHtml}
           </div>
         </div>
       `;
@@ -2670,7 +2729,7 @@
       const netBuffer = totalIncome - totalPaidExpenses;
       liqNetBufferValue = netBuffer;
 
-      // 2. ÖZET GÖRÜNÜMÜ
+      // 2. ÖZET GÖRÜNÜMÜ (EN ÜSTE DAYALI VE GİZLİ BAŞLAR)
       if (currentLiquidityView === 'summary') {
         let html = `
           <div class="liq-section-title">💳 Kart Harcama</div>
@@ -2734,7 +2793,7 @@
         }
         html += `</div>`;
 
-        // GELİRLER PENCERESİ
+        // GELİRLER PENCERESİ (GİZLİ BAŞLAR)
         html += `
           <div class="liq-section-title">💰 Gelirler</div>
           <div class="liq-card" style="border-left: 4px solid var(--green);">
@@ -2770,7 +2829,7 @@
         }
         html += `</div></div>`;
 
-        // TOPLAM LİKİDİTE RAPORU PENCERESİ
+        // TOPLAM LİKİDİTE RAPORU PENCERESİ (GİZLİ BAŞLAR)
         const isNetPos = netBuffer >= 0;
         const netThemeColor = isNetPos ? 'var(--green)' : 'var(--red)';
 
@@ -2803,6 +2862,7 @@
         `;
 
         container.innerHTML = html;
+        container.scrollTop = 0; // En üste dayalı açılır
         return;
       }
 
@@ -3174,7 +3234,7 @@
       if (totalTrTRYAll > 0 && totalTrEURAll > 0) trRateEUR = totalTrEURAll / totalTrTRYAll;
       const totalPendingObligation = remainingCardLimit + totalRemManual + totalRemTrEUR;
 
-      // 2. ÖZET GÖRÜNÜMÜ
+      // 2. ÖZET GÖRÜNÜMÜ (EN ÜSTE DAYALI BAŞLAR)
       if (currentControlView === 'summary') {
         let html = `
           <div class="liq-section-title">💳 Kart Harcama</div>
@@ -3272,6 +3332,7 @@
         `;
 
         container.innerHTML = html;
+        container.scrollTop = 0; // En üste dayalı açılır
         return;
       }
 
@@ -3367,6 +3428,8 @@
 
       html += `</div>`;
       container.innerHTML = html;
+      
+      // Toplamı tetikle
       recalcControlTotal();
     }
 
@@ -3577,7 +3640,7 @@
 
       card.addEventListener('touchstart', startPress, { passive: true });
       card.addEventListener('touchend', cancelPress);
-      card.addEventListener('touchmove', cancelPress, { passive: true });
+      card.addEventListener('touchmove', cancelPress);
 
       card.addEventListener('mousedown', startPress);
       card.addEventListener('mouseup', cancelPress);
