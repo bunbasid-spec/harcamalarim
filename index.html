@@ -1165,7 +1165,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.3.0
+    Sürüm 3.2.9
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1390,7 +1390,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.3.0";
+    const CURRENT_VERSION = "3.2.9";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1783,7 +1783,6 @@
       const pastSelect = document.getElementById('pastReportSheetSelect');
       pastSelect.innerHTML = '';
 
-      // Gelecek Ay ve Mevcut Ay hariç tutulur
       const pastMonths = availableSheets.filter(s => s !== "Mevcut Ay" && s !== "Gelecek Ay");
 
       if (pastMonths.length === 0) {
@@ -3649,7 +3648,7 @@
 
       card.addEventListener('touchstart', startPress, { passive: true });
       card.addEventListener('touchend', cancelPress);
-      card.addEventListener('touchmove', cancelPress);
+      card.addEventListener('touchmove', cancelPress, { passive: true });
 
       card.addEventListener('mousedown', startPress);
       card.addEventListener('mouseup', cancelPress);
@@ -3886,6 +3885,869 @@
       }
       let num = parseFloat(str);
       return isNaN(num) ? 0 : num;
+    }
+
+    function renderBudgetList() {
+      const container = document.getElementById('listContainer');
+      const badge = document.getElementById('budgetSearchSumBadge');
+      container.innerHTML = '';
+      if (!currentData || currentModule !== 'budget') return;
+
+      const select = document.getElementById('sheetSelect');
+      const isCurrentOrNext = (select && (select.value === "Mevcut Ay" || select.value === "Gelecek Ay"));
+
+      let rawItems = [];
+      let isIncome = false;
+      let canManage = isCurrentOrNext;
+
+      if (activeBudgetTab === 'card') rawItems = currentData.cardItems || [];
+      else if (activeBudgetTab === 'manual') rawItems = currentData.manualItems || [];
+      else if (activeBudgetTab === 'tr') rawItems = currentData.trItems || [];
+      else if (activeBudgetTab === 'income') { rawItems = currentData.incomeItems || []; isIncome = true; }
+
+      if (isSearchActiveBudget && searchQueryBudget) {
+        rawItems = rawItems.filter(item => {
+          let str = `${item.merchant || ''} ${item.card || ''} ${item.amount || ''} ${item.date || ''}`.toLowerCase();
+          return str.includes(searchQueryBudget);
+        });
+
+        let totalSum = 0;
+        rawItems.forEach(item => {
+          if (activeBudgetTab === 'tr') {
+            totalSum += parseAmountToNum(item.eurAmount || 0);
+          } else {
+            totalSum += parseAmountToNum(item.amount || 0);
+          }
+        });
+
+        let count = rawItems.length;
+        let formattedTotal = "€" + totalSum.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        badge.innerText = `(${count}) ${formattedTotal}`;
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      if (!rawItems || rawItems.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-dim)">${isSearchActiveBudget ? 'Aramaya uygun kayıt bulunamadı.' : 'Kayıt bulunamadı.'}</div>`;
+        return;
+      }
+
+      // Akıllı Tarih Çözümleyici (Hücre Tarihi veya Parantez İçi Tarih)
+      function getSortTimestamp(item) {
+        if (item.date && item.date.trim() !== "") {
+          let p = item.date.trim().split(".");
+          if (p.length === 3) {
+            return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0])).getTime();
+          }
+        }
+        let match = (item.merchant || "").match(/\((\d{1,2})\.(\d{1,2})\)/);
+        if (match) {
+          let day = parseInt(match[1]);
+          let month = parseInt(match[2]) - 1;
+          let year = new Date().getFullYear();
+          return new Date(year, month, day).getTime();
+        }
+        return Number.MAX_SAFE_INTEGER;
+      }
+
+      // Bekleyenleri kendi içinde ayın gününe göre (1'inden 30'una), gerçekleşenleri yeniden eskiye sıralar
+      let items = [...rawItems].sort((a, b) => {
+        let isPendingA = (!a.date || a.date.trim() === "");
+        let isPendingB = (!b.date || b.date.trim() === "");
+
+        if (isPendingA && isPendingB) {
+          return getSortTimestamp(a) - getSortTimestamp(b);
+        }
+        if (isPendingA && !isPendingB) return -1;
+        if (!isPendingA && isPendingB) return 1;
+
+        return getSortTimestamp(b) - getSortTimestamp(a);
+      });
+
+      items.forEach(item => {
+        const formattedAmt = formatAmount(item.amount);
+        const isPending = (!item.date || item.date.trim() === "");
+
+        let subText = "";
+        if (isPending) {
+          subText = `<span class="badge-pending">⏳ Bekliyor</span>`;
+        } else {
+          subText = item.date;
+        }
+
+        if (item.card) subText += ` • ${item.card}`;
+        if (activeBudgetTab === 'tr' && item.rate) subText += ` • Kur: ${item.rate}`;
+
+        let eurSub = (activeBudgetTab === 'tr' && item.eurAmount) ? `<div class="sub-eur">${item.eurAmount}</div>` : '';
+        let itemColor = isIncome ? 'var(--green)' : 'var(--red)';
+        let sign = isIncome ? '+' : '-';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = canManage ? 'swipe-container' : 'row-wrapper';
+        wrapper.id = `item-row-${item.rowIndex}`;
+
+        const cardEl = document.createElement('div');
+        cardEl.className = 'item-card' + (isPending ? ' pending-card' : '');
+        cardEl.innerHTML = `
+          <div class="item-left">
+            <div class="name">${item.merchant || 'Açıklamasız'}</div>
+            <div class="sub">${subText}</div>
+          </div>
+          <div class="item-right" style="color: ${itemColor}">
+            ${sign}${formattedAmt}
+            ${eurSub}
+          </div>
+        `;
+
+        if (canManage) {
+          const actionsDiv = document.createElement('div');
+          actionsDiv.className = 'swipe-actions';
+          actionsDiv.style.width = '150px';
+
+          const editBtn = document.createElement('button');
+          editBtn.className = 'swipe-btn edit';
+          editBtn.innerText = 'Düzenle';
+          editBtn.onclick = () => openEditBudgetModal(activeBudgetTab, item);
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'swipe-btn delete';
+          delBtn.innerText = 'Sil';
+          delBtn.onclick = () => deleteBudgetItem(activeBudgetTab, item.rowIndex);
+
+          actionsDiv.appendChild(editBtn);
+          actionsDiv.appendChild(delBtn);
+          wrapper.appendChild(actionsDiv);
+        }
+
+        wrapper.appendChild(cardEl);
+        if (canManage) attachSwipeEvents(cardEl, wrapper, null);
+        container.appendChild(wrapper);
+      });
+    }
+
+    function openEditBudgetModal(type, item) {
+      resetCurrentSwipe();
+      editingBudgetRowIndex = item.rowIndex;
+      modalSelectedType = type;
+
+      document.getElementById('lblModalBudgetTitle').innerText = 'Kaydı Düzenle';
+      document.getElementById('btnBudgetSubmit').innerText = 'Güncelle';
+      document.getElementById('budgetTypeSwitcher').style.display = 'none';
+
+      setModalType(type, false);
+
+      document.getElementById('mDate').value = parseFormattedDateToInput(item.date);
+      document.getElementById('mAmount').value = formatAmountForInput(item.amount);
+      
+      let rawMerchant = item.merchant || "";
+      if (item.date && item.date.trim() !== "") {
+        rawMerchant = rawMerchant.replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
+      }
+      document.getElementById('mDesc').value = rawMerchant;
+      document.getElementById('mAccount').value = item.card || "";
+
+      openModalWithScrollLock('modalBudget');
+    }
+
+    function renderDebtsDashboard(data) {
+      if (!data || currentModule !== 'debts') return;
+      
+      const isArchive = document.getElementById('sheetSelect').value === 'archive';
+      
+      document.getElementById('lblDebtNetTitle').innerHTML = isArchive ? "NET KAPANAN DURUM" : "NET BORÇ / ALACAK DURUMU";
+      document.getElementById('lblDebtGiveTitle').innerHTML = isArchive ? "KAPATTIĞIM<br>BORÇLAR" : "BORÇLARIM (ALDIKLARIM)";
+      document.getElementById('lblDebtGetTitle').innerHTML = isArchive ? "TAHSİL ETTİĞİM<br>ALACAKLAR" : "ALACAKLARIM (VERDİKLERİM)";
+
+      updateMaskedDisplay();
+      renderDebtsList();
+    }
+
+    function switchDebtTab(tab) {
+      activeDebtTab = tab;
+      document.querySelectorAll('#viewDebts .tab-btn').forEach(btn => btn.classList.remove('active'));
+      
+      let targetId = 'tab-debt-give';
+      if (tab === 'credit') targetId = 'tab-debt-get';
+      if (tab === 'history') targetId = 'tab-debt-history';
+      
+      const target = document.getElementById(targetId);
+      if (target) target.classList.add('active');
+      renderDebtsList();
+    }
+
+    function calculateDurationText(startDateStr, endDateStr) {
+      if (!startDateStr) return "";
+      const sParts = startDateStr.toString().trim().split(".");
+      if (sParts.length !== 3) return "";
+      
+      let start = new Date(parseInt(sParts[2]), parseInt(sParts[1]) - 1, parseInt(sParts[0]));
+      let end = new Date();
+
+      if (endDateStr) {
+        const eParts = endDateStr.toString().trim().split(".");
+        if (eParts.length === 3) {
+          end = new Date(parseInt(eParts[2]), parseInt(eParts[1]) - 1, parseInt(eParts[0]));
+        }
+      }
+
+      if (end < start) return "(0 gün)";
+
+      let years = end.getFullYear() - start.getFullYear();
+      let months = end.getMonth() - start.getMonth();
+      let days = end.getDate() - start.getDate();
+
+      if (days < 0) {
+        months -= 1;
+        let prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
+        days += prevMonth.getDate();
+      }
+
+      if (months < 0) {
+        years -= 1;
+        months += 12;
+      }
+
+      let totalMonths = years * 12 + months;
+      let textParts = [];
+
+      if (totalMonths > 0) textParts.push(`${totalMonths} ay`);
+      if (days > 0 || totalMonths === 0) textParts.push(`${days} gün`);
+
+      return `(${textParts.join(" ")})`;
+    }
+
+    function renderDebtsList() {
+      const container = document.getElementById('listContainer');
+      const badge = document.getElementById('debtsSearchSumBadge');
+      container.innerHTML = '';
+      if (!debtsData || currentModule !== 'debts') return;
+
+      if (activeDebtTab === 'history') {
+        let history = [...(debtsData.history || [])];
+
+        if (isSearchActiveDebts && searchQueryDebts) {
+          history = history.filter(item => {
+            let str = `${item.person || ''} ${item.note || ''} ${item.amount || ''} ${item.date || ''}`.toLowerCase();
+            return str.includes(searchQueryDebts);
+          });
+
+          let totalSum = 0;
+          history.forEach(item => { totalSum += parseAmountToNum(item.amount || 0); });
+          let count = history.length;
+          let formattedTotal = "€" + totalSum.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          badge.innerText = `(${count}) ${formattedTotal}`;
+          badge.style.display = "inline-block";
+        } else {
+          badge.style.display = "none";
+        }
+
+        history.sort((a, b) => parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date));
+
+        if (history.length === 0) {
+          container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-dim)">${isSearchActiveDebts ? 'Aramaya uygun geçmiş bulunamadı.' : 'Ödeme geçmişi bulunamadı.'}</div>`;
+          return;
+        }
+
+        history.forEach(item => {
+          let itemColor = 'var(--green)';
+          let canManage = false;
+
+          if (item.note.includes("Borç Alma")) {
+            itemColor = 'var(--red)';
+          } else if (item.note.includes("Borç Verme")) {
+            itemColor = 'var(--accent)';
+          } else if (item.note.includes("Geri Ödeme")) {
+            canManage = true;
+          }
+
+          const wrapper = document.createElement('div');
+          wrapper.className = canManage ? 'swipe-container' : 'row-wrapper';
+          wrapper.id = `history-row-${item.rowIndex}`;
+
+          const cardEl = document.createElement('div');
+          cardEl.className = 'item-card';
+          cardEl.innerHTML = `
+            <div class="item-left">
+              <div class="name">${item.person}</div>
+              <div class="sub">${item.date} • ${item.note}</div>
+            </div>
+            <div class="item-right" style="color: ${itemColor}">
+              ${formatAmount(item.amount)}
+            </div>
+          `;
+
+          if (canManage) {
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'swipe-actions';
+            actionsDiv.style.width = '150px';
+
+            const editBtn = document.createElement('button');
+            editBtn.className = 'swipe-btn edit';
+            editBtn.innerText = 'Düzenle';
+            editBtn.onclick = () => openEditHistoryModal(item);
+
+            const undoBtn = document.createElement('button');
+            undoBtn.className = 'swipe-btn undo';
+            undoBtn.innerText = 'Geri Al';
+            undoBtn.onclick = () => undoHistoryEntry(item.rowIndex);
+
+            actionsDiv.appendChild(editBtn);
+            actionsDiv.appendChild(undoBtn);
+            wrapper.appendChild(actionsDiv);
+          }
+
+          wrapper.appendChild(cardEl);
+          if (canManage) attachSwipeEvents(cardEl, wrapper, null);
+          container.appendChild(wrapper);
+        });
+        return;
+      }
+
+      const isArchive = document.getElementById('sheetSelect').value === 'archive';
+      let rawItems = (activeDebtTab === 'debt') ? (debtsData.debts || []) : (debtsData.credits || []);
+
+      if (isSearchActiveDebts && searchQueryDebts) {
+        rawItems = rawItems.filter(item => {
+          let str = `${item.person || ''} ${item.totalAmount || ''} ${item.remainingAmount || ''} ${item.date || ''}`.toLowerCase();
+          return str.includes(searchQueryDebts);
+        });
+
+        let totalSum = 0;
+        rawItems.forEach(item => {
+          totalSum += parseAmountToNum(isArchive ? item.totalAmount : item.remainingAmount);
+        });
+        let count = rawItems.length;
+        let formattedTotal = "€" + totalSum.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        badge.innerText = `(${count}) ${formattedTotal}`;
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      if (!rawItems || rawItems.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-dim)">${isSearchActiveDebts ? 'Aramaya uygun kayıt bulunamadı.' : 'Kayıt bulunamadı.'}</div>`;
+        return;
+      }
+
+      let items = [...rawItems].sort((a, b) => {
+        if (isArchive) {
+          return parseDateToTimestamp(b.closeDate || b.date) - parseDateToTimestamp(a.closeDate || a.date);
+        } else {
+          return parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
+        }
+      });
+
+      items.forEach(item => {
+        const total = formatAmount(item.totalAmount);
+        const rem = formatAmount(item.remainingAmount);
+        const paid = formatAmount(item.paidAmount);
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'swipe-container';
+        wrapper.id = `debt-row-${item.rowIndex}`;
+
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'swipe-actions';
+
+        if (!isArchive) {
+          actionsDiv.style.width = '225px';
+
+          const payBtn = document.createElement('button');
+          payBtn.className = 'swipe-btn pay';
+          payBtn.innerText = 'Ödeme';
+          payBtn.onclick = () => openPaymentModal(activeDebtTab, item.rowIndex, item.person);
+
+          const closeBtn = document.createElement('button');
+          closeBtn.className = 'swipe-btn close';
+          closeBtn.innerText = 'Kapat';
+          closeBtn.onclick = () => handleDebtArchive(activeDebtTab, item.rowIndex);
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'swipe-btn delete';
+          delBtn.innerText = 'Sil';
+          delBtn.onclick = () => handleDebtDelete(activeDebtTab, item.rowIndex);
+
+          actionsDiv.appendChild(payBtn);
+          actionsDiv.appendChild(closeBtn);
+          actionsDiv.appendChild(delBtn);
+        } else {
+          actionsDiv.style.width = '75px';
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'swipe-btn delete';
+          delBtn.innerText = 'Sil';
+          delBtn.onclick = () => handleDebtDelete(activeDebtTab, item.rowIndex);
+
+          actionsDiv.appendChild(delBtn);
+        }
+
+        let initialLabel = (activeDebtTab === 'debt') ? 'Borç Alındı' : 'Borç Verildi';
+        let initialColor = (activeDebtTab === 'debt') ? 'var(--red)' : 'var(--green)';
+        let paymentColor = (activeDebtTab === 'debt') ? 'var(--green)' : 'var(--red)';
+
+        let histHtml = `
+          <div class="acc-row">
+            <span class="acc-date">📅 ${item.date}</span>
+            <span class="acc-note">${initialLabel}</span>
+            <span class="acc-amount" style="color: ${initialColor}">${total}</span>
+          </div>
+        `;
+
+        if (item.history && item.history.length > 0) {
+          const paymentsOnly = item.history.filter(h => h.note.includes("Geri Ödeme"));
+          paymentsOnly.forEach(h => {
+            histHtml += `
+              <div class="acc-row">
+                <span class="acc-date">📅 ${h.date}</span>
+                <span class="acc-note">Geri Ödeme</span>
+                <span class="acc-amount" style="color: ${paymentColor}">${formatAmount(h.amount)}</span>
+              </div>
+            `;
+          });
+        }
+
+        let archiveCloseHtml = '';
+        if (isArchive && item.closeDate) {
+          archiveCloseHtml = `
+            <div class="acc-row" style="color: var(--text-dim); border-top: 1px dashed rgba(255,255,255,0.08); margin-top: 4px; padding-top: 4px;">
+              <span class="acc-date">📅 ${item.closeDate}</span>
+              <span class="acc-note" style="color: var(--text-dim)">Kapanma Tarihi</span>
+              <span class="acc-amount" style="color: var(--text-dim)">Kapandı</span>
+            </div>
+          `;
+        }
+
+        let subText = "";
+        let rightMainDisplay = "";
+        let rightSubDisplay = "";
+
+        if (isArchive) {
+          subText = `${item.date} • Kapanış: ${item.closeDate}`;
+          rightMainDisplay = total;
+          rightSubDisplay = "Kapandı";
+        } else {
+          if (activeDebtTab === 'debt') {
+            subText = `${item.date} • Alınan: ${total}`;
+            rightMainDisplay = rem;
+            rightSubDisplay = `Ödenen: ${paid}`;
+          } else {
+            subText = `${item.date} • Verilen: ${total}`;
+            rightMainDisplay = rem;
+            rightSubDisplay = `Alınan: ${paid}`;
+          }
+        }
+
+        let durationText = isArchive 
+          ? calculateDurationText(item.date, item.closeDate)
+          : calculateDurationText(item.date, null);
+
+        const cardEl = document.createElement('div');
+        cardEl.className = 'item-card';
+        cardEl.innerHTML = `
+          <div class="item-left">
+            <div class="name">
+              <span style="font-size:10px; color:var(--text-dim); margin-right:4px;">▼</span>${item.person}
+              <span style="font-weight:normal; font-size:12px; color:var(--text-dim);">&nbsp;&nbsp;/&nbsp;&nbsp;${durationText}</span>
+            </div>
+            <div class="sub">${subText}</div>
+          </div>
+          <div class="item-right" style="color: ${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">
+            ${rightMainDisplay}
+            <div class="sub-eur">${rightSubDisplay}</div>
+          </div>
+        `;
+
+        const accBody = document.createElement('div');
+        accBody.className = 'accordion-body';
+        accBody.id = `acc-${item.rowIndex}`;
+        accBody.innerHTML = `
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase;">İşlem Geçmişi</div>
+          ${histHtml}
+          ${archiveCloseHtml}
+          <div class="acc-row" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); font-weight: bold;">
+            <span style="grid-column: span 2;">${isArchive ? 'Kapanan Tutar' : 'Kalan Tutar'}</span>
+            <span class="acc-amount" style="color:${activeDebtTab === 'debt' ? 'var(--red)' : 'var(--green)'}">${isArchive ? total : rem}</span>
+          </div>
+        `;
+
+        wrapper.appendChild(actionsDiv);
+        wrapper.appendChild(cardEl);
+        wrapper.appendChild(accBody);
+
+        attachSwipeEvents(cardEl, wrapper, `acc-${item.rowIndex}`);
+        container.appendChild(wrapper);
+      });
+    }
+
+    function openEditHistoryModal(histItem) {
+      resetCurrentSwipe();
+      document.getElementById('payDebtType').value = 'history';
+      document.getElementById('payRowIndex').value = histItem.rowIndex;
+      document.getElementById('payPersonName').value = histItem.person;
+      document.getElementById('payIsHistoryEdit').value = 'true';
+
+      document.getElementById('lblPaymentTitle').innerText = `${histItem.person} İçin Ödemeyi Düzenle`;
+      document.getElementById('lblPaymentDate').innerText = 'Ödeme Tarihi';
+      document.getElementById('lblPaymentAmount').innerText = 'Tutar (€)';
+      document.getElementById('btnPaymentSubmit').innerText = 'Güncelle';
+
+      document.getElementById('payDate').value = parseFormattedDateToInput(histItem.date);
+      document.getElementById('payAmount').value = formatAmountForInput(histItem.amount);
+      openModalWithScrollLock('modalPayment');
+    }
+
+    function toggleMask(key) {
+      maskedState[key] = !maskedState[key];
+      updateMaskedDisplay();
+    }
+
+    function updateMaskedDisplay() {
+      if (currentModule === 'budget' && currentData) {
+        const remEl = document.getElementById('remVal');
+        if (maskedState.rem) {
+          remEl.innerText = "••••••"; remEl.classList.add('masked'); remEl.style.color = "";
+        } else {
+          remEl.innerText = currentData.remaining; remEl.classList.remove('masked');
+          remEl.style.color = (currentData.remaining || "").toString().includes("-") ? "var(--red)" : "var(--green)";
+        }
+
+        const manEl = document.getElementById('manualVal');
+        manEl.innerText = maskedState.manual ? "••••••" : currentData.manualTotal;
+        manEl.classList.toggle('masked', maskedState.manual);
+
+        const trEl = document.getElementById('trVal');
+        trEl.innerText = maskedState.tr ? "••••••" : (currentData.trTotal || "€0,00");
+        trEl.classList.toggle('masked', maskedState.tr);
+
+        const incEl = document.getElementById('incVal');
+        incEl.innerText = maskedState.inc ? "••••••" : currentData.incomeTotal;
+        incEl.classList.toggle('masked', maskedState.inc);
+      } 
+      else if (currentModule === 'debts' && debtsData) {
+        const netEl = document.getElementById('debtNetVal');
+        if (maskedState.debtNet) {
+          netEl.innerText = "••••••"; netEl.classList.add('masked'); netEl.style.color = "";
+        } else {
+          netEl.innerText = debtsData.netBalance; netEl.classList.remove('masked');
+          netEl.style.color = (debtsData.netBalance || "").toString().includes("-") ? "var(--red)" : "var(--green)";
+        }
+
+        const giveEl = document.getElementById('debtGiveVal');
+        giveEl.innerText = maskedState.debtGive ? "••••••" : debtsData.totalDebt;
+        giveEl.classList.toggle('masked', maskedState.debtGive);
+
+        const getEl = document.getElementById('debtGetVal');
+        getEl.innerText = maskedState.debtGet ? "••••••" : debtsData.totalCredit;
+        getEl.classList.toggle('masked', maskedState.debtGet);
+      }
+    }
+
+    let currentlySwiped = null;
+    let currentlySwipedContainer = null;
+
+    function attachSwipeEvents(card, container, accordionId) {
+      let startX = 0;
+      let startY = 0;
+      let currentX = 0;
+      let currentY = 0;
+      let isHorizontal = false;
+      let isVertical = false;
+
+      card.addEventListener('touchstart', e => {
+        if (currentlySwiped && currentlySwiped !== card) {
+          currentlySwiped.style.transform = 'translateX(0px)';
+          if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped');
+          currentlySwiped = null; 
+          currentlySwipedContainer = null;
+        }
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        currentX = startX;
+        currentY = startY;
+        isHorizontal = false;
+        isVertical = false;
+      }, { passive: true });
+
+      card.addEventListener('touchmove', e => {
+        currentX = e.touches[0].clientX;
+        currentY = e.touches[0].clientY;
+        let diffX = currentX - startX;
+        let diffY = currentY - startY;
+
+        if (!isHorizontal && !isVertical) {
+          if (Math.abs(diffX) > 6 && Math.abs(diffX) > Math.abs(diffY)) {
+            isHorizontal = true;
+          } else if (Math.abs(diffY) > 6) {
+            isVertical = true;
+          }
+        }
+
+        if (isHorizontal) {
+          const actionsEl = container.querySelector('.swipe-actions');
+          const maxSnap = actionsEl ? actionsEl.offsetWidth : 75;
+          const maxDrag = -(maxSnap + 25);
+          
+          if (diffX < 0 && diffX > maxDrag) {
+            container.classList.add('swiping');
+            card.style.transform = `translateX(${diffX}px)`;
+          }
+        }
+      }, { passive: true });
+
+      card.addEventListener('touchend', () => {
+        let diffX = currentX - startX;
+        let diffY = currentY - startY;
+
+        if (Math.abs(diffX) < 8 && Math.abs(diffY) < 8) {
+          if (currentlySwiped === card) {
+            card.style.transform = 'translateX(0px)';
+            container.classList.remove('swiped', 'swiping');
+            currentlySwiped = null;
+            currentlySwipedContainer = null;
+          } else if (accordionId) {
+            const acc = document.getElementById(accordionId);
+            if (acc) {
+              const isOpen = acc.classList.contains('open');
+              document.querySelectorAll('.accordion-body').forEach(el => el.classList.remove('open'));
+              if (!isOpen) {
+                acc.classList.add('open');
+              }
+            }
+          }
+          return;
+        }
+
+        if (isHorizontal) {
+          const actionsEl = container.querySelector('.swipe-actions');
+          const snapOffset = actionsEl ? -actionsEl.offsetWidth : -75;
+
+          if (diffX < -35) {
+            if (accordionId) {
+              const acc = document.getElementById(accordionId);
+              if (acc) acc.classList.remove('open');
+            }
+            card.style.transform = `translateX(${snapOffset}px)`;
+            container.classList.add('swiped');
+            container.classList.remove('swiping');
+            currentlySwiped = card;
+            currentlySwipedContainer = container;
+          } else {
+            card.style.transform = 'translateX(0px)';
+            container.classList.remove('swiped', 'swiping');
+            if (currentlySwiped === card) {
+              currentlySwiped = null;
+              currentlySwipedContainer = null;
+            }
+          }
+        }
+      });
+    }
+
+    function resetCurrentSwipe() {
+      if (currentlySwiped) {
+        currentlySwiped.style.transform = 'translateX(0px)';
+        if (currentlySwipedContainer) currentlySwipedContainer.classList.remove('swiped');
+        currentlySwiped = null;
+        currentlySwipedContainer = null;
+      }
+    }
+
+    let touchStartY = 0;
+    let isPulling = false;
+    let pullIndicator = null;
+    let appContent = null;
+
+    function initPullToRefresh() {
+      pullIndicator = document.getElementById('pullIndicator');
+      appContent = document.getElementById('appContent');
+
+      document.addEventListener('touchstart', e => {
+        const anyModalOpen = Array.from(document.querySelectorAll('.modal')).some(m => m.style.display === 'flex');
+        if (anyModalOpen || e.target.closest('.modal')) {
+          isPulling = false;
+          return;
+        }
+
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+        if (scrollTop <= 5) {
+          touchStartY = e.touches[0].clientY;
+          isPulling = true;
+        } else {
+          isPulling = false;
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchmove', e => {
+        if (!isPulling || touchStartY === 0) return;
+        let currentY = e.touches[0].clientY;
+        let distance = currentY - touchStartY;
+
+        if (distance > 0) {
+          let pullOffset = Math.min(80, distance * 0.45);
+          appContent.style.transform = `translateY(${pullOffset}px)`;
+          let scale = Math.min(1, distance / 70);
+          pullIndicator.style.opacity = scale;
+          pullIndicator.style.transform = `translateX(-50%) scale(${scale})`;
+          pullIndicator.innerHTML = '↓';
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchend', e => {
+        if (!isPulling || touchStartY === 0) return;
+        let touchEndY = e.changedTouches[0].clientY;
+        let distance = touchEndY - touchStartY;
+
+        if (distance > 70) {
+          appContent.style.transform = 'translateY(60px)';
+          pullIndicator.innerHTML = '↻';
+          pullIndicator.classList.add('rotating');
+          onFilterChange();
+        } else {
+          resetPullIndicator();
+        }
+        touchStartY = 0;
+        isPulling = false;
+      }, { passive: true });
+    }
+
+    function resetPullIndicator() {
+      if (!pullIndicator) return;
+      if (appContent) appContent.style.transform = 'translateY(0px)';
+      pullIndicator.classList.remove('rotating');
+      pullIndicator.style.opacity = '0';
+      pullIndicator.style.transform = 'translateX(-50%) scale(0)';
+      pullIndicator.innerHTML = '↓';
+    }
+
+    function closeModal(id) {
+      closeAllComboboxes();
+      document.getElementById(id).style.display = 'none';
+      document.body.classList.remove('modal-open');
+      editingBudgetRowIndex = null;
+
+      if (id === 'modalBudget') {
+        document.getElementById('mAmount').value = '';
+        document.getElementById('mDesc').value = '';
+        document.getElementById('mAccount').value = '';
+      }
+    }
+
+    function setModalType(type, clearInputs = true) {
+      modalSelectedType = type;
+      closeAllComboboxes();
+
+      if (clearInputs) {
+        document.getElementById('mDesc').value = '';
+        document.getElementById('mAccount').value = '';
+      }
+
+      document.querySelectorAll('#modalBudget .type-btn').forEach(b => b.classList.remove('active'));
+      const lblAmount = document.getElementById('lblAmount');
+      const lblDesc = document.getElementById('lblDesc');
+      const grpCard = document.getElementById('grpCard');
+      const mDesc = document.getElementById('mDesc');
+      const mAmount = document.getElementById('mAmount');
+      const lblAccountTitle = document.getElementById('lblAccountTitle');
+      const arrowDesc = document.getElementById('arrowDesc');
+      const lblDateTitle = document.getElementById('lblDateTitle');
+
+      if (type === 'card') {
+        document.getElementById('btnTypeCard').classList.add('active');
+        lblDateTitle.innerText = 'Tarih';
+        lblDesc.innerText = 'Satıcı';
+        lblAmount.innerText = 'Tutar (€)';
+        mAmount.placeholder = 'örn: 25,50 €';
+        mDesc.placeholder = 'örn: Rewe, Amazon';
+        grpCard.style.display = 'block';
+        lblAccountTitle.innerText = 'Kart';
+        arrowDesc.style.display = 'none';
+      } else if (type === 'manual') {
+        document.getElementById('btnTypeManual').classList.add('active');
+        lblDateTitle.innerText = 'Tarih (İsteğe Bağlı / Boş = Bekliyor)';
+        lblDesc.innerText = 'Kime / Açıklama';
+        lblAmount.innerText = 'Tutar (€)';
+        mAmount.placeholder = 'örn: 50,00 €';
+        mDesc.placeholder = 'örn: Ev Sahibi / Kira';
+        grpCard.style.display = 'block';
+        lblAccountTitle.innerText = 'Hesap / Ödeme Türü';
+        arrowDesc.style.display = 'flex';
+      } else if (type === 'tr') {
+        document.getElementById('btnTypeTR').classList.add('active');
+        lblDateTitle.innerText = 'Tarih (İsteğe Bağlı / Boş = Bekliyor)';
+        lblDesc.innerText = 'Nereye / Açıklama';
+        lblAmount.innerText = 'Tutar (₺)';
+        mAmount.placeholder = 'örn: 500,00 ₺';
+        mDesc.placeholder = 'örn: Spotify, Enpara';
+        grpCard.style.display = 'none';
+        arrowDesc.style.display = 'flex';
+      } else if (type === 'income') {
+        document.getElementById('btnTypeIncome').classList.add('active');
+        lblDateTitle.innerText = 'Tarih (İsteğe Bağlı / Boş = Bekliyor)';
+        lblDesc.innerText = 'Nereden / Açıklama';
+        lblAmount.innerText = 'Tutar (€)';
+        mAmount.placeholder = 'örn: 500,00 €';
+        mDesc.placeholder = 'örn: Maaş, Kindergeld';
+        grpCard.style.display = 'none';
+        arrowDesc.style.display = 'flex';
+      }
+    }
+
+    function setDebtModalType(type) {
+      modalDebtSelectedType = type;
+      document.querySelectorAll('#modalDebt .type-btn').forEach(b => b.classList.remove('active'));
+      const lblPerson = document.getElementById('lblDebtPerson');
+
+      if (type === 'debt') {
+        document.getElementById('btnTypeDebtGive').classList.add('active');
+        lblPerson.innerText = 'Kimden Borç Aldım';
+      } else {
+        document.getElementById('btnTypeDebtGet').classList.add('active');
+        lblPerson.innerText = 'Kime Borç Verdim';
+      }
+    }
+
+    async function submitBudgetEntry() {
+      const type = modalSelectedType;
+      const rawDate = document.getElementById('mDate').value;
+      let dateFormatted = "";
+      if (rawDate) {
+        const p = rawDate.split("-");
+        dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
+      }
+
+      let merchantText = document.getElementById('mDesc').value.trim();
+
+      if (dateFormatted) {
+        merchantText = merchantText.replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
+      }
+
+      const payload = {
+        date: dateFormatted,
+        amount: document.getElementById('mAmount').value,
+        merchant: merchantText,
+        card: document.getElementById('mAccount').value
+      };
+
+      const isEdit = (editingBudgetRowIndex !== null);
+      const targetRowIndex = editingBudgetRowIndex;
+      const sheet = document.getElementById('sheetSelect').value || "Mevcut Ay";
+
+      closeModal('modalBudget');
+      delete memoryCache[sheet];
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: isEdit ? 'editEntry' : 'addEntry',
+          sheet: sheet,
+          type: type,
+          rowIndex: targetRowIndex,
+          payload: payload
+        })
+      });
+
+      onFilterChange();
     }
 
     function openPaymentModal(debtType, rowIndex, personName) {
