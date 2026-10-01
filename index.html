@@ -1089,12 +1089,15 @@
   <div id="pullIndicator">↓</div>
 
   <div id="appContent">
-    <div class="header">
+    <div class="header" style="grid-template-columns: 1fr 38px 1fr; gap: 8px;">
       <div class="module-switcher">
         <button class="mod-btn active" id="modBudget" onclick="switchModule('budget')">Bütçe</button>
         <button class="mod-btn" id="modDebts" onclick="switchModule('debts')">Borçlar</button>
       </div>
       
+      <!-- ORTADAKİ TEK İKON AJANDA BUTONU -->
+      <button type="button" id="btnTimelineView" style="height:38px; width:38px; background:var(--card-bg); border:1px solid var(--border); border-radius:8px; color:var(--text-dim); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;" onclick="switchModule('timeline')">📅</button>
+
       <select id="sheetSelect" class="sheet-select" onchange="onFilterChange()"></select>
     </div>
 
@@ -1182,6 +1185,24 @@
       </div>
     </div>
 
+    <!-- 3. SÜREKLİ AJANDA GÖRÜNÜMÜ -->
+    <div id="viewTimeline" style="display: none; animation: fadeIn 0.2s ease;">
+      <!-- Üst Filtre Barı & Ödenmişleri Göster Seçeneği -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+        <label style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--text-dim); cursor:pointer;">
+          <input type="checkbox" id="chkTimelineShowPaid" onchange="renderMainTimelineView()" style="accent-color:var(--accent); width:15px; height:15px; cursor:pointer;">
+          Ödenmişleri Göster
+        </label>
+        <button type="button" id="timeline-btn-toggle-all" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer; padding: 2px 0;" onclick="toggleAllCalendarBodies('main-timeline')">Tümünü Aç ▼</button>
+      </div>
+
+      <!-- Çip Filtreleri -->
+      <div class="filter-chip-bar" id="timelineFilterChipBar"></div>
+
+      <!-- Günler ve Hareketler Akışı -->
+      <div id="timelineListContainer" style="padding-bottom: 70px;"></div>
+    </div>
+    
     <div id="listContainer"></div>
   </div>
 
@@ -2342,7 +2363,9 @@
     }
 
     function toggleCalendarFilterKey(moduleType, key) {
-      let filterSet = (moduleType === 'liq') ? selectedFiltersLiq : ((moduleType === 'ctrl') ? selectedFiltersCtrl : selectedFiltersPast);
+      let filterSet = (moduleType === 'liq') ? selectedFiltersLiq : 
+                      ((moduleType === 'ctrl') ? selectedFiltersCtrl : 
+                      ((moduleType === 'timeline') ? selectedFiltersTimeline : selectedFiltersPast));
 
       if (key === 'ALL') {
         filterSet.clear();
@@ -2356,6 +2379,7 @@
 
       if (moduleType === 'liq') renderLiquidityContent();
       else if (moduleType === 'ctrl') renderControlContent();
+      else if (moduleType === 'timeline') renderMainTimelineView();
       else if (moduleType === 'past') {
         const sheet = document.getElementById('pastReportSheetSelect').value;
         if (sheet && memoryCache[sheet]) renderPastReportContent(memoryCache[sheet]);
@@ -3829,32 +3853,293 @@
       onFilterChange();
     }
 
+    // Timeline Değişkenleri
+    let selectedFiltersTimeline = new Set();
+
+    // switchModule Fonksiyonunu Güncelle
     function switchModule(mod) {
       currentModule = mod;
-      document.getElementById('modBudget').classList.toggle('active', mod === 'budget');
-      document.getElementById('modDebts').classList.toggle('active', mod === 'debts');
+      
+      const isBudget = (mod === 'budget');
+      const isDebts = (mod === 'debts');
+      const isTimeline = (mod === 'timeline');
 
-      document.getElementById('viewBudget').style.display = (mod === 'budget') ? 'block' : 'none';
-      document.getElementById('viewDebts').style.display = (mod === 'debts') ? 'block' : 'none';
+      document.getElementById('modBudget').classList.toggle('active', isBudget);
+      document.getElementById('modDebts').classList.toggle('active', isDebts);
+
+      const btnTime = document.getElementById('btnTimelineView');
+      if (btnTime) {
+        btnTime.style.borderColor = isTimeline ? 'var(--accent)' : 'var(--border)';
+        btnTime.style.color = isTimeline ? 'var(--accent)' : 'var(--text-dim)';
+        btnTime.style.background = isTimeline ? 'rgba(56, 189, 248, 0.15)' : 'var(--card-bg)';
+      }
+
+      document.getElementById('viewBudget').style.display = isBudget ? 'block' : 'none';
+      document.getElementById('viewDebts').style.display = isDebts ? 'block' : 'none';
+      document.getElementById('viewTimeline').style.display = isTimeline ? 'block' : 'none';
+      document.getElementById('listContainer').style.display = isTimeline ? 'none' : 'block';
 
       const edge = document.getElementById('edgeIndicator');
-      if (edge && mod !== 'budget') edge.className = '';
+      if (edge && !isBudget) edge.className = '';
       
       const select = document.getElementById('sheetSelect');
-      if (mod === 'budget') {
-        fetchInitialData();
+
+      if (isTimeline) {
+        select.style.visibility = 'hidden'; // Ajandadayken ay seçimi otomatik akar
+        loadAndRenderMainTimeline();
       } else {
-        select.classList.remove('past-month-warning', 'next-month-theme');
-        document.getElementById('pastMonthBannerContainer').style.display = 'none';
-        select.innerHTML = `
-          <option value="active" selected>Aktif Borçlar</option>
-          <option value="archive">Arşiv</option>
-        `;
-        if (debtsData) {
-          renderDebtsDashboard(debtsData);
+        select.style.visibility = 'visible';
+        if (isBudget) {
+          fetchInitialData();
+        } else {
+          select.classList.remove('past-month-warning', 'next-month-theme');
+          document.getElementById('pastMonthBannerContainer').style.display = 'none';
+          select.innerHTML = `
+            <option value="active" selected>Aktif Borçlar</option>
+            <option value="archive">Arşiv</option>
+          `;
+          if (debtsData) renderDebtsDashboard(debtsData);
+          loadDebtsData();
         }
-        loadDebtsData();
       }
+    }
+
+    async function loadAndRenderMainTimeline() {
+      const container = document.getElementById('timelineListContainer');
+      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-dim);">Ajanda hazırlanıyor...</div>';
+
+      // Mevcut Ay ve Gelecek Ay verilerini hazırla
+      if (!memoryCache["Mevcut Ay"]) {
+        try {
+          const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent("Mevcut Ay")}`);
+          memoryCache["Mevcut Ay"] = await res.json();
+        } catch(e){}
+      }
+      if (!memoryCache["Gelecek Ay"]) {
+        try {
+          const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent("Gelecek Ay")}`);
+          memoryCache["Gelecek Ay"] = await res.json();
+        } catch(e){}
+      }
+
+      renderMainTimelineView();
+    }
+
+    function renderMainTimelineView() {
+      const container = document.getElementById('timelineListContainer');
+      const chipBar = document.getElementById('timelineFilterChipBar');
+      const showPaid = document.getElementById('chkTimelineShowPaid').checked;
+
+      const curData = memoryCache["Mevcut Ay"];
+      const nextData = memoryCache["Gelecek Ay"];
+
+      if (!curData) {
+        container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--red);">Mevcut ay verisi bulunamadı.</div>';
+        return;
+      }
+
+      const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+      const now = new Date();
+      const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const nextMonthLabel = `${nextMonthDate.getFullYear()} ${monthNames[nextMonthDate.getMonth()]}`;
+
+      // İki aydan verileri çek ve ay etiketi ekle
+      function collectItems(dataObj, isNextMonth) {
+        let items = [];
+        if (!dataObj) return items;
+
+        if (showPaid) {
+          (dataObj.cardItems || []).forEach(it => items.push({ ...it, srcType: 'card', typeTag: 'KART', isIncome: false, filterCategory: 'card', filterAccount: 'card', isNextMonth }));
+        }
+
+        (dataObj.manualItems || []).forEach(it => {
+          let isPending = (!it.date || it.date.trim() === "");
+          if (!showPaid && !isPending) return;
+          let acc = (it.card || '').toLowerCase().trim();
+          let filterAcc = 'other';
+          if (acc.includes('sparkasse')) filterAcc = 'sparkasse';
+          else if (acc.includes('n26')) filterAcc = 'n26';
+          else if (acc.includes('c24')) filterAcc = 'c24';
+          else if (acc.includes('nakit') || acc.includes('bar')) filterAcc = 'nakit';
+          items.push({ ...it, srcType: 'manual', typeTag: 'HESAP', isIncome: false, filterCategory: 'manual', filterAccount: filterAcc, isNextMonth });
+        });
+
+        (dataObj.trItems || []).forEach(it => {
+          let isPending = (!it.date || it.date.trim() === "");
+          if (!showPaid && !isPending) return;
+          let eurVal = parseAmountToNum(it.eurAmount || 0);
+          let tryVal = parseAmountToNum(it.amount || 0);
+          items.push({ ...it, srcType: 'tr', typeTag: 'TR KART', isIncome: false, eurVal, tryVal, filterCategory: 'tr', filterAccount: 'tr', isNextMonth });
+        });
+
+        if (showPaid) {
+          (dataObj.incomeItems || []).forEach(it => items.push({ ...it, srcType: 'income', typeTag: 'GELİR', isIncome: true, filterCategory: 'income', filterAccount: 'income', isNextMonth }));
+        }
+
+        return items;
+      }
+
+      let allRaw = [...collectItems(curData, false), ...collectItems(nextData, true)];
+
+      // Çip Filtrelerini Oluştur
+      const filterMetadata = {
+        sparkasse: "Sparkasse", n26: "N26", c24: "C24",
+        nakit: "Nakit", tr: "TR", card: "Kart", income: "Gelir", other: "Diğer"
+      };
+
+      let activeKeys = new Set(allRaw.map(it => it.filterAccount));
+      let chipsHtml = `<div class="filter-chip ${selectedFiltersTimeline.size === 0 ? 'active' : ''}" onclick="toggleCalendarFilterKey('timeline', 'ALL')">Tümü</div>`;
+      Object.keys(filterMetadata).forEach(k => {
+        if (activeKeys.has(k)) {
+          let isAct = selectedFiltersTimeline.has(k);
+          chipsHtml += `<div class="filter-chip ${isAct ? 'active' : ''}" onclick="toggleCalendarFilterKey('timeline', '${k}')">${filterMetadata[k]}</div>`;
+        }
+      });
+      chipBar.innerHTML = chipsHtml;
+
+      // Filtreleme
+      let filtered = allRaw.filter(it => {
+        if (selectedFiltersTimeline.size === 0) return true;
+        return selectedFiltersTimeline.has(it.filterAccount) || selectedFiltersTimeline.has(it.filterCategory);
+      });
+
+      // Günleri Grupla (Mevcut Ay ve Gelecek Ay ayrı anahtarlanır)
+      let currentMonthGroups = {};
+      let nextMonthGroups = {};
+      let totalExpenseEUR = 0, totalIncomeEUR = 0, totalTRY = 0;
+
+      filtered.forEach(it => {
+        let dInfo = extractDayAndDateInfo(it);
+        if (!dInfo) return;
+
+        let targetDict = it.isNextMonth ? nextMonthGroups : currentMonthGroups;
+        let dayKey = dInfo.dayNum;
+
+        if (!targetDict[dayKey]) {
+          targetDict[dayKey] = { dayNum: dInfo.dayNum, dayStr: dInfo.dayStr, dayName: dInfo.dayName, netEur: 0, items: [] };
+        }
+
+        let numAmt = (it.srcType === 'tr') ? (it.eurVal || 0) : parseAmountToNum(it.amount);
+        if (it.isIncome) {
+          targetDict[dayKey].netEur += numAmt;
+          totalIncomeEUR += numAmt;
+        } else {
+          targetDict[dayKey].netEur -= numAmt;
+          totalExpenseEUR += numAmt;
+        }
+
+        if (it.srcType === 'tr') totalTRY += (it.tryVal || parseAmountToNum(it.amount));
+        targetDict[dayKey].items.push({ ...it, calculatedEur: numAmt });
+      });
+
+      function renderGroupList(groupsDict, prefix) {
+        let sorted = Object.values(groupsDict).sort((a,b) => a.dayNum - b.dayNum);
+        let outHtml = '';
+        sorted.forEach((grp, idx) => {
+          let bodyId = `main-timeline-cal-day-body-${prefix}-${idx}`;
+          let isNetPos = grp.netEur >= 0;
+          let sign = isNetPos ? '+' : '-';
+          let formattedTot = "€" + Math.abs(grp.netEur).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          let color = isNetPos ? 'var(--green)' : 'var(--red)';
+
+          outHtml += `
+            <div class="calendar-timeline-card">
+              <div class="calendar-day-header" onclick="toggleCalendarDayBody('${bodyId}', 'main-timeline')">
+                <div class="calendar-day-badge">
+                  <span class="calendar-day-num">${grp.dayStr}</span>
+                  <span class="calendar-day-name">(${grp.dayName})</span>
+                </div>
+                <div class="calendar-day-total" style="color:${color}">
+                  <span>${sign}${formattedTot}</span>
+                  <span style="font-size:10px; color:var(--text-dim);">▼</span>
+                </div>
+              </div>
+              <div class="calendar-day-body" id="${bodyId}">
+          `;
+
+          grp.items.forEach(it => {
+            let itemDesc = it.merchant || 'Açıklamasız';
+            let itemAccount = it.card || (it.srcType === 'tr' ? 'TR Ödeme' : (it.isIncome ? 'Gelir' : 'Diğer Gider'));
+            let itemColor = it.isIncome ? 'var(--green)' : 'var(--red)';
+            let itemSign = it.isIncome ? '+' : '-';
+
+            let amountsHtml = '';
+            if (it.srcType === 'tr') {
+              amountsHtml = `
+                <div class="cal-item-primary-amt" style="color:${itemColor}">${itemSign}€${(it.calculatedEur || 0).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <div class="cal-item-secondary-amt">(-${formatAmount(it.amount)})</div>
+              `;
+            } else {
+              amountsHtml = `<div class="cal-item-primary-amt" style="color:${itemColor}">${itemSign}${formatAmount(it.amount)}</div>`;
+            }
+
+            outHtml += `
+              <div class="cal-item-row">
+                <div class="cal-item-left">
+                  <div class="cal-item-tag-box"><span class="template-tag tag-${it.srcType}">${it.typeTag}</span></div>
+                  <div class="cal-item-col">
+                    <div class="cal-item-desc">${itemDesc}</div>
+                    <div class="cal-item-sub">${itemAccount}</div>
+                  </div>
+                </div>
+                <div class="cal-item-right">${amountsHtml}</div>
+              </div>
+            `;
+          });
+
+          outHtml += `</div></div>`;
+        });
+        return outHtml;
+      }
+
+      let html = '';
+      let curHtml = renderGroupList(currentMonthGroups, 'cur');
+      let nextHtml = renderGroupList(nextMonthGroups, 'next');
+
+      if (!curHtml && !nextHtml) {
+        html = '<div style="text-align:center; padding:30px; color:var(--text-dim);">Filtreye uygun kayıt bulunamadı.</div>';
+      } else {
+        html += curHtml;
+        if (nextHtml) {
+          // İkonuz, sade ve şık ay ayracı
+          html += `
+            <div style="text-align:center; margin: 18px 0 12px 0; font-size:12px; font-weight:700; color:var(--purple); letter-spacing:0.5px;">
+              ━━━━ Gelecek Ay (${nextMonthLabel}) ━━━━
+            </div>
+          `;
+          html += nextHtml;
+        }
+      }
+
+      // Alt Toplam Kartı
+      let netAll = totalIncomeEUR - totalExpenseEUR;
+      let netSign = netAll >= 0 ? '+' : '-';
+      let netColor = netAll >= 0 ? 'var(--green)' : 'var(--red)';
+      let isOnlyTR = (selectedFiltersTimeline.size === 1 && selectedFiltersTimeline.has('tr'));
+
+      let trSub = (isOnlyTR && totalTRY > 0) 
+        ? `<span style="font-size:11px; color:var(--text-dim);">(-₺${totalTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})})</span>` 
+        : '';
+
+      html += `
+        <div class="calendar-summary-bottom-card" style="margin-bottom: 20px;">
+          <div class="calendar-summary-title">
+            <span>Ajanda Genel Toplamı:</span>
+            <span style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-top:2px;">
+              Gelir: <b style="color:var(--green);">+€${totalIncomeEUR.toLocaleString("de-DE", {minimumFractionDigits: 2})}</b> • 
+              Gider: <b style="color:var(--red);">-€${totalExpenseEUR.toLocaleString("de-DE", {minimumFractionDigits: 2})}</b>
+            </span>
+          </div>
+          <div class="calendar-summary-amounts">
+            <span style="font-size:16px; font-weight:800; color:${netColor}; font-variant-numeric:tabular-nums;">
+              ${netSign}€${Math.abs(netAll).toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            </span>
+            ${trSub}
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = html;
     }
 
     function onFilterChange() {
