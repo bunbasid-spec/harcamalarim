@@ -635,6 +635,13 @@
     .type-btn#btnTypeDebtGive.active { background: var(--red); color: #ffffff; }
     .type-btn#btnTypeDebtGet.active { background: var(--green); color: #0f172a; }
 
+    body.theme-next-month, html.theme-next-month {
+      background-color: #171126 !important;
+    }
+    body.theme-past-month, html.theme-past-month {
+      background-color: #21150c !important;
+    }
+    
     .form-group { 
       margin-bottom: 12px; 
       width: 100%; 
@@ -3733,6 +3740,7 @@
       }
     }
 
+
     function onFilterChange() {
       if (currentModule === 'budget') {
         const select = document.getElementById('sheetSelect');
@@ -3744,21 +3752,31 @@
         const bannerText = document.getElementById('pastMonthBannerText');
         const bannerIcon = document.getElementById('bannerIcon');
 
+        // Önce tüm tematik arka plan sınıflarını temizle
+        document.body.classList.remove('theme-next-month', 'theme-past-month');
+        document.documentElement.classList.remove('theme-next-month', 'theme-past-month');
         select.classList.remove('past-month-warning', 'next-month-theme');
         bannerPill.classList.remove('next-theme');
 
         if (sheet === "Gelecek Ay") {
+          // Gelecek Ay: Çok hafif mor zemin
+          document.body.classList.add('theme-next-month');
+          document.documentElement.classList.add('theme-next-month');
           select.classList.add('next-month-theme');
           bannerIcon.innerText = "🔮";
           bannerText.innerText = "Gelecek Ay Hazırlığı";
           bannerPill.classList.add('next-theme');
           bannerContainer.style.display = 'flex';
         } else if (sheet !== "Mevcut Ay") {
+          // Geçmiş Aylar: Çok hafif turuncu/kehribar zemin
+          document.body.classList.add('theme-past-month');
+          document.documentElement.classList.add('theme-past-month');
           select.classList.add('past-month-warning');
           bannerIcon.innerText = "⚠️";
           bannerText.innerText = `${sheet} İnceleniyor`;
           bannerContainer.style.display = 'flex';
         } else {
+          // Mevcut Ay: Standart orijinal koyu zemin
           bannerContainer.style.display = 'none';
         }
 
@@ -3779,9 +3797,14 @@
           .catch(err => console.error("Ay verisi alınamadı:", err))
           .finally(() => resetPullIndicator());
       } else {
+        // Borçlar modülüne geçilirse arka planı sıfırla
+        document.body.classList.remove('theme-next-month', 'theme-past-month');
+        document.documentElement.classList.remove('theme-next-month', 'theme-past-month');
         loadDebtsData();
       }
     }
+
+       
 
     async function loadDebtsData() {
       const isArchive = document.getElementById('sheetSelect').value === 'archive';
