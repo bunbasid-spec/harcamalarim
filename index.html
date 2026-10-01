@@ -5089,24 +5089,46 @@
           return;
         }
 
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-        if (scrollTop <= 5) {
+        // Timeline modunda iç liste scroll durumunu, diğer modlarda ana sayfa scroll durumunu kontrol et
+        let isAtVeryTop = false;
+        if (currentModule === 'timeline') {
+          const listCont = document.getElementById('timelineListContainer');
+          isAtVeryTop = listCont ? (listCont.scrollTop <= 5) : false;
+        } else {
+          const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+          isAtVeryTop = (scrollTop <= 5);
+        }
+
+        if (isAtVeryTop) {
           touchStartY = e.touches[0].clientY;
           isPulling = true;
         } else {
           isPulling = false;
+          touchStartY = 0;
         }
       }, { passive: true });
 
       document.addEventListener('touchmove', e => {
         if (!isPulling || touchStartY === 0) return;
+
+        // Hareket esnasında liste aşağı kaymışsa çekmeyi anında iptal et
+        if (currentModule === 'timeline') {
+          const listCont = document.getElementById('timelineListContainer');
+          if (listCont && listCont.scrollTop > 5) {
+            resetPullIndicator();
+            isPulling = false;
+            return;
+          }
+        }
+
         let currentY = e.touches[0].clientY;
         let distance = currentY - touchStartY;
 
-        if (distance > 0) {
-          let pullOffset = Math.min(80, distance * 0.45);
+        // Sadece aşağı doğru kararlı bir çekme varsa oku göster
+        if (distance > 15) {
+          let pullOffset = Math.min(80, (distance - 15) * 0.4);
           appContent.style.transform = `translateY(${pullOffset}px)`;
-          let scale = Math.min(1, distance / 70);
+          let scale = Math.min(1, (distance - 15) / 80);
           pullIndicator.style.opacity = scale;
           pullIndicator.style.transform = `translateX(-50%) scale(${scale})`;
           pullIndicator.innerHTML = '↓';
@@ -5118,11 +5140,17 @@
         let touchEndY = e.changedTouches[0].clientY;
         let distance = touchEndY - touchStartY;
 
-        if (distance > 70) {
+        // Yanlışlıkla tetiklenmemesi için çekme eşiği 95px yapıldı
+        if (distance > 95) {
           appContent.style.transform = 'translateY(60px)';
           pullIndicator.innerHTML = '↻';
           pullIndicator.classList.add('rotating');
-          onFilterChange();
+          
+          if (currentModule === 'timeline') {
+            loadAndRenderMainTimeline();
+          } else {
+            onFilterChange();
+          }
         } else {
           resetPullIndicator();
         }
