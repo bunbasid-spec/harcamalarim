@@ -3794,16 +3794,14 @@
           // Gelecek Ay: Mor sol çizgi + mor tema rozeti
           if (edge) edge.className = 'next-month';
           select.classList.add('next-month-theme');
-          bannerIcon.innerText = "🔮";
-          bannerText.innerText = "Gelecek Ay Hazırlığı";
+          bannerText.innerText = "Gelecek Ay Hazırlığı  /  ";
           bannerPill.classList.add('next-theme');
           bannerContainer.style.display = 'flex';
         } else if (sheet !== "Mevcut Ay") {
           // Geçmiş Ay: Turuncu sol çizgi + turuncu uyarı rozeti
           if (edge) edge.className = 'past-month';
           select.classList.add('past-month-warning');
-          bannerIcon.innerText = "⚠️";
-          bannerText.innerText = `${sheet} İnceleniyor`;
+          bannerText.innerText = `${sheet} İnceleniyor  /  `;
           bannerContainer.style.display = 'flex';
         } else {
           // Mevcut Ay: Kenar çizgisi gizli, standart görünüm
