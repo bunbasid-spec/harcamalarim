@@ -635,11 +635,27 @@
     .type-btn#btnTypeDebtGive.active { background: var(--red); color: #ffffff; }
     .type-btn#btnTypeDebtGet.active { background: var(--green); color: #0f172a; }
 
-    body.theme-next-month, html.theme-next-month {
-      background-color: #322250 !important;
+    /* SOL KENAR DURUM ŞERİDİ */
+    #edgeIndicator {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 4px;
+      z-index: 160;
+      pointer-events: none;
+      display: none;
+      transition: background-color 0.25s ease, box-shadow 0.25s ease;
     }
-    body.theme-past-month, html.theme-past-month {
-      background-color: #2c1f15 !important;
+    #edgeIndicator.next-month {
+      display: block;
+      background-color: var(--purple);
+      box-shadow: 2px 0 10px rgba(168, 85, 247, 0.45);
+    }
+    #edgeIndicator.past-month {
+      display: block;
+      background-color: var(--orange);
+      box-shadow: 2px 0 10px rgba(245, 158, 11, 0.45);
     }
     
     .form-group { 
@@ -1070,6 +1086,7 @@
 </head>
 <body>
 
+  <div id="edgeIndicator"></div>
   <div class="status-bar-shield"></div>
   <div id="pullIndicator">↓</div>
 
@@ -3723,6 +3740,9 @@
       document.getElementById('viewBudget').style.display = (mod === 'budget') ? 'block' : 'none';
       document.getElementById('viewDebts').style.display = (mod === 'debts') ? 'block' : 'none';
 
+      const edge = document.getElementById('edgeIndicator');
+      if (edge && mod !== 'budget') edge.className = '';
+      
       const select = document.getElementById('sheetSelect');
       if (mod === 'budget') {
         fetchInitialData();
@@ -3751,32 +3771,30 @@
         const bannerPill = document.getElementById('pastMonthBannerPill');
         const bannerText = document.getElementById('pastMonthBannerText');
         const bannerIcon = document.getElementById('bannerIcon');
+        const edge = document.getElementById('edgeIndicator');
 
-        // Önce tüm tematik arka plan sınıflarını temizle
-        document.body.classList.remove('theme-next-month', 'theme-past-month');
-        document.documentElement.classList.remove('theme-next-month', 'theme-past-month');
+        // Önceki sınıfları temizle
         select.classList.remove('past-month-warning', 'next-month-theme');
         bannerPill.classList.remove('next-theme');
+        if (edge) edge.className = '';
 
         if (sheet === "Gelecek Ay") {
-          // Gelecek Ay: Çok hafif mor zemin
-          document.body.classList.add('theme-next-month');
-          document.documentElement.classList.add('theme-next-month');
+          // Gelecek Ay: Mor sol çizgi + mor tema rozeti
+          if (edge) edge.className = 'next-month';
           select.classList.add('next-month-theme');
           bannerIcon.innerText = "🔮";
           bannerText.innerText = "Gelecek Ay Hazırlığı";
           bannerPill.classList.add('next-theme');
           bannerContainer.style.display = 'flex';
         } else if (sheet !== "Mevcut Ay") {
-          // Geçmiş Aylar: Çok hafif turuncu/kehribar zemin
-          document.body.classList.add('theme-past-month');
-          document.documentElement.classList.add('theme-past-month');
+          // Geçmiş Ay: Turuncu sol çizgi + turuncu uyarı rozeti
+          if (edge) edge.className = 'past-month';
           select.classList.add('past-month-warning');
           bannerIcon.innerText = "⚠️";
           bannerText.innerText = `${sheet} İnceleniyor`;
           bannerContainer.style.display = 'flex';
         } else {
-          // Mevcut Ay: Standart orijinal koyu zemin
+          // Mevcut Ay: Kenar çizgisi gizli, standart görünüm
           bannerContainer.style.display = 'none';
         }
 
@@ -3797,14 +3815,12 @@
           .catch(err => console.error("Ay verisi alınamadı:", err))
           .finally(() => resetPullIndicator());
       } else {
-        // Borçlar modülüne geçilirse arka planı sıfırla
-        document.body.classList.remove('theme-next-month', 'theme-past-month');
-        document.documentElement.classList.remove('theme-next-month', 'theme-past-month');
+        const edge = document.getElementById('edgeIndicator');
+        if (edge) edge.className = '';
         loadDebtsData();
       }
     }
 
-       
 
     async function loadDebtsData() {
       const isArchive = document.getElementById('sheetSelect').value === 'archive';
