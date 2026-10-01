@@ -2675,70 +2675,71 @@
     }
 
     /* =========================================================
-   AJANDA ÇİPLERİ İÇİN UZUN BASMA (TERS SEÇİM / HARİÇ TUTMA)
-   ========================================================= */
+       AJANDA ÇİPLERİ İÇİN UZUN BASMA (TERS SEÇİM / HARİÇ TUTMA)
+       ========================================================= */
     (function setupAgendaLongPressExclude() {
-      const filterContainers = [
-        '#agendaFilters',           // Likidite / Ay İçi Kontrol filtre konteyneri
-        '#pastMonthAgendaFilters',  // Geçmiş Ay Raporu filtre konteyneri
-        '.agenda-chip-group'        // Varsa ortak sınıf
-      ];
-
       let longPressTimer = null;
       let isLongPressTriggered = false;
 
+      function parseChipOnClick(chip) {
+        const onclickAttr = chip.getAttribute('onclick') || '';
+        // toggleCalendarFilterKey('liq', 'sparkasse') formatını yakalar
+        const match = onclickAttr.match(/toggleCalendarFilterKey\s*\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*\)/);
+        if (!match) return null;
+        return { moduleType: match[1], key: match[2] };
+      }
+
       function handleLongPress(targetChip) {
-        const filterType = targetChip.getAttribute('data-filter') || targetChip.dataset.type;
-        // Eğer basılan çip zaten 'all' (Tümü) ise işlem yapma
-        if (!filterType || filterType === 'all') return;
+        const info = parseChipOnClick(targetChip);
+        if (!info || info.key === 'ALL') return;
 
-        const parent = targetChip.closest('.filter-container, .chip-group, [id*="Filters"]');
-        if (!parent) return;
+        const { moduleType, key: excludedKey } = info;
+        let filterSet = (moduleType === 'liq') ? selectedFiltersLiq : ((moduleType === 'ctrl') ? selectedFiltersCtrl : selectedFiltersPast);
 
-        const allChip = parent.querySelector('[data-filter="all"], [data-type="all"]');
-        // Sadece "Tümü" seçiliyken bu ters seçim çalışsın
-        const isAllActive = allChip && (allChip.classList.contains('active') || allChip.classList.contains('selected'));
-        if (!isAllActive) return;
+        // Sadece "Tümü" seçiliyken (yani filterSet boyutu 0 iken) ters seçim çalışır
+        if (filterSet.size !== 0) return;
 
-        // Titreşim desteği (hissiyat için)
+        // O an ekranda var olan tüm çip anahtarlarını topla
+        const parentBar = targetChip.closest('.filter-chip-bar');
+        if (!parentBar) return;
+
+        const allChips = parentBar.querySelectorAll('.filter-chip');
+        const availableKeys = [];
+        allChips.forEach(c => {
+          const cInfo = parseChipOnClick(c);
+          if (cInfo && cInfo.key !== 'ALL') availableKeys.push(cInfo.key);
+        });
+
+        if (availableKeys.length <= 1) return;
+
+        // Dokunsal geri bildirim
         if (navigator.vibrate) navigator.vibrate(40);
 
-        // 1. "Tümü" seçimini kaldır
-        allChip.classList.remove('active', 'selected');
-
-        // 2. Basılı tutulan hariç diğer tüm çipleri aktif yap
-        const chips = parent.querySelectorAll('[data-filter], [data-type]');
-        chips.forEach(chip => {
-          const type = chip.getAttribute('data-filter') || chip.dataset.type;
-          if (type !== 'all') {
-            if (type === filterType) {
-              chip.classList.remove('active', 'selected');
-            } else {
-              chip.classList.add('active', 'selected');
-            }
+        // Basılı tutulan HARİÇ tüm aktif anahtarları Set'e ekle
+        filterSet.clear();
+        availableKeys.forEach(k => {
+          if (k !== excludedKey) {
+            filterSet.add(k);
           }
         });
 
-        // 3. İlgili ajandayı yeniden çiz / filtreyi tetikle
-        triggerAgendaFilterUpdate(parent);
-      }
-
-      function triggerAgendaFilterUpdate(parent) {
-        // Projenizdeki filtreleme tetikleyicilerini çağırır
-        if (typeof applyAgendaFilter === 'function') {
-          applyAgendaFilter();
-        } else if (typeof filterAgendaItems === 'function') {
-          filterAgendaItems();
-        } else if (typeof renderAgendaDashboard === 'function') {
-          renderAgendaDashboard();
-        } else if (typeof renderPastMonthAgenda === 'function') {
-          renderPastMonthAgenda();
+        // İlgili modülün ajandasını yeniden render et
+        if (moduleType === 'liq') {
+          renderLiquidityContent();
+        } else if (moduleType === 'ctrl') {
+          renderControlContent();
+        } else if (moduleType === 'past') {
+          const sheet = document.getElementById('pastReportSheetSelect').value;
+          if (sheet && memoryCache[sheet]) renderPastReportContent(memoryCache[sheet]);
         }
       }
 
       document.addEventListener('touchstart', function(e) {
-        const chip = e.target.closest('[data-filter], [data-type]');
+        const chip = e.target.closest('.filter-chip');
         if (!chip) return;
+
+        const info = parseChipOnClick(chip);
+        if (!info || info.key === 'ALL') return;
 
         isLongPressTriggered = false;
         longPressTimer = setTimeout(() => {
@@ -2752,11 +2753,10 @@
       });
 
       document.addEventListener('touchmove', function(e) {
-        // Kullanıcı ekranı kaydırıyorsa uzun basmayı iptal et
         if (longPressTimer) clearTimeout(longPressTimer);
       });
 
-      // Tıklama anında eğer uzun basma tetiklendiyse normal tıklamayı yut
+      // Uzun basma tetiklendiğinde normal tıklamanın çalışmasını engelle
       document.addEventListener('click', function(e) {
         if (isLongPressTriggered) {
           e.preventDefault();
@@ -5151,51 +5151,6 @@
       });
       loadDebtsData();
     }
-
-    async function submitMoveMonthEntry() {
-      const select = document.getElementById('sheetSelect');
-      const currentSheet = select ? select.value : "Mevcut Ay";
-      const isMovingToNext = (currentSheet === "Mevcut Ay");
-
-      const confirmMsg = isMovingToNext
-        ? "Bu harcama Mevcut Ay'dan silinip Gelecek Ay'a (Erken Harcama olarak) taşınsın mı?"
-        : "Bu harcama Gelecek Ay'dan silinip Mevcut Ay'a geri taşınsın mı? (-EH notu silinecektir)";
-
-      if (!confirm(confirmMsg)) return;
-
-      const rawDate = document.getElementById('mDate').value;
-      let dateFormatted = "";
-      if (rawDate) {
-        const p = rawDate.split("-");
-        dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
-      }
-
-      const payload = {
-        date: dateFormatted,
-        amount: document.getElementById('mAmount').value,
-        merchant: document.getElementById('mDesc').value.trim(),
-        card: document.getElementById('mAccount').value
-      };
-
-      const type = modalSelectedType;
-      const targetRowIndex = editingBudgetRowIndex;
-
-      closeModal('modalBudget');
-
-      // Her iki ayın da önbelleğini temizle
-      delete memoryCache["Mevcut Ay"];
-      delete memoryCache["Gelecek Ay"];
-
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'moveBudgetItem',
-          sourceSheet: currentSheet,
-          type: type,
-          rowIndex: targetRowIndex,
-          payload: payload
-        })
-      });
 
       onFilterChange();
     }
