@@ -2674,6 +2674,98 @@
       container.innerHTML = html;
     }
 
+    /* =========================================================
+   AJANDA ÇİPLERİ İÇİN UZUN BASMA (TERS SEÇİM / HARİÇ TUTMA)
+   ========================================================= */
+    (function setupAgendaLongPressExclude() {
+      const filterContainers = [
+        '#agendaFilters',           // Likidite / Ay İçi Kontrol filtre konteyneri
+        '#pastMonthAgendaFilters',  // Geçmiş Ay Raporu filtre konteyneri
+        '.agenda-chip-group'        // Varsa ortak sınıf
+      ];
+
+      let longPressTimer = null;
+      let isLongPressTriggered = false;
+
+      function handleLongPress(targetChip) {
+        const filterType = targetChip.getAttribute('data-filter') || targetChip.dataset.type;
+        // Eğer basılan çip zaten 'all' (Tümü) ise işlem yapma
+        if (!filterType || filterType === 'all') return;
+
+        const parent = targetChip.closest('.filter-container, .chip-group, [id*="Filters"]');
+        if (!parent) return;
+
+        const allChip = parent.querySelector('[data-filter="all"], [data-type="all"]');
+        // Sadece "Tümü" seçiliyken bu ters seçim çalışsın
+        const isAllActive = allChip && (allChip.classList.contains('active') || allChip.classList.contains('selected'));
+        if (!isAllActive) return;
+
+        // Titreşim desteği (hissiyat için)
+        if (navigator.vibrate) navigator.vibrate(40);
+
+        // 1. "Tümü" seçimini kaldır
+        allChip.classList.remove('active', 'selected');
+
+        // 2. Basılı tutulan hariç diğer tüm çipleri aktif yap
+        const chips = parent.querySelectorAll('[data-filter], [data-type]');
+        chips.forEach(chip => {
+          const type = chip.getAttribute('data-filter') || chip.dataset.type;
+          if (type !== 'all') {
+            if (type === filterType) {
+              chip.classList.remove('active', 'selected');
+            } else {
+              chip.classList.add('active', 'selected');
+            }
+          }
+        });
+
+        // 3. İlgili ajandayı yeniden çiz / filtreyi tetikle
+        triggerAgendaFilterUpdate(parent);
+      }
+
+      function triggerAgendaFilterUpdate(parent) {
+        // Projenizdeki filtreleme tetikleyicilerini çağırır
+        if (typeof applyAgendaFilter === 'function') {
+          applyAgendaFilter();
+        } else if (typeof filterAgendaItems === 'function') {
+          filterAgendaItems();
+        } else if (typeof renderAgendaDashboard === 'function') {
+          renderAgendaDashboard();
+        } else if (typeof renderPastMonthAgenda === 'function') {
+          renderPastMonthAgenda();
+        }
+      }
+
+      document.addEventListener('touchstart', function(e) {
+        const chip = e.target.closest('[data-filter], [data-type]');
+        if (!chip) return;
+
+        isLongPressTriggered = false;
+        longPressTimer = setTimeout(() => {
+          isLongPressTriggered = true;
+          handleLongPress(chip);
+        }, 450);
+      }, { passive: true });
+
+      document.addEventListener('touchend', function(e) {
+        if (longPressTimer) clearTimeout(longPressTimer);
+      });
+
+      document.addEventListener('touchmove', function(e) {
+        // Kullanıcı ekranı kaydırıyorsa uzun basmayı iptal et
+        if (longPressTimer) clearTimeout(longPressTimer);
+      });
+
+      // Tıklama anında eğer uzun basma tetiklendiyse normal tıklamayı yut
+      document.addEventListener('click', function(e) {
+        if (isLongPressTriggered) {
+          e.preventDefault();
+          e.stopPropagation();
+          isLongPressTriggered = false;
+        }
+      }, true);
+    })();
+
     // =========================================================
     // LİKİDİTE PLANLAMASI RENDER (ÖZET | AJANDA | PLAN)
     // =========================================================
