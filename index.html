@@ -3523,16 +3523,29 @@
       const select = document.getElementById('sheetSelect');
       const currentActiveSheet = select ? select.value : "Mevcut Ay";
 
-      let sourceTitle = "Ağustos 2026 Kayıtları";
-      let targetText = "Seçilenleri Ekle";
+      // Geçmiş bir aydaysak aktarımı engelle
+      if (currentActiveSheet !== "Mevcut Ay" && currentActiveSheet !== "Gelecek Ay") {
+        alert("Geçmiş aylara kayıt aktarımı yapılamaz.\nLütfen 'Mevcut Ay' veya 'Gelecek Ay' sayfasına geçin.");
+        return;
+      }
 
+      const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+      const now = new Date();
+      const currentMonthText = `${now.getFullYear()} ${monthNames[now.getMonth()]}`;
+
+      // En son arşivlenen ayın adı
       const pastMonthsList = availableSheets.filter(s => s !== "Mevcut Ay" && s !== "Gelecek Ay");
-      const latestArchivedMonth = pastMonthsList.length > 0 ? pastMonthsList[0] : (localStorage.getItem('cache_template_name') || "Ağustos 2026");
+      const latestArchivedMonth = pastMonthsList.length > 0 ? pastMonthsList[0] : (localStorage.getItem('cache_template_name') || "Geçen Ay");
+
+      let sourceTitle = "";
+      let targetText = "";
 
       if (currentActiveSheet === "Gelecek Ay") {
-        sourceTitle = "Eylül 2026 Kayıtları";
+        // Gelecek Ay'daysak kaynak MEVCUT AY'dır (Örn: 2026 Ekim Kayıtları)
+        sourceTitle = `${currentMonthText} Kayıtları`;
         targetText = "Seçilenleri Gelecek Ay'a Ekle";
       } else {
+        // Mevcut Ay'daysak kaynak ARŞİVDEKİ SON AYDIR (Örn: 2026 Eylül Kayıtları)
         sourceTitle = `${latestArchivedMonth} Kayıtları`;
         targetText = "Seçilenleri Mevcut Ay'a Ekle";
       }
@@ -3577,6 +3590,7 @@
       }
     }
 
+    
     function renderTemplateItems(items) {
       const container = document.getElementById('templateItemsContainer');
       container.innerHTML = '';
