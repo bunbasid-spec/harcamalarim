@@ -4213,15 +4213,16 @@
       container.innerHTML = html;
       updateToggleAllButtonState('main-timeline');
 
-      // Ödenmişler açıldığında ekranı doğrudan Mevcut Ay'ın başına odakla
-      // Böylece kullanıcı ekranı yukarı çektiğinde geçmiş ay görünür!
+      // Ödenmişler açıldığında sayfayı yukarı zıplatmadan sadece iç listeyi hizala
       if (showPaid && pastHtml) {
         setTimeout(() => {
           const anchor = document.getElementById('timelineCurrentMonthAnchor');
-          if (anchor) {
-            anchor.scrollIntoView({ behavior: 'instant', block: 'start' });
+          const listCont = document.getElementById('timelineListContainer');
+          if (anchor && listCont) {
+            // Pencereyi sarsmadan, sadece iç kapsayıcının scroll pozisyonunu ayarlar
+            listCont.scrollTop = anchor.offsetTop - listCont.offsetTop;
           }
-        }, 50);
+        }, 30);
       }
     }
 
