@@ -3960,6 +3960,7 @@
 
       const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
       const now = new Date();
+      const currentMonthLabel = `${now.getFullYear()} ${monthNames[now.getMonth()]}`;
       const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
       const nextMonthLabel = `${nextMonthDate.getFullYear()} ${monthNames[nextMonthDate.getMonth()]}`;
 
@@ -4004,7 +4005,7 @@
         ...collectItems(nextData, 'next')
       ];
 
-      // Çip Filtreleri
+      // Çip Filtrelerini Hazırla
       const filterMetadata = {
         sparkasse: "Sparkasse", n26: "N26", c24: "C24",
         nakit: "Nakit", tr: "TR", card: "Kart", income: "Gelir", other: "Diğer"
@@ -4020,13 +4021,12 @@
       });
       chipBar.innerHTML = chipsHtml;
 
-      // Filtreleme
+      // Filtre Uygula
       let filtered = allRaw.filter(it => {
         if (selectedFiltersTimeline.size === 0) return true;
         return selectedFiltersTimeline.has(it.filterAccount) || selectedFiltersTimeline.has(it.filterCategory);
       });
 
-      // Gruplama (Geçmiş Ay, Mevcut Ay, Gelecek Ay)
       let pastMonthGroups = {};
       let curMonthGroups = {};
       let nextMonthGroups = {};
@@ -4124,25 +4124,40 @@
       if (!pastHtml && !curHtml && !nextHtml) {
         html = '<div style="text-align:center; padding:30px; color:var(--text-dim);">Filtreye uygun kayıt bulunamadı.</div>';
       } else {
+        // 1. GEÇMİŞ AY BÖLÜMÜ (Varsa en üstte)
         if (pastHtml) {
           html += `
-            <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin: 10px 0 14px 0;">
+            <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin: 4px 0 10px 0;">
               <div style="flex:1; height:1px; background:var(--border);"></div>
-              <span style="font-size:13px; font-weight:700; color:var(--orange); letter-spacing:0.3px; white-space:nowrap;">Geçmiş Ay (${latestPastSheet})</span>
+              <span style="font-size:12px; font-weight:700; color:var(--text-dim); letter-spacing:0.3px; white-space:nowrap;">Geçmiş Ay (${latestPastSheet})</span>
               <div style="flex:1; height:1px; background:var(--border);"></div>
             </div>
           `;
           html += pastHtml;
         }
 
+        // 2. MEVCUT AY BAŞLANGIÇ ÇIPASI (Scroll Hedefi)
+        html += `<div id="timelineCurrentMonthAnchor"></div>`;
+
+        // Eğer geçmiş ay varsa, araya Mevcut Ay ayracı koy
+        if (pastHtml && curHtml) {
+          html += `
+            <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin: 16px 0 10px 0;">
+              <div style="flex:1; height:1px; background:var(--border);"></div>
+              <span style="font-size:12px; font-weight:700; color:var(--text-dim); letter-spacing:0.3px; white-space:nowrap;">Mevcut Ay (${currentMonthLabel})</span>
+              <div style="flex:1; height:1px; background:var(--border);"></div>
+            </div>
+          `;
+        }
+
         html += curHtml;
 
+        // 3. GELECEK AY BÖLÜMÜ (Kart çerçevesi renginde çizgi ve yazı)
         if (nextHtml) {
-          // İki kartı tam ortalayan, kart çerçevesi renginde çizgilere sahip ayraç
           html += `
-            <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin: 18px 0 14px 0;">
+            <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin: 18px 0 10px 0;">
               <div style="flex:1; height:1px; background:var(--border);"></div>
-              <span style="font-size:13px; font-weight:700; color:var(--purple); letter-spacing:0.3px; white-space:nowrap;">Gelecek Ay (${nextMonthLabel})</span>
+              <span style="font-size:12px; font-weight:700; color:var(--text-dim); letter-spacing:0.3px; white-space:nowrap;">Gelecek Ay (${nextMonthLabel})</span>
               <div style="flex:1; height:1px; background:var(--border);"></div>
             </div>
           `;
@@ -4180,6 +4195,17 @@
 
       container.innerHTML = html;
       updateToggleAllButtonState('main-timeline');
+
+      // Ödenmişler açıldığında ekranı doğrudan Mevcut Ay'ın başına odakla
+      // Böylece kullanıcı ekranı yukarı çektiğinde geçmiş ay görünür!
+      if (showPaid && pastHtml) {
+        setTimeout(() => {
+          const anchor = document.getElementById('timelineCurrentMonthAnchor');
+          if (anchor) {
+            anchor.scrollIntoView({ behavior: 'instant', block: 'start' });
+          }
+        }, 50);
+      }
     }
 
     function onFilterChange() {
