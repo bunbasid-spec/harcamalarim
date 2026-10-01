@@ -1311,8 +1311,9 @@
 
       <div class="modal-actions">
         <button type="button" class="btn-submit" id="btnBudgetSubmit" onclick="submitBudgetEntry()">Kaydet</button>
+        <button type="button" id="btnMoveMonthAction" style="display:none; width:100%; font-weight:700; padding:12px; border-radius:10px; border:none; font-size:14px; cursor:pointer;" onclick="submitMoveMonthEntry()"></button>
         <button type="button" class="btn-cancel" onclick="closeModal('modalBudget')">Kapat</button>
-      </div>
+      </div>       
     </div>
   </div>
 
@@ -3508,10 +3509,61 @@
       document.getElementById('mAmount').value = '';
       document.getElementById('mDesc').value = '';
       document.getElementById('mAccount').value = '';
+      document.getElementById('btnMoveMonthAction').style.display = 'none';
       setModalType(activeBudgetTab || 'card');
       openModalWithScrollLock('modalBudget');
     }
 
+
+    async function submitMoveMonthEntry() {
+      const select = document.getElementById('sheetSelect');
+      const currentSheet = select ? select.value : "Mevcut Ay";
+      const isMovingToNext = (currentSheet === "Mevcut Ay");
+
+      const confirmMsg = isMovingToNext
+        ? "Bu harcama Mevcut Ay'dan silinip Gelecek Ay'a (Erken Harcama olarak) taşınsın mı?"
+        : "Bu harcama Gelecek Ay'dan silinip Mevcut Ay'a geri taşınsın mı? (-EH notu silinecektir)";
+
+      if (!confirm(confirmMsg)) return;
+
+      const rawDate = document.getElementById('mDate').value;
+      let dateFormatted = "";
+      if (rawDate) {
+        const p = rawDate.split("-");
+        dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
+      }
+
+      const payload = {
+        date: dateFormatted,
+        amount: document.getElementById('mAmount').value,
+        merchant: document.getElementById('mDesc').value.trim(),
+        card: document.getElementById('mAccount').value
+      };
+
+      const type = modalSelectedType;
+      const targetRowIndex = editingBudgetRowIndex;
+
+      closeModal('modalBudget');
+
+      // Her iki ayın da önbelleğini temizle
+      delete memoryCache["Mevcut Ay"];
+      delete memoryCache["Gelecek Ay"];
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'moveBudgetItem',
+          sourceSheet: currentSheet,
+          type: type,
+          rowIndex: targetRowIndex,
+          payload: payload
+        })
+      });
+
+      onFilterChange();
+    }
+
+    
     // =========================================================
     // ŞABLON AKTARIMI (DİNAMİK AY ADI & KARTLARI ELEME KURALI)
     // =========================================================
@@ -4096,6 +4148,25 @@
       document.getElementById('mDesc').value = rawMerchant;
       document.getElementById('mAccount').value = item.card || "";
 
+      // Ay Taşıma Butonunun Durumunu Ayarla
+      const currentSheet = document.getElementById('sheetSelect').value || "Mevcut Ay";
+      const moveBtn = document.getElementById('btnMoveMonthAction');
+
+      if (currentSheet === "Mevcut Ay") {
+        moveBtn.innerText = "Gelecek Aya Taşı";
+        moveBtn.style.background = "var(--purple)";
+        moveBtn.style.color = "#ffffff";
+        moveBtn.style.display = "block";
+      } else if (currentSheet === "Gelecek Ay") {
+        moveBtn.innerText = "Geçmiş Aya Taşı";
+        moveBtn.style.background = "#334155";
+        moveBtn.style.color = "var(--orange)";
+        moveBtn.style.border = "1px solid var(--orange)";
+        moveBtn.style.display = "block";
+      } else {
+        moveBtn.style.display = "none";
+      }
+      
       openModalWithScrollLock('modalBudget');
     }
 
