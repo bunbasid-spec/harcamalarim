@@ -2334,13 +2334,16 @@
 
     function updateToggleAllButtonState(moduleType) {
       const bodies = document.querySelectorAll(`[id^="${moduleType}-cal-day-body-"]`);
-      const btn = document.getElementById(`${moduleType}-btn-toggle-all`);
+      let btnId = `${moduleType}-btn-toggle-all`;
+      if (moduleType === 'main-timeline') btnId = 'timeline-btn-toggle-all';
+      
+      const btn = document.getElementById(btnId);
       if (!btn || bodies.length === 0) return;
 
       const anyOpen = Array.from(bodies).some(b => b.classList.contains('open'));
       btn.innerText = anyOpen ? "Tümünü Kapat ▲" : "Tümünü Aç ▼";
     }
-
+    
     function toggleAllCalendarBodies(moduleType) {
       const bodies = document.querySelectorAll(`[id^="${moduleType}-cal-day-body-"]`);
       if (bodies.length === 0) return;
@@ -2743,6 +2746,7 @@
           }
         });
 
+        // İlgili modülün ajandasını yeniden render et
         if (moduleType === 'liq') {
           renderLiquidityContent();
         } else if (moduleType === 'ctrl') {
@@ -2750,6 +2754,8 @@
         } else if (moduleType === 'past') {
           const sheet = document.getElementById('pastReportSheetSelect').value;
           if (sheet && memoryCache[sheet]) renderPastReportContent(memoryCache[sheet]);
+        } else if (moduleType === 'timeline') {
+          renderMainTimelineView();
         }
       }
 
@@ -3908,7 +3914,7 @@
       const container = document.getElementById('timelineListContainer');
       container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-dim);">Ajanda hazırlanıyor...</div>';
 
-      // Mevcut Ay ve Gelecek Ay verilerini hazırla
+      // 1. Mevcut ve Gelecek Ay'ı yükle
       if (!memoryCache["Mevcut Ay"]) {
         try {
           const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent("Mevcut Ay")}`);
@@ -3919,6 +3925,16 @@
         try {
           const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent("Gelecek Ay")}`);
           memoryCache["Gelecek Ay"] = await res.json();
+        } catch(e){}
+      }
+
+      // 2. Ödenmişler için en son geçmiş ayı yükle
+      const pastMonths = availableSheets.filter(s => s !== "Mevcut Ay" && s !== "Gelecek Ay");
+      const latestPastSheet = pastMonths.length > 0 ? pastMonths[0] : null;
+      if (latestPastSheet && !memoryCache[latestPastSheet]) {
+        try {
+          const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(latestPastSheet)}`);
+          memoryCache[latestPastSheet] = await res.json();
         } catch(e){}
       }
 
@@ -3933,6 +3949,10 @@
       const curData = memoryCache["Mevcut Ay"];
       const nextData = memoryCache["Gelecek Ay"];
 
+      const pastMonths = availableSheets.filter(s => s !== "Mevcut Ay" && s !== "Gelecek Ay");
+      const latestPastSheet = pastMonths.length > 0 ? pastMonths[0] : null;
+      const pastData = (showPaid && latestPastSheet) ? memoryCache[latestPastSheet] : null;
+
       if (!curData) {
         container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--red);">Mevcut ay verisi bulunamadı.</div>';
         return;
@@ -3943,13 +3963,12 @@
       const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
       const nextMonthLabel = `${nextMonthDate.getFullYear()} ${monthNames[nextMonthDate.getMonth()]}`;
 
-      // İki aydan verileri çek ve ay etiketi ekle
-      function collectItems(dataObj, isNextMonth) {
+      function collectItems(dataObj, tag) {
         let items = [];
         if (!dataObj) return items;
 
         if (showPaid) {
-          (dataObj.cardItems || []).forEach(it => items.push({ ...it, srcType: 'card', typeTag: 'KART', isIncome: false, filterCategory: 'card', filterAccount: 'card', isNextMonth }));
+          (dataObj.cardItems || []).forEach(it => items.push({ ...it, srcType: 'card', typeTag: 'KART', isIncome: false, filterCategory: 'card', filterAccount: 'card', monthTag: tag }));
         }
 
         (dataObj.manualItems || []).forEach(it => {
@@ -3961,7 +3980,7 @@
           else if (acc.includes('n26')) filterAcc = 'n26';
           else if (acc.includes('c24')) filterAcc = 'c24';
           else if (acc.includes('nakit') || acc.includes('bar')) filterAcc = 'nakit';
-          items.push({ ...it, srcType: 'manual', typeTag: 'HESAP', isIncome: false, filterCategory: 'manual', filterAccount: filterAcc, isNextMonth });
+          items.push({ ...it, srcType: 'manual', typeTag: 'HESAP', isIncome: false, filterCategory: 'manual', filterAccount: filterAcc, monthTag: tag });
         });
 
         (dataObj.trItems || []).forEach(it => {
@@ -3969,19 +3988,23 @@
           if (!showPaid && !isPending) return;
           let eurVal = parseAmountToNum(it.eurAmount || 0);
           let tryVal = parseAmountToNum(it.amount || 0);
-          items.push({ ...it, srcType: 'tr', typeTag: 'TR KART', isIncome: false, eurVal, tryVal, filterCategory: 'tr', filterAccount: 'tr', isNextMonth });
+          items.push({ ...it, srcType: 'tr', typeTag: 'TR KART', isIncome: false, eurVal, tryVal, filterCategory: 'tr', filterAccount: 'tr', monthTag: tag });
         });
 
         if (showPaid) {
-          (dataObj.incomeItems || []).forEach(it => items.push({ ...it, srcType: 'income', typeTag: 'GELİR', isIncome: true, filterCategory: 'income', filterAccount: 'income', isNextMonth }));
+          (dataObj.incomeItems || []).forEach(it => items.push({ ...it, srcType: 'income', typeTag: 'GELİR', isIncome: true, filterCategory: 'income', filterAccount: 'income', monthTag: tag }));
         }
 
         return items;
       }
 
-      let allRaw = [...collectItems(curData, false), ...collectItems(nextData, true)];
+      let allRaw = [
+        ...collectItems(pastData, 'past'),
+        ...collectItems(curData, 'cur'),
+        ...collectItems(nextData, 'next')
+      ];
 
-      // Çip Filtrelerini Oluştur
+      // Çip Filtreleri
       const filterMetadata = {
         sparkasse: "Sparkasse", n26: "N26", c24: "C24",
         nakit: "Nakit", tr: "TR", card: "Kart", income: "Gelir", other: "Diğer"
@@ -4003,8 +4026,9 @@
         return selectedFiltersTimeline.has(it.filterAccount) || selectedFiltersTimeline.has(it.filterCategory);
       });
 
-      // Günleri Grupla (Mevcut Ay ve Gelecek Ay ayrı anahtarlanır)
-      let currentMonthGroups = {};
+      // Gruplama (Geçmiş Ay, Mevcut Ay, Gelecek Ay)
+      let pastMonthGroups = {};
+      let curMonthGroups = {};
       let nextMonthGroups = {};
       let totalExpenseEUR = 0, totalIncomeEUR = 0, totalTRY = 0;
 
@@ -4012,7 +4036,7 @@
         let dInfo = extractDayAndDateInfo(it);
         if (!dInfo) return;
 
-        let targetDict = it.isNextMonth ? nextMonthGroups : currentMonthGroups;
+        let targetDict = (it.monthTag === 'past') ? pastMonthGroups : ((it.monthTag === 'next') ? nextMonthGroups : curMonthGroups);
         let dayKey = dInfo.dayNum;
 
         if (!targetDict[dayKey]) {
@@ -4093,18 +4117,33 @@
       }
 
       let html = '';
-      let curHtml = renderGroupList(currentMonthGroups, 'cur');
+      let pastHtml = renderGroupList(pastMonthGroups, 'past');
+      let curHtml = renderGroupList(curMonthGroups, 'cur');
       let nextHtml = renderGroupList(nextMonthGroups, 'next');
 
-      if (!curHtml && !nextHtml) {
+      if (!pastHtml && !curHtml && !nextHtml) {
         html = '<div style="text-align:center; padding:30px; color:var(--text-dim);">Filtreye uygun kayıt bulunamadı.</div>';
       } else {
-        html += curHtml;
-        if (nextHtml) {
-          // İkonuz, sade ve şık ay ayracı
+        if (pastHtml) {
           html += `
-            <div style="text-align:center; margin: 18px 0 12px 0; font-size:12px; font-weight:700; color:var(--purple); letter-spacing:0.5px;">
-              ━━━━ Gelecek Ay (${nextMonthLabel}) ━━━━
+            <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin: 10px 0 14px 0;">
+              <div style="flex:1; height:1px; background:var(--border);"></div>
+              <span style="font-size:13px; font-weight:700; color:var(--orange); letter-spacing:0.3px; white-space:nowrap;">Geçmiş Ay (${latestPastSheet})</span>
+              <div style="flex:1; height:1px; background:var(--border);"></div>
+            </div>
+          `;
+          html += pastHtml;
+        }
+
+        html += curHtml;
+
+        if (nextHtml) {
+          // İki kartı tam ortalayan, kart çerçevesi renginde çizgilere sahip ayraç
+          html += `
+            <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin: 18px 0 14px 0;">
+              <div style="flex:1; height:1px; background:var(--border);"></div>
+              <span style="font-size:13px; font-weight:700; color:var(--purple); letter-spacing:0.3px; white-space:nowrap;">Gelecek Ay (${nextMonthLabel})</span>
+              <div style="flex:1; height:1px; background:var(--border);"></div>
             </div>
           `;
           html += nextHtml;
@@ -4140,6 +4179,7 @@
       `;
 
       container.innerHTML = html;
+      updateToggleAllButtonState('main-timeline');
     }
 
     function onFilterChange() {
