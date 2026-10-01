@@ -1273,7 +1273,11 @@
   <!-- BÜTÇE EKLEME & DÜZENLEME MODALI -->
   <div class="modal" id="modalBudget">
     <div class="modal-content">
-      <h3 style="margin-bottom: 14px; font-size: 16px;" id="lblModalBudgetTitle">Kayıt Ekle</h3>
+      <!-- BAŞLIK VE YANINDA MİNİ TAŞIMA BUTONU -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="font-size: 16px; margin: 0;" id="lblModalBudgetTitle">Kayıt Ekle</h3>
+        <button type="button" id="btnMoveMonthAction" style="display: none; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; border: none; cursor: pointer; white-space: nowrap;" onclick="submitMoveMonthEntry()"></button>
+      </div>
       
       <div class="type-switcher" id="budgetTypeSwitcher">
         <button type="button" class="type-btn active" id="btnTypeCard" onclick="setModalType('card')">Kart</button>
@@ -1311,7 +1315,6 @@
 
       <div class="modal-actions">
         <button type="button" class="btn-submit" id="btnBudgetSubmit" onclick="submitBudgetEntry()">Kaydet</button>
-        <button type="button" id="btnMoveMonthAction" style="display:none; width:100%; font-weight:700; padding:12px; border-radius:10px; border:none; font-size:14px; cursor:pointer;" onclick="submitMoveMonthEntry()"></button>
         <button type="button" class="btn-cancel" onclick="closeModal('modalBudget')">Kapat</button>
       </div>       
     </div>
@@ -3509,7 +3512,6 @@
       document.getElementById('mAmount').value = '';
       document.getElementById('mDesc').value = '';
       document.getElementById('mAccount').value = '';
-      document.getElementById('btnMoveMonthAction').style.display = 'none';
       setModalType(activeBudgetTab || 'card');
       openModalWithScrollLock('modalBudget');
     }
@@ -4148,21 +4150,22 @@
       document.getElementById('mDesc').value = rawMerchant;
       document.getElementById('mAccount').value = item.card || "";
 
-      // Ay Taşıma Butonunun Durumunu Ayarla
+      // Üst Başlık Yanı Mini Taşıma Butonu
       const currentSheet = document.getElementById('sheetSelect').value || "Mevcut Ay";
       const moveBtn = document.getElementById('btnMoveMonthAction');
 
       if (currentSheet === "Mevcut Ay") {
         moveBtn.innerText = "Gelecek Aya Taşı";
-        moveBtn.style.background = "var(--purple)";
-        moveBtn.style.color = "#ffffff";
-        moveBtn.style.display = "block";
+        moveBtn.style.background = "rgba(168, 85, 247, 0.2)";
+        moveBtn.style.color = "var(--purple)";
+        moveBtn.style.border = "1px solid var(--purple)";
+        moveBtn.style.display = "inline-block";
       } else if (currentSheet === "Gelecek Ay") {
         moveBtn.innerText = "Geçmiş Aya Taşı";
-        moveBtn.style.background = "#334155";
+        moveBtn.style.background = "rgba(245, 158, 11, 0.2)";
         moveBtn.style.color = "var(--orange)";
         moveBtn.style.border = "1px solid var(--orange)";
-        moveBtn.style.display = "block";
+        moveBtn.style.display = "inline-block";
       } else {
         moveBtn.style.display = "none";
       }
