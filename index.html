@@ -1187,9 +1187,8 @@
 
     <!-- 3. SÜREKLİ AJANDA GÖRÜNÜMÜ -->
     <div id="viewTimeline" style="display: none; animation: fadeIn 0.2s ease;">
-      <!-- EKRANIN TEPESİNDE SABİT (STICKY) KALAN FİLTRE VE KONTROL ALANI -->
-      <div style="position: sticky; top: max(44px, env(safe-area-inset-top)); background: var(--bg); z-index: 40; padding-top: 4px; padding-bottom: 6px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.9);">
-        <!-- Üst Kontrol Barı -->
+      <!-- SABİT ÜST KONTROL ALANI (ARTIK ASLA YUKARI KAÇMAZ) -->
+      <div style="background: var(--bg); padding-bottom: 6px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-dim); cursor: pointer;">
             <input type="checkbox" id="chkTimelineShowPaid" onchange="renderMainTimelineView()" style="accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer;">
@@ -1199,11 +1198,11 @@
         </div>
 
         <!-- Yatay Kayan Çip Filtreleri -->
-        <div class="filter-chip-bar" id="timelineFilterChipBar" style="margin-bottom: 0; padding-bottom: 2px;"></div>
+        <div class="filter-chip-bar" id="timelineFilterChipBar" style="margin-bottom: 0; padding-bottom: 4px;"></div>
       </div>
 
-      <!-- GÜNLER VE HAREKETLER AKIŞI (KARTLAR BURADA KAYAR) -->
-      <div id="timelineListContainer" style="padding-top: 10px; padding-bottom: 70px;"></div>
+      <!-- SADECE KARTLARIN KAYDIĞI İÇ ALAN -->
+      <div id="timelineListContainer" style="overflow-y: auto; max-height: calc(100vh - 200px); padding-top: 6px; padding-bottom: 85px; -webkit-overflow-scrolling: touch;"></div>
     </div>
     
     <div id="listContainer"></div>
@@ -3907,10 +3906,12 @@
       const select = document.getElementById('sheetSelect');
 
       if (isTimeline) {
-        select.style.visibility = 'hidden'; // Ajandadayken ay seçimi otomatik akar
+        select.style.visibility = 'hidden';
+        document.body.style.overflow = 'hidden'; // Sayfa gövdesinin yukarı kaçmasını engeller
         loadAndRenderMainTimeline();
       } else {
         select.style.visibility = 'visible';
+        document.body.style.overflow = ''; // Diğer modlarda normal kaydırmaya döner
         if (isBudget) {
           fetchInitialData();
         } else {
