@@ -5059,6 +5059,54 @@
       });
       loadDebtsData();
     }
+
+    async function submitMoveMonthEntry() {
+      const select = document.getElementById('sheetSelect');
+      const currentSheet = select ? select.value : "Mevcut Ay";
+      const isMovingToNext = (currentSheet === "Mevcut Ay");
+
+      const confirmMsg = isMovingToNext
+        ? "Bu harcama Mevcut Ay'dan silinip Gelecek Ay'a (Erken Harcama olarak) taşınsın mı?"
+        : "Bu harcama Gelecek Ay'dan silinip Mevcut Ay'a geri taşınsın mı? (-EH notu silinecektir)";
+
+      if (!confirm(confirmMsg)) return;
+
+      const rawDate = document.getElementById('mDate').value;
+      let dateFormatted = "";
+      if (rawDate) {
+        const p = rawDate.split("-");
+        dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
+      }
+
+      const payload = {
+        date: dateFormatted,
+        amount: document.getElementById('mAmount').value,
+        merchant: document.getElementById('mDesc').value.trim(),
+        card: document.getElementById('mAccount').value
+      };
+
+      const type = modalSelectedType;
+      const targetRowIndex = editingBudgetRowIndex;
+
+      closeModal('modalBudget');
+
+      // Her iki ayın da önbelleğini temizle
+      delete memoryCache["Mevcut Ay"];
+      delete memoryCache["Gelecek Ay"];
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'moveBudgetItem',
+          sourceSheet: currentSheet,
+          type: type,
+          rowIndex: targetRowIndex,
+          payload: payload
+        })
+      });
+
+      onFilterChange();
+    }
   </script>
 </body>
 </html>
