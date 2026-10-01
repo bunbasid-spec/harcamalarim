@@ -117,12 +117,12 @@
     }
 
     .header { 
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 12px; 
       margin-bottom: 16px; 
-      padding-top: 6px;
-      align-items: center;
+      padding-top: 6px; 
+      align-items: center; 
     }
 
     .module-switcher {
@@ -162,18 +162,18 @@
     }
 
     select.sheet-select { 
-      width: 100%;
-      height: 38px;
+      width: 100%; 
+      height: 38px; 
       background: var(--card-bg); 
       color: var(--text); 
       border: 1px solid var(--border); 
       padding: 0 10px; 
       border-radius: 8px; 
       font-size: 13px; 
-      font-weight: 600;
-      outline: none;
-      text-align: center;
-      transition: all 0.25s ease;
+      font-weight: 600; 
+      outline: none; 
+      text-align: center; 
+      transition: all 0.25s ease; 
     }
 
     select.sheet-select.past-month-warning {
@@ -266,10 +266,10 @@
       border: 1px solid var(--border); 
       border-radius: 10px; 
       padding: 4px; 
-      gap: 4px;
-      height: 42px;
-      box-sizing: border-box;
-      align-items: center;
+      gap: 4px; 
+      height: 42px; 
+      box-sizing: border-box; 
+      align-items: center; 
     }
     .tab-btn { 
       flex: 1; 
@@ -282,7 +282,7 @@
       font-weight: 600; 
       border-radius: 7px; 
       cursor: pointer; 
-      transition: all 0.2s ease;
+      transition: all 0.2s ease; 
     }
     
     .tab-btn#tab-card.active { background: var(--accent); color: #0f172a; box-shadow: 0 2px 8px rgba(56, 189, 248, 0.35); }
@@ -431,10 +431,10 @@
       z-index: 2; 
       transition: transform 0.2s ease-out, border-radius 0.2s ease, background 0.2s ease; 
       width: 100%; 
-      min-height: 58px;
-      box-sizing: border-box;
-      cursor: pointer;
-      touch-action: pan-y;
+      min-height: 58px; 
+      box-sizing: border-box; 
+      cursor: pointer; 
+      touch-action: pan-y; 
     }
     .swipe-container.swiped .item-card,
     .swipe-container.swiping .item-card {
@@ -508,9 +508,9 @@
       justify-content: center; 
       z-index: 50; 
       transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-      touch-action: none;
-      user-select: none;
-      -webkit-user-select: none;
+      touch-action: none; 
+      user-select: none; 
+      -webkit-user-select: none; 
     }
     .fab span { 
       display: block; 
@@ -518,7 +518,7 @@
       font-weight: 400; 
       line-height: 1; 
       margin-top: -3px; 
-      pointer-events: none;
+      pointer-events: none; 
     }
     .fab:active { transform: scale(0.92); opacity: 0.9; }
 
@@ -589,7 +589,7 @@
       background: rgba(0,0,0,0.75); 
       align-items: flex-end; 
       z-index: 999; 
-      touch-action: pan-y;
+      touch-action: pan-y; 
     }
     .modal-content { 
       background: var(--card-bg); 
@@ -598,11 +598,11 @@
       padding: 20px; 
       padding-bottom: max(25px, env(safe-area-inset-bottom)); 
       border-top: 1px solid var(--border); 
-      box-sizing: border-box;
-      max-height: 90vh;
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
+      box-sizing: border-box; 
+      max-height: 90vh; 
+      overflow-y: auto; 
+      overscroll-behavior: contain; 
+      -webkit-overflow-scrolling: touch; 
     }
     
     .type-switcher {
@@ -659,8 +659,8 @@
     .form-group { 
       margin-bottom: 12px; 
       width: 100%; 
-      box-sizing: border-box;
-      position: relative;
+      box-sizing: border-box; 
+      position: relative; 
     }
     .form-group label { 
       display: block; 
@@ -671,19 +671,19 @@
     
     .form-group input { 
       width: 100%; 
-      max-width: 100%;
-      min-width: 0;
+      max-width: 100%; 
+      min-width: 0; 
       background: var(--bg); 
       border: 1px solid var(--border); 
       color: #fff; 
       padding: 11px 12px; 
       border-radius: 8px; 
       font-size: 15px; 
-      outline: none;
-      box-sizing: border-box;
-      display: block;
-      -webkit-appearance: none;
-      appearance: none;
+      outline: none; 
+      box-sizing: border-box; 
+      display: block; 
+      -webkit-appearance: none; 
+      appearance: none; 
     }
     .form-group input[type="date"] {
       min-height: 44px;
@@ -761,7 +761,7 @@
 
     .modal-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
     .btn-submit { 
-      width: 100%;
+      width: 100%; 
       background: var(--accent); 
       color: #0f172a; 
       font-weight: bold; 
@@ -772,7 +772,7 @@
       cursor: pointer; 
     }
     .btn-cancel { 
-      width: 100%;
+      width: 100%; 
       background: #334155; 
       color: var(--text); 
       font-weight: 600; 
@@ -1187,7 +1187,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.4.0
+    Sürüm 3.5.0
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1416,7 +1416,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.4.0";
+    const CURRENT_VERSION = "3.5.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -2683,7 +2683,6 @@
 
       function parseChipOnClick(chip) {
         const onclickAttr = chip.getAttribute('onclick') || '';
-        // toggleCalendarFilterKey('liq', 'sparkasse') formatını yakalar
         const match = onclickAttr.match(/toggleCalendarFilterKey\s*\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*\)/);
         if (!match) return null;
         return { moduleType: match[1], key: match[2] };
@@ -2696,10 +2695,9 @@
         const { moduleType, key: excludedKey } = info;
         let filterSet = (moduleType === 'liq') ? selectedFiltersLiq : ((moduleType === 'ctrl') ? selectedFiltersCtrl : selectedFiltersPast);
 
-        // Sadece "Tümü" seçiliyken (yani filterSet boyutu 0 iken) ters seçim çalışır
+        // Sadece "Tümü" seçiliyken ters seçim çalışır
         if (filterSet.size !== 0) return;
 
-        // O an ekranda var olan tüm çip anahtarlarını topla
         const parentBar = targetChip.closest('.filter-chip-bar');
         if (!parentBar) return;
 
@@ -2712,10 +2710,8 @@
 
         if (availableKeys.length <= 1) return;
 
-        // Dokunsal geri bildirim
         if (navigator.vibrate) navigator.vibrate(40);
 
-        // Basılı tutulan HARİÇ tüm aktif anahtarları Set'e ekle
         filterSet.clear();
         availableKeys.forEach(k => {
           if (k !== excludedKey) {
@@ -2723,7 +2719,6 @@
           }
         });
 
-        // İlgili modülün ajandasını yeniden render et
         if (moduleType === 'liq') {
           renderLiquidityContent();
         } else if (moduleType === 'ctrl') {
@@ -2756,7 +2751,6 @@
         if (longPressTimer) clearTimeout(longPressTimer);
       });
 
-      // Uzun basma tetiklendiğinde normal tıklamanın çalışmasını engelle
       document.addEventListener('click', function(e) {
         if (isLongPressTriggered) {
           e.preventDefault();
@@ -3600,6 +3594,7 @@
       document.getElementById('lblModalBudgetTitle').innerText = 'Kayıt Ekle';
       document.getElementById('btnBudgetSubmit').innerText = 'Kaydet';
       document.getElementById('budgetTypeSwitcher').style.display = 'flex';
+      document.getElementById('btnMoveMonthAction').style.display = 'none';
       document.getElementById('mDate').value = (activeBudgetTab === 'card') ? new Date().toISOString().split('T')[0] : '';
       document.getElementById('mAmount').value = '';
       document.getElementById('mDesc').value = '';
@@ -3608,56 +3603,6 @@
       openModalWithScrollLock('modalBudget');
     }
 
-
-    async function submitMoveMonthEntry() {
-      const select = document.getElementById('sheetSelect');
-      const currentSheet = select ? select.value : "Mevcut Ay";
-      const isMovingToNext = (currentSheet === "Mevcut Ay");
-
-      const confirmMsg = isMovingToNext
-        ? "Bu harcama Mevcut Ay'dan silinip Gelecek Ay'a (Erken Harcama olarak) taşınsın mı?"
-        : "Bu harcama Gelecek Ay'dan silinip Mevcut Ay'a geri taşınsın mı? (-EH notu silinecektir)";
-
-      if (!confirm(confirmMsg)) return;
-
-      const rawDate = document.getElementById('mDate').value;
-      let dateFormatted = "";
-      if (rawDate) {
-        const p = rawDate.split("-");
-        dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
-      }
-
-      const payload = {
-        date: dateFormatted,
-        amount: document.getElementById('mAmount').value,
-        merchant: document.getElementById('mDesc').value.trim(),
-        card: document.getElementById('mAccount').value
-      };
-
-      const type = modalSelectedType;
-      const targetRowIndex = editingBudgetRowIndex;
-
-      closeModal('modalBudget');
-
-      // Her iki ayın da önbelleğini temizle
-      delete memoryCache["Mevcut Ay"];
-      delete memoryCache["Gelecek Ay"];
-
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'moveBudgetItem',
-          sourceSheet: currentSheet,
-          type: type,
-          rowIndex: targetRowIndex,
-          payload: payload
-        })
-      });
-
-      onFilterChange();
-    }
-
-    
     // =========================================================
     // ŞABLON AKTARIMI (DİNAMİK AY ADI & KARTLARI ELEME KURALI)
     // =========================================================
@@ -3668,7 +3613,6 @@
       const select = document.getElementById('sheetSelect');
       const currentActiveSheet = select ? select.value : "Mevcut Ay";
 
-      // Geçmiş bir aydaysak aktarımı engelle
       if (currentActiveSheet !== "Mevcut Ay" && currentActiveSheet !== "Gelecek Ay") {
         alert("Geçmiş aylara kayıt aktarımı yapılamaz.\nLütfen 'Mevcut Ay' veya 'Gelecek Ay' sayfasına geçin.");
         return;
@@ -3678,7 +3622,6 @@
       const now = new Date();
       const currentMonthText = `${now.getFullYear()} ${monthNames[now.getMonth()]}`;
 
-      // En son arşivlenen ayın adı
       const pastMonthsList = availableSheets.filter(s => s !== "Mevcut Ay" && s !== "Gelecek Ay");
       const latestArchivedMonth = pastMonthsList.length > 0 ? pastMonthsList[0] : (localStorage.getItem('cache_template_name') || "Geçen Ay");
 
@@ -3686,11 +3629,9 @@
       let targetText = "";
 
       if (currentActiveSheet === "Gelecek Ay") {
-        // Gelecek Ay'daysak kaynak MEVCUT AY'dır (Örn: 2026 Ekim Kayıtları)
         sourceTitle = `${currentMonthText} Kayıtları`;
         targetText = "Seçilenleri Gelecek Ay'a Ekle";
       } else {
-        // Mevcut Ay'daysak kaynak ARŞİVDEKİ SON AYDIR (Örn: 2026 Eylül Kayıtları)
         sourceTitle = `${latestArchivedMonth} Kayıtları`;
         targetText = "Seçilenleri Mevcut Ay'a Ekle";
       }
@@ -3735,7 +3676,6 @@
       }
     }
 
-    
     function renderTemplateItems(items) {
       const container = document.getElementById('templateItemsContainer');
       container.innerHTML = '';
@@ -3917,7 +3857,6 @@
       }
     }
 
-
     function onFilterChange() {
       if (currentModule === 'budget') {
         const select = document.getElementById('sheetSelect');
@@ -3927,30 +3866,26 @@
         const bannerContainer = document.getElementById('pastMonthBannerContainer');
         const bannerPill = document.getElementById('pastMonthBannerPill');
         const bannerText = document.getElementById('pastMonthBannerText');
-        const bannerIcon = document.getElementById('bannerIcon');
         const edge = document.getElementById('edgeIndicator');
 
         // Önceki sınıfları temizle
         select.classList.remove('past-month-warning', 'next-month-theme');
-        bannerPill.classList.remove('next-theme');
+        if (bannerPill) bannerPill.classList.remove('next-theme');
         if (edge) edge.className = '';
 
         if (sheet === "Gelecek Ay") {
-          // Gelecek Ay: Mor sol çizgi + mor tema rozeti
           if (edge) edge.className = 'next-month';
           select.classList.add('next-month-theme');
-          bannerText.innerText = "Gelecek Ay Hazırlığı  /  ";
-          bannerPill.classList.add('next-theme');
-          bannerContainer.style.display = 'flex';
+          if (bannerText) bannerText.innerText = "Gelecek Ay Hazırlığı  /  ";
+          if (bannerPill) bannerPill.classList.add('next-theme');
+          if (bannerContainer) bannerContainer.style.display = 'flex';
         } else if (sheet !== "Mevcut Ay") {
-          // Geçmiş Ay: Turuncu sol çizgi + turuncu uyarı rozeti
           if (edge) edge.className = 'past-month';
           select.classList.add('past-month-warning');
-          bannerText.innerText = `${sheet} İnceleniyor  /  `;
-          bannerContainer.style.display = 'flex';
+          if (bannerText) bannerText.innerText = `${sheet} İnceleniyor  /  `;
+          if (bannerContainer) bannerContainer.style.display = 'flex';
         } else {
-          // Mevcut Ay: Kenar çizgisi gizli, standart görünüm
-          bannerContainer.style.display = 'none';
+          if (bannerContainer) bannerContainer.style.display = 'none';
         }
 
         if (memoryCache[sheet]) {
@@ -3975,7 +3910,6 @@
         loadDebtsData();
       }
     }
-
 
     async function loadDebtsData() {
       const isArchive = document.getElementById('sheetSelect').value === 'archive';
@@ -4128,7 +4062,6 @@
         return;
       }
 
-      // Akıllı Tarih Çözümleyici (Hücre Tarihi veya Parantez İçi Tarih)
       function getSortTimestamp(item) {
         if (item.date && item.date.trim() !== "") {
           let p = item.date.trim().split(".");
@@ -4146,7 +4079,6 @@
         return Number.MAX_SAFE_INTEGER;
       }
 
-      // Bekleyenleri kendi içinde ayın gününe göre (1'inden 30'una), gerçekleşenleri yeniden eskiye sıralar
       let items = [...rawItems].sort((a, b) => {
         let isPendingA = (!a.date || a.date.trim() === "");
         let isPendingB = (!b.date || b.date.trim() === "");
@@ -4242,7 +4174,6 @@
       document.getElementById('mDesc').value = rawMerchant;
       document.getElementById('mAccount').value = item.card || "";
 
-      // Üst Başlık Yanı Mini Taşıma Butonu
       const currentSheet = document.getElementById('sheetSelect').value || "Mevcut Ay";
       const moveBtn = document.getElementById('btnMoveMonthAction');
 
@@ -4956,6 +4887,53 @@
         body: JSON.stringify({
           action: isEdit ? 'editEntry' : 'addEntry',
           sheet: sheet,
+          type: type,
+          rowIndex: targetRowIndex,
+          payload: payload
+        })
+      });
+
+      onFilterChange();
+    }
+
+    async function submitMoveMonthEntry() {
+      const select = document.getElementById('sheetSelect');
+      const currentSheet = select ? select.value : "Mevcut Ay";
+      const isMovingToNext = (currentSheet === "Mevcut Ay");
+
+      const confirmMsg = isMovingToNext
+        ? "Bu harcama Mevcut Ay'dan silinip Gelecek Ay'a (Erken Harcama olarak) taşınsın mı?"
+        : "Bu harcama Gelecek Ay'dan silinip Mevcut Ay'a geri taşınsın mı? (-EH notu silinecektir)";
+
+      if (!confirm(confirmMsg)) return;
+
+      const rawDate = document.getElementById('mDate').value;
+      let dateFormatted = "";
+      if (rawDate) {
+        const p = rawDate.split("-");
+        dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
+      }
+
+      const payload = {
+        date: dateFormatted,
+        amount: document.getElementById('mAmount').value,
+        merchant: document.getElementById('mDesc').value.trim(),
+        card: document.getElementById('mAccount').value
+      };
+
+      const type = modalSelectedType;
+      const targetRowIndex = editingBudgetRowIndex;
+
+      closeModal('modalBudget');
+
+      delete memoryCache["Mevcut Ay"];
+      delete memoryCache["Gelecek Ay"];
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'moveBudgetItem',
+          sourceSheet: currentSheet,
           type: type,
           rowIndex: targetRowIndex,
           payload: payload
