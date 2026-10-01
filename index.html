@@ -2735,9 +2735,13 @@
         if (!info || info.key === 'ALL') return;
 
         const { moduleType, key: excludedKey } = info;
-        let filterSet = (moduleType === 'liq') ? selectedFiltersLiq : ((moduleType === 'ctrl') ? selectedFiltersCtrl : selectedFiltersPast);
+        
+        // TIMELINE MODÜLÜ BURAYA EKLENDİ:
+        let filterSet = (moduleType === 'liq') ? selectedFiltersLiq : 
+                        ((moduleType === 'ctrl') ? selectedFiltersCtrl : 
+                        ((moduleType === 'timeline') ? selectedFiltersTimeline : selectedFiltersPast));
 
-        // Sadece "Tümü" seçiliyken ters seçim çalışır
+        // Sadece "Tümü" seçiliyken (filtre seti boşken) çalışır
         if (filterSet.size !== 0) return;
 
         const parentBar = targetChip.closest('.filter-chip-bar');
@@ -2754,6 +2758,7 @@
 
         if (navigator.vibrate) navigator.vibrate(40);
 
+        // Basılı tutulan HARİÇ tüm aktif anahtarları Set'e ekle
         filterSet.clear();
         availableKeys.forEach(k => {
           if (k !== excludedKey) {
@@ -2761,7 +2766,7 @@
           }
         });
 
-        // İlgili modülün ajandasını yeniden render et
+        // İlgili görünümü yeniden çiz
         if (moduleType === 'liq') {
           renderLiquidityContent();
         } else if (moduleType === 'ctrl') {
