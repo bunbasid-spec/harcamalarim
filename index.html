@@ -1187,20 +1187,23 @@
 
     <!-- 3. SÜREKLİ AJANDA GÖRÜNÜMÜ -->
     <div id="viewTimeline" style="display: none; animation: fadeIn 0.2s ease;">
-      <!-- Üst Filtre Barı & Ödenmişleri Göster Seçeneği -->
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-        <label style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--text-dim); cursor:pointer;">
-          <input type="checkbox" id="chkTimelineShowPaid" onchange="renderMainTimelineView()" style="accent-color:var(--accent); width:15px; height:15px; cursor:pointer;">
-          Ödenmişleri Göster
-        </label>
-        <button type="button" id="timeline-btn-toggle-all" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer; padding: 2px 0;" onclick="toggleAllCalendarBodies('main-timeline')">Tümünü Aç ▼</button>
+      <!-- EKRANIN TEPESİNDE SABİT (STICKY) KALAN FİLTRE VE KONTROL ALANI -->
+      <div style="position: sticky; top: max(44px, env(safe-area-inset-top)); background: var(--bg); z-index: 40; padding-top: 4px; padding-bottom: 6px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.9);">
+        <!-- Üst Kontrol Barı -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-dim); cursor: pointer;">
+            <input type="checkbox" id="chkTimelineShowPaid" onchange="renderMainTimelineView()" style="accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer;">
+            Ödenmişleri Göster
+          </label>
+          <button type="button" id="timeline-btn-toggle-all" style="background: transparent; border: none; color: var(--accent); font-size: 12px; font-weight: 700; cursor: pointer; padding: 2px 0;" onclick="toggleAllCalendarBodies('main-timeline')">Tümünü Aç ▼</button>
+        </div>
+
+        <!-- Yatay Kayan Çip Filtreleri -->
+        <div class="filter-chip-bar" id="timelineFilterChipBar" style="margin-bottom: 0; padding-bottom: 2px;"></div>
       </div>
 
-      <!-- Çip Filtreleri -->
-      <div class="filter-chip-bar" id="timelineFilterChipBar"></div>
-
-      <!-- Günler ve Hareketler Akışı -->
-      <div id="timelineListContainer" style="padding-bottom: 70px;"></div>
+      <!-- GÜNLER VE HAREKETLER AKIŞI (KARTLAR BURADA KAYAR) -->
+      <div id="timelineListContainer" style="padding-top: 10px; padding-bottom: 70px;"></div>
     </div>
     
     <div id="listContainer"></div>
@@ -2333,22 +2336,33 @@
     }
 
     function updateToggleAllButtonState(moduleType) {
-      const bodies = document.querySelectorAll(`[id^="${moduleType}-cal-day-body-"]`);
+      let selector = `[id^="${moduleType}-cal-day-body-"]`;
+      if (moduleType === 'main-timeline') {
+        selector = `[id^="main-timeline-cal-day-body-"]`;
+      }
+
+      const bodies = document.querySelectorAll(selector);
       let btnId = `${moduleType}-btn-toggle-all`;
       if (moduleType === 'main-timeline') btnId = 'timeline-btn-toggle-all';
       
       const btn = document.getElementById(btnId);
       if (!btn || bodies.length === 0) return;
 
-      const anyOpen = Array.from(bodies).some(b => b.classList.contains('open'));
+      // Açık olan kartları kontrol et
+      const anyOpen = Array.from(bodies).some(b => b.classList.contains('open') || b.style.display === 'block');
       btn.innerText = anyOpen ? "Tümünü Kapat ▲" : "Tümünü Aç ▼";
     }
-    
+
     function toggleAllCalendarBodies(moduleType) {
-      const bodies = document.querySelectorAll(`[id^="${moduleType}-cal-day-body-"]`);
+      let selector = `[id^="${moduleType}-cal-day-body-"]`;
+      if (moduleType === 'main-timeline') {
+        selector = `[id^="main-timeline-cal-day-body-"]`;
+      }
+
+      const bodies = document.querySelectorAll(selector);
       if (bodies.length === 0) return;
 
-      const anyOpen = Array.from(bodies).some(b => b.classList.contains('open'));
+      const anyOpen = Array.from(bodies).some(b => b.classList.contains('open') || b.style.display === 'block');
 
       bodies.forEach(b => {
         b.style.display = '';
@@ -2359,7 +2373,9 @@
         }
       });
 
-      const btn = document.getElementById(`${moduleType}-btn-toggle-all`);
+      let btnId = `${moduleType}-btn-toggle-all`;
+      if (moduleType === 'main-timeline') btnId = 'timeline-btn-toggle-all';
+      const btn = document.getElementById(btnId);
       if (btn) {
         btn.innerText = anyOpen ? "Tümünü Aç ▼" : "Tümünü Kapat ▲";
       }
@@ -4127,9 +4143,9 @@
         // 1. GEÇMİŞ AY BÖLÜMÜ (Varsa en üstte)
         if (pastHtml) {
           html += `
-            <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin: 4px 0 10px 0;">
+            <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin: 10px 0 18px 0; padding: 4px 0;">
               <div style="flex:1; height:1px; background:var(--border);"></div>
-              <span style="font-size:12px; font-weight:700; color:var(--text-dim); letter-spacing:0.3px; white-space:nowrap;">Geçmiş Ay (${latestPastSheet})</span>
+              <span style="font-size:12px; font-weight:700; color:var(--border); letter-spacing:0.5px; white-space:nowrap; text-transform:uppercase;">Geçmiş Ay (${latestPastSheet})</span>
               <div style="flex:1; height:1px; background:var(--border);"></div>
             </div>
           `;
@@ -4142,9 +4158,9 @@
         // Eğer geçmiş ay varsa, araya Mevcut Ay ayracı koy
         if (pastHtml && curHtml) {
           html += `
-            <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin: 16px 0 10px 0;">
+            <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin: 10px 0 18px 0; padding: 4px 0;">
               <div style="flex:1; height:1px; background:var(--border);"></div>
-              <span style="font-size:12px; font-weight:700; color:var(--text-dim); letter-spacing:0.3px; white-space:nowrap;">Mevcut Ay (${currentMonthLabel})</span>
+              <span style="font-size:12px; font-weight:700; color:var(--border); letter-spacing:0.5px; white-space:nowrap; text-transform:uppercase;">Mevcut Ay (${currentMonthLabel})</span>
               <div style="flex:1; height:1px; background:var(--border);"></div>
             </div>
           `;
@@ -4155,9 +4171,9 @@
         // 3. GELECEK AY BÖLÜMÜ (Kart çerçevesi renginde çizgi ve yazı)
         if (nextHtml) {
           html += `
-            <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin: 18px 0 10px 0;">
+            <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin: 10px 0 18px 0; padding: 4px 0;">
               <div style="flex:1; height:1px; background:var(--border);"></div>
-              <span style="font-size:12px; font-weight:700; color:var(--text-dim); letter-spacing:0.3px; white-space:nowrap;">Gelecek Ay (${nextMonthLabel})</span>
+              <span style="font-size:12px; font-weight:700; color:var(--border); letter-spacing:0.5px; white-space:nowrap; text-transform:uppercase;">Gelecek Ay (${nextMonthLabel})</span>
               <div style="flex:1; height:1px; background:var(--border);"></div>
             </div>
           `;
