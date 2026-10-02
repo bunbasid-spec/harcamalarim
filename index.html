@@ -4122,58 +4122,54 @@
       let pastMonthGroups = {};
       let curMonthGroups = {};
       let nextMonthGroups = {};
-      
-      // Genel Toplam Sayacı
-      let totalExpenseEUR = 0, totalIncomeEUR = 0, totalTRY = 0;
 
-      // Sadece Mevcut Ay Hesap Kırılımları
-      let curAccountSums = {
-        sparkasse: 0, n26: 0, c24: 0, nakit: 0,
-        trEUR: 0, trTRY: 0, card: 0, income: 0, other: 0
-      };
-      let curTotalExpenseEUR = 0, curTotalIncomeEUR = 0;
+      // 3 Ayın Ayrı Ayrı Hesap İstatistikleri
+      function initMonthStats() {
+        return {
+          totalExpenseEUR: 0,
+          totalIncomeEUR: 0,
+          hasExpenses: false,
+          accounts: { sparkasse: 0, n26: 0, c24: 0, nakit: 0, trEUR: 0, trTRY: 0, card: 0, income: 0, other: 0 }
+        };
+      }
+
+      let statsPast = initMonthStats();
+      let statsCur = initMonthStats();
+      let statsNext = initMonthStats();
 
       filtered.forEach(it => {
         let dInfo = extractDayAndDateInfo(it);
         if (!dInfo) return;
 
         let targetDict = (it.monthTag === 'past') ? pastMonthGroups : ((it.monthTag === 'next') ? nextMonthGroups : curMonthGroups);
+        let targetStats = (it.monthTag === 'past') ? statsPast : ((it.monthTag === 'next') ? statsNext : statsCur);
         let dayKey = dInfo.dayNum;
 
         if (!targetDict[dayKey]) {
-          targetDict[dayKey] = { dayNum: dInfo.dayNum, dayStr: dInfo.dayStr, dayName: dInfo.dayName, netEur: 0, items: [] };
+          targetDict[dayKey] = { dayNum: dInfo.dayNum, dayStr: dInfo.dayStr, dayName: dInfo.dayName, netEur: 0, hasExpense: false, items: [] };
         }
 
         let numAmt = (it.srcType === 'tr') ? (it.eurVal || 0) : parseAmountToNum(it.amount);
-        
-        // Genel toplam ekleme
+
         if (it.isIncome) {
           targetDict[dayKey].netEur += numAmt;
-          totalIncomeEUR += numAmt;
+          targetStats.totalIncomeEUR += numAmt;
+          targetStats.accounts.income += numAmt;
         } else {
           targetDict[dayKey].netEur -= numAmt;
-          totalExpenseEUR += numAmt;
-        }
-        if (it.srcType === 'tr') totalTRY += (it.tryVal || parseAmountToNum(it.amount));
+          targetDict[dayKey].hasExpense = true;
+          targetStats.hasExpenses = true;
+          targetStats.totalExpenseEUR += numAmt;
 
-        // Mevcut Ay özel hesap kırılımı
-        if (it.monthTag === 'cur') {
-          if (it.isIncome) {
-            curTotalIncomeEUR += numAmt;
-            curAccountSums.income += numAmt;
-          } else {
-            curTotalExpenseEUR += numAmt;
-            if (it.filterAccount === 'sparkasse') curAccountSums.sparkasse += numAmt;
-            else if (it.filterAccount === 'n26') curAccountSums.n26 += numAmt;
-            else if (it.filterAccount === 'c24') curAccountSums.c24 += numAmt;
-            else if (it.filterAccount === 'nakit') curAccountSums.nakit += numAmt;
-            else if (it.filterAccount === 'tr') {
-              curAccountSums.trEUR += numAmt;
-              curAccountSums.trTRY += (it.tryVal || parseAmountToNum(it.amount));
-            }
-            else if (it.filterAccount === 'card') curAccountSums.card += numAmt;
-            else curAccountSums.other += numAmt;
-          }
+          if (it.filterAccount === 'sparkasse') targetStats.accounts.sparkasse += numAmt;
+          else if (it.filterAccount === 'n26') targetStats.accounts.n26 += numAmt;
+          else if (it.filterAccount === 'c24') targetStats.accounts.c24 += numAmt;
+          else if (it.filterAccount === 'nakit') targetStats.accounts.nakit += numAmt;
+          else if (it.filterAccount === 'tr') {
+            targetStats.accounts.trEUR += numAmt;
+            targetStats.accounts.trTRY += (it.tryVal || parseAmountToNum(it.amount));
+          } else if (it.filterAccount === 'card') targetStats.accounts.card += numAmt;
+          else targetStats.accounts.other += numAmt;
         }
 
         targetDict[dayKey].items.push({ ...it, calculatedEur: numAmt });
@@ -4184,7 +4180,9 @@
         let outHtml = '';
         sorted.forEach((grp, idx) => {
           let bodyId = `main-timeline-cal-day-body-${prefix}-${idx}`;
-          let isNetPos = grp.netEur >= 0;
+          
+          // Gider varsa ve net 0 ise (örn: EUR belli olmayan TR) başlık kırmızı -€0,00 olsun
+          let isNetPos = grp.netEur > 0 || (grp.netEur === 0 && !grp.hasExpense);
           let sign = isNetPos ? '+' : '-';
           let formattedTot = "€" + Math.abs(grp.netEur).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
           let color = isNetPos ? 'var(--green)' : 'var(--red)';
@@ -4212,8 +4210,11 @@
 
             let amountsHtml = '';
             if (it.srcType === 'tr') {
+              let eurPart = (it.calculatedEur > 0) 
+                ? `${itemSign}€${it.calculatedEur.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+                : `-€0,00`;
               amountsHtml = `
-                <div class="cal-item-primary-amt" style="color:${itemColor}">${itemSign}€${(it.calculatedEur || 0).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <div class="cal-item-primary-amt" style="color:${itemColor}">${eurPart}</div>
                 <div class="cal-item-secondary-amt">(-${formatAmount(it.amount)})</div>
               `;
             } else {
@@ -4239,6 +4240,64 @@
         return outHtml;
       }
 
+      // Standart Ay Özeti Kartı Üretici (Hizalı ve Standart Çerçeveli)
+      function generateMonthSummaryCard(title, stats) {
+        let net = stats.totalIncomeEUR - stats.totalExpenseEUR;
+        let isNetPos = net > 0 || (net === 0 && !stats.hasExpenses);
+        let netSign = isNetPos ? '+' : '-';
+        let netColor = isNetPos ? 'var(--green)' : 'var(--red)';
+
+        let lines = '';
+        const acc = stats.accounts;
+
+        function addLine(name, eurVal, tryVal = 0, isInc = false) {
+          let valHtml = '';
+          if (tryVal > 0) {
+            let eurText = eurVal > 0 ? `-€${eurVal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : `-€0,00`;
+            valHtml = `
+              <b style="color:var(--red); font-variant-numeric:tabular-nums;">${eurText}</b>
+              <span style="color:var(--text-dim); font-size:10px; font-weight:normal; margin-left:4px;">(-₺${tryVal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})})</span>
+            `;
+          } else if (isInc) {
+            valHtml = `<b style="color:var(--green); font-variant-numeric:tabular-nums;">+€${eurVal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b>`;
+          } else {
+            valHtml = `<b style="color:var(--red); font-variant-numeric:tabular-nums;">-€${eurVal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b>`;
+          }
+
+          return `
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; margin-top:3px; gap:8px;">
+              <span style="color:var(--text-dim); white-space:nowrap;">${name}:</span>
+              <div style="text-align:right; flex:1;">${valHtml}</div>
+            </div>
+          `;
+        }
+
+        if (acc.sparkasse > 0) lines += addLine('Sparkasse', acc.sparkasse);
+        if (acc.n26 > 0) lines += addLine('N26', acc.n26);
+        if (acc.c24 > 0) lines += addLine('C24', acc.c24);
+        if (acc.nakit > 0) lines += addLine('Nakit', acc.nakit);
+        if (acc.trTRY > 0 || acc.trEUR > 0) lines += addLine('TR', acc.trEUR, acc.trTRY);
+        if (acc.card > 0) lines += addLine('Kart', acc.card);
+        if (acc.income > 0) lines += addLine('Gelir', acc.income, 0, true);
+        if (acc.other > 0) lines += addLine('Diğer', acc.other);
+
+        return `
+          <div class="calendar-summary-bottom-card" style="margin-top: 10px; margin-bottom: 14px;">
+            <div class="calendar-summary-title" style="flex: 1; padding-right: 12px;">
+              <span style="font-size:12px; color:var(--accent); font-weight:700;">${title}</span>
+              <div style="margin-top: 4px;">
+                ${lines || '<span style="font-size:11px; color:var(--text-dim);">Kayıt bulunamadı</span>'}
+              </div>
+            </div>
+            <div class="calendar-summary-amounts" style="justify-content: flex-start; margin-top: 2px;">
+              <span style="font-size:16px; font-weight:800; color:${netColor}; font-variant-numeric:tabular-nums;">
+                ${netSign}€${Math.abs(net).toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+              </span>
+            </div>
+          </div>
+        `;
+      }
+
       let html = '';
       let pastHtml = renderGroupList(pastMonthGroups, 'past');
       let curHtml = renderGroupList(curMonthGroups, 'cur');
@@ -4257,14 +4316,15 @@
             </div>
           `;
           html += pastHtml;
+          html += generateMonthSummaryCard('Geçmiş Ay Toplamı:', statsPast);
         }
 
-        // 2. MEVCUT AY BAŞLANGICI
+        // 2. MEVCUT AY
         html += `<div id="timelineCurrentMonthAnchor"></div>`;
 
         if (pastHtml && curHtml) {
           html += `
-            <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin: 10px 0 18px 0; padding: 4px 0;">
+            <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin: 18px 0 18px 0; padding: 4px 0;">
               <div style="flex:1; height:1px; background:var(--border);"></div>
               <span style="font-size:15px; font-weight:700; color:var(--border); letter-spacing:0.5px; white-space:nowrap; text-transform:uppercase;">Mevcut Ay (${currentMonthLabel})</span>
               <div style="flex:1; height:1px; background:var(--border);"></div>
@@ -4272,92 +4332,9 @@
           `;
         }
 
-        html += curHtml;
-
-        // =========================================================
-        // MEVCUT AY ÖZET KARTI (HESAP BAZINDA ALT ALTA DÖKÜM)
-        // =========================================================
         if (curHtml) {
-          let curNet = curTotalIncomeEUR - curTotalExpenseEUR;
-          let curNetSign = curNet >= 0 ? '+' : '-';
-          let curNetColor = curNet >= 0 ? 'var(--green)' : 'var(--red)';
-
-          // Seçili hesap satırları
-          let accountBreakdownLines = '';
-
-          if (curAccountSums.sparkasse > 0) {
-            accountBreakdownLines += `
-              <div style="display:flex; align-items:center; gap:6px; font-size:11px; margin-top:2px;">
-                <span style="color:var(--text-dim); min-width:65px;">Sparkasse:</span>
-                <b style="color:var(--red);">-€${curAccountSums.sparkasse.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b>
-              </div>`;
-          }
-          if (curAccountSums.n26 > 0) {
-            accountBreakdownLines += `
-              <div style="display:flex; align-items:center; gap:6px; font-size:11px; margin-top:2px;">
-                <span style="color:var(--text-dim); min-width:65px;">N26:</span>
-                <b style="color:var(--red);">-€${curAccountSums.n26.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b>
-              </div>`;
-          }
-          if (curAccountSums.c24 > 0) {
-            accountBreakdownLines += `
-              <div style="display:flex; align-items:center; gap:6px; font-size:11px; margin-top:2px;">
-                <span style="color:var(--text-dim); min-width:65px;">C24:</span>
-                <b style="color:var(--red);">-€${curAccountSums.c24.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b>
-              </div>`;
-          }
-          if (curAccountSums.nakit > 0) {
-            accountBreakdownLines += `
-              <div style="display:flex; align-items:center; gap:6px; font-size:11px; margin-top:2px;">
-                <span style="color:var(--text-dim); min-width:65px;">Nakit:</span>
-                <b style="color:var(--red);">-€${curAccountSums.nakit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b>
-              </div>`;
-          }
-          if (curAccountSums.trEUR > 0) {
-            accountBreakdownLines += `
-              <div style="display:flex; align-items:center; gap:6px; font-size:11px; margin-top:2px;">
-                <span style="color:var(--text-dim); min-width:65px;">TR:</span>
-                <b style="color:var(--red);">-€${curAccountSums.trEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b>
-                <span style="color:var(--text-dim); font-size:10px;">(-₺${curAccountSums.trTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})})</span>
-              </div>`;
-          }
-          if (curAccountSums.card > 0) {
-            accountBreakdownLines += `
-              <div style="display:flex; align-items:center; gap:6px; font-size:11px; margin-top:2px;">
-                <span style="color:var(--text-dim); min-width:65px;">Kart:</span>
-                <b style="color:var(--red);">-€${curAccountSums.card.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b>
-              </div>`;
-          }
-          if (curAccountSums.income > 0) {
-            accountBreakdownLines += `
-              <div style="display:flex; align-items:center; gap:6px; font-size:11px; margin-top:2px;">
-                <span style="color:var(--text-dim); min-width:65px;">Gelir:</span>
-                <b style="color:var(--green);">+€${curAccountSums.income.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b>
-              </div>`;
-          }
-          if (curAccountSums.other > 0) {
-            accountBreakdownLines += `
-              <div style="display:flex; align-items:center; gap:6px; font-size:11px; margin-top:2px;">
-                <span style="color:var(--text-dim); min-width:65px;">Diğer:</span>
-                <b style="color:var(--red);">-€${curAccountSums.other.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b>
-              </div>`;
-          }
-
-          html += `
-            <div class="calendar-summary-bottom-card" style="margin-top: 10px; margin-bottom: 12px; border-color: rgba(56, 189, 248, 0.4);">
-              <div class="calendar-summary-title">
-                <span style="font-size:12px; color:var(--accent);">Mevcut Ay Toplamı:</span>
-                <div style="margin-top: 4px;">
-                  ${accountBreakdownLines || '<span style="font-size:11px; color:var(--text-dim);">Kayıt bulunamadı</span>'}
-                </div>
-              </div>
-              <div class="calendar-summary-amounts" style="justify-content: flex-start; margin-top: 2px;">
-                <span style="font-size:16px; font-weight:800; color:${curNetColor}; font-variant-numeric:tabular-nums;">
-                  ${curNetSign}€${Math.abs(curNet).toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                </span>
-              </div>
-            </div>
-          `;
+          html += curHtml;
+          html += generateMonthSummaryCard('Mevcut Ay Toplamı:', statsCur);
         }
 
         // 3. GELECEK AY
@@ -4370,36 +4347,9 @@
             </div>
           `;
           html += nextHtml;
+          html += generateMonthSummaryCard('Gelecek Ay Toplamı:', statsNext);
         }
       }
-
-      // 4. SAYFA EN ALTI - AJANDA GENEL TOPLAMI (TÜM AYLAR)
-      let netAll = totalIncomeEUR - totalExpenseEUR;
-      let netSign = netAll >= 0 ? '+' : '-';
-      let netColor = netAll >= 0 ? 'var(--green)' : 'var(--red)';
-      let isOnlyTR = (selectedFiltersTimeline.size === 1 && selectedFiltersTimeline.has('tr'));
-
-      let trSub = (isOnlyTR && totalTRY > 0) 
-        ? `<span style="font-size:11px; color:var(--text-dim);">(-₺${totalTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})})</span>` 
-        : '';
-
-      html += `
-        <div class="calendar-summary-bottom-card" style="margin-top: 14px; margin-bottom: 25px;">
-          <div class="calendar-summary-title">
-            <span>Ajanda Genel Toplamı:</span>
-            <span style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-top:2px;">
-              Gelir: <b style="color:var(--green);">+€${totalIncomeEUR.toLocaleString("de-DE", {minimumFractionDigits: 2})}</b> • 
-              Gider: <b style="color:var(--red);">-€${totalExpenseEUR.toLocaleString("de-DE", {minimumFractionDigits: 2})}</b>
-            </span>
-          </div>
-          <div class="calendar-summary-amounts">
-            <span style="font-size:16px; font-weight:800; color:${netColor}; font-variant-numeric:tabular-nums;">
-              ${netSign}€${Math.abs(netAll).toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-            </span>
-            ${trSub}
-          </div>
-        </div>
-      `;
 
       container.innerHTML = html;
       updateToggleAllButtonState('main-timeline');
