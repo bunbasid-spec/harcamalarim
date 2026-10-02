@@ -1210,7 +1210,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.5.1
+    Sürüm 3.5.2
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1439,7 +1439,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.5.1";
+    const CURRENT_VERSION = "3.5.2";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -3737,7 +3737,7 @@
         return;
       }
 
-      // Hedef ayda (Mevcut Ay veya Gelecek Ay) zaten ekli olan kalemleri topla
+      // Hedef ayda zaten ekli olan kalemlerin adlarını topla
       const select = document.getElementById('sheetSelect');
       const targetSheet = (select && select.value === "Gelecek Ay") ? "Gelecek Ay" : "Mevcut Ay";
       const targetData = memoryCache[targetSheet] || currentData || {};
@@ -3750,7 +3750,14 @@
         });
       });
 
-      // 1. Akıllı Tarih Çözücü & Sıralama Mantığı (Ayın 1'inden 31'ine)
+      // Kategori sıralama önceliği: HESAP (1) -> TR KART (2) -> GELİR (3)
+      const typePriority = {
+        'manual': 1,
+        'tr': 2,
+        'income': 3
+      };
+
+      // Tarih günü çözücü (Hücre tarihi veya parantez içi tarih)
       function getTemplateDayNum(it) {
         if (it.date && it.date.trim() !== "") {
           let p = it.date.trim().split(".");
@@ -3758,27 +3765,35 @@
         }
         let match = (it.merchant || "").match(/\((\d{1,2})\.(\d{1,2})\)/);
         if (match) return parseInt(match[1]) || 99;
-        return 99; // Tarihsizler en sona
+        return 99; // Tarih bilgisi olmayanlar en sona
       }
 
-      // Tarihe göre artan sırala (1'inden 31'ine)
-      cleanItems.sort((a, b) => getTemplateDayNum(a) - getTemplateDayNum(b));
-      loadedTemplateItems = cleanItems; // İndekslerin eşleşmesi için hafızayı senkronize et
+      // Önce Kategoriye Göre, Kategori İçinde İse Güne Göre (1'den 31'e) Sırala
+      cleanItems.sort((a, b) => {
+        let pA = typePriority[a.type] || 99;
+        let pB = typePriority[b.type] || 99;
 
-      // 2. Elemanları Listele
+        if (pA !== pB) {
+          return pA - pB; // Önce etiket grupla
+        }
+        return getTemplateDayNum(a) - getTemplateDayNum(b); // Etiket içinde tarihe göre sırala
+      });
+
+      loadedTemplateItems = cleanItems; // Hafızayı sıralı listeyle eşitle
+
+      // Elemanları Render Et
       cleanItems.forEach((item, idx) => {
         let tagClass = `tag-${item.type}`;
         let subInfo = item.date ? item.date : '<span style="color:var(--orange);">⏳ Bekliyor</span>';
         if (item.card) subInfo += ` • ${item.card}`;
 
-        // Hedefte zaten var mı kontrolü
         let cleanName = (item.merchant || '').toLowerCase().replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
         let isAlreadyExists = existingNames.has(cleanName);
 
-        // Zaten varsa işareti kaldır (seçilmemiş gelsin), yoksa seçili gelsin
         let isCheckedAttr = isAlreadyExists ? '' : 'checked';
+        // Kısa ve zarif "⚠️ Mevcut" rozeti
         let existsBadgeHtml = isAlreadyExists 
-          ? `<span style="font-size:10px; font-weight:700; color:var(--orange); background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); padding:2px 6px; border-radius:4px; margin-left:6px; white-space:nowrap;">⚠️ ${targetSheet}'da Var</span>` 
+          ? `<span style="font-size:10px; font-weight:700; color:var(--orange); background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); padding:2px 6px; border-radius:4px; margin-left:6px; white-space:nowrap;">⚠️ Mevcut</span>` 
           : '';
 
         const rowEl = document.createElement('label');
