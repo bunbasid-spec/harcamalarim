@@ -1218,7 +1218,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.5.6
+    Sürüm 3.5.7
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1447,7 +1447,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.5.6";
+    const CURRENT_VERSION = "3.5.7";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -2297,43 +2297,56 @@
     }
 
     const TR_DAY_NAMES = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
+    const TR_MONTH_NAMES = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
-    function extractDayAndDateInfo(item) {
+    function extractDayAndDateInfo(item, defaultMonthTag = 'cur') {
       let rawDate = (item.date || '').trim();
       let dayNum = 0;
+      let monthIndex = -1;
+      let year = new Date().getFullYear();
       let dateObj = null;
 
+      // 1. Hücredeki tam tarih analizi (DD.MM.YYYY)
       if (rawDate) {
         let p = rawDate.split(".");
         if (p.length === 3) {
           dayNum = parseInt(p[0]);
-          dateObj = new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
-        }
-      }
-
-      if (!dayNum) {
-        let match = (item.merchant || '').match(/\((\d{1,2})\.(\d{1,2})\)/);
-        if (match) {
-          dayNum = parseInt(match[1]);
-          let monthIndex = parseInt(match[2]) - 1;
-          let year = new Date().getFullYear();
+          monthIndex = parseInt(p[1]) - 1;
+          year = parseInt(p[2]);
           dateObj = new Date(year, monthIndex, dayNum);
         }
       }
 
-      if (!dayNum) return null;
+      // 2. Parantez içi tarih analizi (örn: (28.09))
+      if (!dateObj) {
+        let match = (item.merchant || '').match(/\((\d{1,2})\.(\d{1,2})\)/);
+        if (match) {
+          dayNum = parseInt(match[1]);
+          monthIndex = parseInt(match[2]) - 1;
+          dateObj = new Date(year, monthIndex, dayNum);
+        }
+      }
+
+      // 3. Tarih hiç yoksa (Bekleyen tarihsiz kalemler)
+      if (!dateObj) return null;
 
       let dayStr = dayNum.toString().padStart(2, '0');
-      let dayName = dateObj ? TR_DAY_NAMES[dateObj.getDay()] : "";
+      let dayName = TR_DAY_NAMES[dateObj.getDay()];
+      let monthName = TR_MONTH_NAMES[dateObj.getMonth()];
 
       return {
         dayNum: dayNum,
         dayStr: dayStr,
         dayName: dayName,
+        monthName: monthName,
+        monthIndex: monthIndex,
+        year: year,
+        timestamp: dateObj.getTime(),
         dateObj: dateObj
       };
     }
 
+    
     function toggleCalendarDayBody(id, moduleType) {
       const el = document.getElementById(id);
       if (el) {
@@ -4031,6 +4044,7 @@
       renderMainTimelineView();
     }
 
+    
     function renderMainTimelineView() {
       const container = document.getElementById('timelineListContainer');
       const chipBar = document.getElementById('timelineFilterChipBar');
@@ -4050,11 +4064,10 @@
         return;
       }
 
-      const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
       const now = new Date();
-      const currentMonthLabel = `${now.getFullYear()} ${monthNames[now.getMonth()]}`;
+      const currentMonthLabel = `${now.getFullYear()} ${TR_MONTH_NAMES[now.getMonth()]}`;
       const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-      const nextMonthLabel = `${nextMonthDate.getFullYear()} ${monthNames[nextMonthDate.getMonth()]}`;
+      const nextMonthLabel = `${nextMonthDate.getFullYear()} ${TR_MONTH_NAMES[nextMonthDate.getMonth()]}`;
 
       function collectItems(dataObj, tag) {
         let items = [];
@@ -4123,7 +4136,6 @@
       let curMonthGroups = {};
       let nextMonthGroups = {};
 
-      // 3 Ayın Ayrı Ayrı Hesap İstatistikleri
       function initMonthStats() {
         return {
           totalExpenseEUR: 0,
@@ -4138,15 +4150,26 @@
       let statsNext = initMonthStats();
 
       filtered.forEach(it => {
-        let dInfo = extractDayAndDateInfo(it);
+        let dInfo = extractDayAndDateInfo(it, it.monthTag);
         if (!dInfo) return;
 
         let targetDict = (it.monthTag === 'past') ? pastMonthGroups : ((it.monthTag === 'next') ? nextMonthGroups : curMonthGroups);
         let targetStats = (it.monthTag === 'past') ? statsPast : ((it.monthTag === 'next') ? statsNext : statsCur);
-        let dayKey = dInfo.dayNum;
+        
+        // GRUPLAMA ANAHTARI: Tam Tarih Zamanı (Timestamp) - Erken harcamalar 01'den önce sıralanır
+        let dayKey = dInfo.timestamp;
 
         if (!targetDict[dayKey]) {
-          targetDict[dayKey] = { dayNum: dInfo.dayNum, dayStr: dInfo.dayStr, dayName: dInfo.dayName, netEur: 0, hasExpense: false, items: [] };
+          targetDict[dayKey] = { 
+            timestamp: dInfo.timestamp,
+            dayNum: dInfo.dayNum, 
+            dayStr: dInfo.dayStr, 
+            dayName: dInfo.dayName,
+            monthName: dInfo.monthName,
+            netEur: 0, 
+            hasExpense: false, 
+            items: [] 
+          };
         }
 
         let numAmt = (it.srcType === 'tr') ? (it.eurVal || 0) : parseAmountToNum(it.amount);
@@ -4176,12 +4199,12 @@
       });
 
       function renderGroupList(groupsDict, prefix) {
-        let sorted = Object.values(groupsDict).sort((a,b) => a.dayNum - b.dayNum);
+        // Kronolojik olarak zamana göre sırala (Örn: 28.09, 29.09, 01.10...)
+        let sorted = Object.values(groupsDict).sort((a, b) => a.timestamp - b.timestamp);
         let outHtml = '';
         sorted.forEach((grp, idx) => {
           let bodyId = `main-timeline-cal-day-body-${prefix}-${idx}`;
           
-          // Gider varsa ve net 0 ise (örn: EUR belli olmayan TR) başlık kırmızı -€0,00 olsun
           let isNetPos = grp.netEur > 0 || (grp.netEur === 0 && !grp.hasExpense);
           let sign = isNetPos ? '+' : '-';
           let formattedTot = "€" + Math.abs(grp.netEur).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -4240,7 +4263,6 @@
         return outHtml;
       }
 
-      // Standart Ay Özeti Kartı Üretici (Sağa Yaslı & TL Başlık Yanında)
       function generateMonthSummaryCard(title, stats) {
         let net = stats.totalIncomeEUR - stats.totalExpenseEUR;
         let isNetPos = net > 0 || (net === 0 && !stats.hasExpenses);
@@ -4264,7 +4286,6 @@
 
           let color = isInc ? 'var(--green)' : 'var(--red)';
 
-          // TR için TL tutarını etiketin hemen sağına ekle
           let labelHtml = `<span style="color:var(--text-dim); white-space:nowrap;">${name}:</span>`;
           if (tryVal > 0) {
             labelHtml = `
@@ -4294,15 +4315,12 @@
 
         return `
           <div class="calendar-summary-bottom-card" style="display:flex; flex-direction:column; margin-top: 10px; margin-bottom: 14px; padding: 12px 14px;">
-            <!-- ÜST SATIR: Başlık ve Büyük Net Toplam (İki Uca Yaslı) -->
             <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
               <span style="font-size:13px; color:var(--accent); font-weight:700;">${title}</span>
               <span style="font-size:16px; font-weight:800; color:${netColor}; font-variant-numeric:tabular-nums;">
                 ${netSign}€${Math.abs(net).toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
               </span>
             </div>
-
-            <!-- ALT SATIR: Sağa Yaslı Hesap Kırılımları -->
             <div style="align-self:flex-end; min-width:180px; margin-top:6px;">
               ${lines || '<span style="font-size:11px; color:var(--text-dim); display:block; text-align:right;">Kayıt bulunamadı</span>'}
             </div>
@@ -5448,10 +5466,12 @@
       const select = document.getElementById('sheetSelect');
       const currentSheet = select ? select.value : "Mevcut Ay";
       const isMovingToNext = (currentSheet === "Mevcut Ay");
+      const isIncomeType = (modalSelectedType === 'income');
+      const tagSuffix = isIncomeType ? "- EG" : "- EH";
 
       const confirmMsg = isMovingToNext
-        ? "Bu harcama Mevcut Ay'dan silinip Gelecek Ay'a (Erken Harcama olarak) taşınsın mı?"
-        : "Bu harcama Gelecek Ay'dan silinip Mevcut Ay'a geri taşınsın mı? (-EH notu silinecektir)";
+        ? `Bu kayıt Mevcut Ay'dan silinip Gelecek Ay'a (${tagSuffix} notuyla) taşınsın mı?`
+        : `Bu kayıt Gelecek Ay'dan silinip Mevcut Ay'a geri taşınsın mı? (${tagSuffix} notu silinecektir)`;
 
       if (!confirm(confirmMsg)) return;
 
@@ -5462,10 +5482,22 @@
         dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
       }
 
+      let merchantVal = document.getElementById('mDesc').value.trim();
+
+      if (isMovingToNext) {
+        // Gelecek aya taşırken etiketi ekle (önceden yoksa)
+        if (!merchantVal.includes("- EH") && !merchantVal.includes("- EG")) {
+          merchantVal = `${merchantVal} ${tagSuffix}`;
+        }
+      } else {
+        // Geri taşırken etiketi temizle
+        merchantVal = merchantVal.replace(/\s*-\s*E[HG]/gi, '').trim();
+      }
+
       const payload = {
         date: dateFormatted,
         amount: document.getElementById('mAmount').value,
-        merchant: document.getElementById('mDesc').value.trim(),
+        merchant: merchantVal,
         card: document.getElementById('mAccount').value
       };
 
@@ -5474,6 +5506,7 @@
 
       closeModal('modalBudget');
 
+      // Önbellekleri temizle
       delete memoryCache["Mevcut Ay"];
       delete memoryCache["Gelecek Ay"];
 
