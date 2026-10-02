@@ -1218,7 +1218,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.5.5
+    Sürüm 3.5.6
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1447,7 +1447,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.5.5";
+    const CURRENT_VERSION = "3.5.6";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -4240,7 +4240,7 @@
         return outHtml;
       }
 
-      // Standart Ay Özeti Kartı Üretici (Hizalı ve Standart Çerçeveli)
+      // Standart Ay Özeti Kartı Üretici (2 Nolu Tasarım Hizalaması)
       function generateMonthSummaryCard(title, stats) {
         let net = stats.totalIncomeEUR - stats.totalExpenseEUR;
         let isNetPos = net > 0 || (net === 0 && !stats.hasExpenses);
@@ -4266,7 +4266,7 @@
 
           return `
             <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; margin-top:3px; gap:8px;">
-              <span style="color:var(--text-dim); white-space:nowrap;">${name}:</span>
+              <span style="color:var(--text-dim); white-space:nowrap; min-width:65px;">${name}:</span>
               <div style="text-align:right; flex:1;">${valHtml}</div>
             </div>
           `;
@@ -4282,17 +4282,18 @@
         if (acc.other > 0) lines += addLine('Diğer', acc.other);
 
         return `
-          <div class="calendar-summary-bottom-card" style="margin-top: 10px; margin-bottom: 14px;">
-            <div class="calendar-summary-title" style="flex: 1; padding-right: 12px;">
-              <span style="font-size:12px; color:var(--accent); font-weight:700;">${title}</span>
-              <div style="margin-top: 4px;">
-                ${lines || '<span style="font-size:11px; color:var(--text-dim);">Kayıt bulunamadı</span>'}
-              </div>
-            </div>
-            <div class="calendar-summary-amounts" style="justify-content: flex-start; margin-top: 2px;">
+          <div class="calendar-summary-bottom-card" style="display:flex; flex-direction:column; margin-top: 10px; margin-bottom: 14px; padding: 12px 14px;">
+            <!-- ÜST SATIR: Başlık ve Büyük Net Toplam (Yan Yana) -->
+            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+              <span style="font-size:13px; color:var(--accent); font-weight:700;">${title}</span>
               <span style="font-size:16px; font-weight:800; color:${netColor}; font-variant-numeric:tabular-nums;">
                 ${netSign}€${Math.abs(net).toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
               </span>
+            </div>
+
+            <!-- ALT SATIR: Sol Tarafta Alt Alta Hesap Kırılımları -->
+            <div style="max-width: 250px; margin-top: 6px;">
+              ${lines || '<span style="font-size:11px; color:var(--text-dim);">Kayıt bulunamadı</span>'}
             </div>
           </div>
         `;
