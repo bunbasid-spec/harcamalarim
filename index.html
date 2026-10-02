@@ -4199,9 +4199,12 @@
       });
 
       function renderGroupList(groupsDict, prefix) {
-        // Kronolojik olarak zamana göre sırala (Örn: 28.09, 29.09, 01.10...)
         let sorted = Object.values(groupsDict).sort((a, b) => a.timestamp - b.timestamp);
         let outHtml = '';
+
+        // Sadece TR filtresi mi seçili?
+        let isOnlyTR = (selectedFiltersTimeline.size === 1 && selectedFiltersTimeline.has('tr'));
+
         sorted.forEach((grp, idx) => {
           let bodyId = `main-timeline-cal-day-body-${prefix}-${idx}`;
           
@@ -4210,6 +4213,20 @@
           let formattedTot = "€" + Math.abs(grp.netEur).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
           let color = isNetPos ? 'var(--green)' : 'var(--red)';
 
+          // Sadece TR seçiliyse ve o gün TL harcaması varsa, başlıkta -€0,00'ın önüne (-₺...) ekle
+          let dayTrTryTotal = 0;
+          if (isOnlyTR) {
+            grp.items.forEach(it => {
+              if (it.srcType === 'tr') {
+                dayTrTryTotal += (it.tryVal || parseAmountToNum(it.amount));
+              }
+            });
+          }
+
+          let dayTrSubHtml = (isOnlyTR && dayTrTryTotal > 0)
+            ? `<span style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-right:5px;">(-₺${dayTrTryTotal.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>`
+            : '';
+
           outHtml += `
             <div class="calendar-timeline-card">
               <div class="calendar-day-header" onclick="toggleCalendarDayBody('${bodyId}', 'main-timeline')">
@@ -4217,9 +4234,10 @@
                   <span class="calendar-day-num">${grp.dayStr}</span>
                   <span class="calendar-day-name">(${grp.dayName})</span>
                 </div>
-                <div class="calendar-day-total" style="color:${color}">
+                <div class="calendar-day-total" style="color:${color}; display:flex; align-items:center;">
+                  ${dayTrSubHtml}
                   <span>${sign}${formattedTot}</span>
-                  <span style="font-size:10px; color:var(--text-dim);">▼</span>
+                  <span style="font-size:10px; color:var(--text-dim); margin-left:4px;">▼</span>
                 </div>
               </div>
               <div class="calendar-day-body" id="${bodyId}">
@@ -4263,19 +4281,12 @@
         return outHtml;
       }
 
-      // Standart Ay Özeti Kartı Üretici (Sadece TR seçiliyse ana toplamın önüne gri TL ekler)
+      // Standart Ay Özeti Kartı Üretici (Eski Düzene Geri Alındı)
       function generateMonthSummaryCard(title, stats) {
         let net = stats.totalIncomeEUR - stats.totalExpenseEUR;
         let isNetPos = net > 0 || (net === 0 && !stats.hasExpenses);
         let netSign = isNetPos ? '+' : '-';
         let netColor = isNetPos ? 'var(--green)' : 'var(--red)';
-
-        // Sadece TR filtresi mi seçili kontrolü
-        let isOnlyTR = (selectedFiltersTimeline.size === 1 && selectedFiltersTimeline.has('tr'));
-        let headerTrSub = '';
-        if (isOnlyTR && stats.accounts.trTRY > 0) {
-          headerTrSub = `<span style="font-size:12px; font-weight:normal; color:var(--text-dim); margin-right:6px;">(-₺${stats.accounts.trTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})})</span>`;
-        }
 
         let lines = '';
         const acc = stats.accounts;
@@ -4323,15 +4334,12 @@
 
         return `
           <div class="calendar-summary-bottom-card" style="display:flex; flex-direction:column; margin-top: 10px; margin-bottom: 14px; padding: 12px 14px;">
-            <!-- ÜST SATIR: Başlık ve Büyük Net Toplam (Önünde Varsa Gri TL Tutarı) -->
+            <!-- ÜST SATIR: Başlık ve Büyük Net Toplam -->
             <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
               <span style="font-size:13px; color:var(--accent); font-weight:700;">${title}</span>
-              <div style="display:flex; align-items:center; justify-content:flex-end;">
-                ${headerTrSub}
-                <span style="font-size:16px; font-weight:800; color:${netColor}; font-variant-numeric:tabular-nums;">
-                  ${netSign}€${Math.abs(net).toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                </span>
-              </div>
+              <span style="font-size:16px; font-weight:800; color:${netColor}; font-variant-numeric:tabular-nums;">
+                ${netSign}€${Math.abs(net).toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+              </span>
             </div>
 
             <!-- ALT SATIR: Sağa Yaslı Hesap Kırılımları -->
