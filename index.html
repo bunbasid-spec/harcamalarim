@@ -1210,7 +1210,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.5.0
+    Sürüm 3.5.1
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1439,7 +1439,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.5.0";
+    const CURRENT_VERSION = "3.5.1";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -3737,25 +3737,70 @@
         return;
       }
 
+      // Hedef ayda (Mevcut Ay veya Gelecek Ay) zaten ekli olan kalemleri topla
+      const select = document.getElementById('sheetSelect');
+      const targetSheet = (select && select.value === "Gelecek Ay") ? "Gelecek Ay" : "Mevcut Ay";
+      const targetData = memoryCache[targetSheet] || currentData || {};
+
+      const existingNames = new Set();
+      ['manualItems', 'trItems', 'incomeItems'].forEach(key => {
+        (targetData[key] || []).forEach(it => {
+          let clean = (it.merchant || '').toLowerCase().replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
+          if (clean) existingNames.add(clean);
+        });
+      });
+
+      // 1. Akıllı Tarih Çözücü & Sıralama Mantığı (Ayın 1'inden 31'ine)
+      function getTemplateDayNum(it) {
+        if (it.date && it.date.trim() !== "") {
+          let p = it.date.trim().split(".");
+          if (p.length === 3) return parseInt(p[0]) || 99;
+        }
+        let match = (it.merchant || "").match(/\((\d{1,2})\.(\d{1,2})\)/);
+        if (match) return parseInt(match[1]) || 99;
+        return 99; // Tarihsizler en sona
+      }
+
+      // Tarihe göre artan sırala (1'inden 31'ine)
+      cleanItems.sort((a, b) => getTemplateDayNum(a) - getTemplateDayNum(b));
+      loadedTemplateItems = cleanItems; // İndekslerin eşleşmesi için hafızayı senkronize et
+
+      // 2. Elemanları Listele
       cleanItems.forEach((item, idx) => {
         let tagClass = `tag-${item.type}`;
         let subInfo = item.date ? item.date : '<span style="color:var(--orange);">⏳ Bekliyor</span>';
         if (item.card) subInfo += ` • ${item.card}`;
 
+        // Hedefte zaten var mı kontrolü
+        let cleanName = (item.merchant || '').toLowerCase().replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
+        let isAlreadyExists = existingNames.has(cleanName);
+
+        // Zaten varsa işareti kaldır (seçilmemiş gelsin), yoksa seçili gelsin
+        let isCheckedAttr = isAlreadyExists ? '' : 'checked';
+        let existsBadgeHtml = isAlreadyExists 
+          ? `<span style="font-size:10px; font-weight:700; color:var(--orange); background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); padding:2px 6px; border-radius:4px; margin-left:6px; white-space:nowrap;">⚠️ ${targetSheet}'da Var</span>` 
+          : '';
+
         const rowEl = document.createElement('label');
         rowEl.className = 'template-item';
+        if (isAlreadyExists) {
+          rowEl.style.opacity = '0.85';
+          rowEl.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+        }
+
         rowEl.innerHTML = `
           <div style="display:flex; align-items:center;">
-            <input type="checkbox" class="chk-template" data-idx="${idx}" checked>
+            <input type="checkbox" class="chk-template" data-idx="${idx}" ${isCheckedAttr}>
             <div>
-              <div style="font-weight:600; font-size:13px;">
+              <div style="font-weight:600; font-size:13px; display:flex; align-items:center; flex-wrap:wrap; gap:2px;">
                 <span class="template-tag ${tagClass}">${item.typeName}</span>
-                ${item.merchant || 'Açıklamasız'}
+                <span>${item.merchant || 'Açıklamasız'}</span>
+                ${existsBadgeHtml}
               </div>
               <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">${subInfo}</div>
             </div>
           </div>
-          <div style="font-weight:700; font-size:14px;">${formatAmount(item.amount)}</div>
+          <div style="font-weight:700; font-size:14px; white-space:nowrap; margin-left:8px;">${formatAmount(item.amount)}</div>
         `;
         container.appendChild(rowEl);
       });
