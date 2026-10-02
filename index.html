@@ -1210,7 +1210,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.5.2
+    Sürüm 3.5.3
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1439,7 +1439,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.5.2";
+    const CURRENT_VERSION = "3.5.3";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -3791,9 +3791,9 @@
         let isAlreadyExists = existingNames.has(cleanName);
 
         let isCheckedAttr = isAlreadyExists ? '' : 'checked';
-        // Kısa ve zarif "⚠️ Mevcut" rozeti
+        // Kısa ve zarif "⚠️" rozeti
         let existsBadgeHtml = isAlreadyExists 
-          ? `<span style="font-size:10px; font-weight:700; color:var(--orange); background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); padding:2px 6px; border-radius:4px; margin-left:6px; white-space:nowrap;">⚠️ Mevcut</span>` 
+          ? `<span style="font-size:10px; font-weight:700; color:var(--orange); background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); padding:2px 6px; border-radius:4px; margin-left:6px; white-space:nowrap;">⚠️</span>` 
           : '';
 
         const rowEl = document.createElement('label');
