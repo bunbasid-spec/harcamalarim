@@ -4263,11 +4263,19 @@
         return outHtml;
       }
 
+      // Standart Ay Özeti Kartı Üretici (Sadece TR seçiliyse ana toplamın önüne gri TL ekler)
       function generateMonthSummaryCard(title, stats) {
         let net = stats.totalIncomeEUR - stats.totalExpenseEUR;
         let isNetPos = net > 0 || (net === 0 && !stats.hasExpenses);
         let netSign = isNetPos ? '+' : '-';
         let netColor = isNetPos ? 'var(--green)' : 'var(--red)';
+
+        // Sadece TR filtresi mi seçili kontrolü
+        let isOnlyTR = (selectedFiltersTimeline.size === 1 && selectedFiltersTimeline.has('tr'));
+        let headerTrSub = '';
+        if (isOnlyTR && stats.accounts.trTRY > 0) {
+          headerTrSub = `<span style="font-size:12px; font-weight:normal; color:var(--text-dim); margin-right:6px;">(-₺${stats.accounts.trTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})})</span>`;
+        }
 
         let lines = '';
         const acc = stats.accounts;
@@ -4315,12 +4323,18 @@
 
         return `
           <div class="calendar-summary-bottom-card" style="display:flex; flex-direction:column; margin-top: 10px; margin-bottom: 14px; padding: 12px 14px;">
+            <!-- ÜST SATIR: Başlık ve Büyük Net Toplam (Önünde Varsa Gri TL Tutarı) -->
             <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
               <span style="font-size:13px; color:var(--accent); font-weight:700;">${title}</span>
-              <span style="font-size:16px; font-weight:800; color:${netColor}; font-variant-numeric:tabular-nums;">
-                ${netSign}€${Math.abs(net).toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-              </span>
+              <div style="display:flex; align-items:center; justify-content:flex-end;">
+                ${headerTrSub}
+                <span style="font-size:16px; font-weight:800; color:${netColor}; font-variant-numeric:tabular-nums;">
+                  ${netSign}€${Math.abs(net).toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                </span>
+              </div>
             </div>
+
+            <!-- ALT SATIR: Sağa Yaslı Hesap Kırılımları -->
             <div style="align-self:flex-end; min-width:180px; margin-top:6px;">
               ${lines || '<span style="font-size:11px; color:var(--text-dim); display:block; text-align:right;">Kayıt bulunamadı</span>'}
             </div>
