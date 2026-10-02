@@ -1187,13 +1187,21 @@
 
     <!-- 3. SÜREKLİ AJANDA GÖRÜNÜMÜ -->
     <div id="viewTimeline" style="display: none; animation: fadeIn 0.2s ease;">
-      <!-- SABİT ÜST KONTROL ALANI (ARTIK ASLA YUKARI KAÇMAZ) -->
+      <!-- SABİT ÜST KONTROL ALANI -->
       <div style="background: var(--bg); padding-bottom: 6px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-dim); cursor: pointer;">
-            <input type="checkbox" id="chkTimelineShowPaid" onchange="renderMainTimelineView()" style="accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer;">
-            Ödenmişleri Göster
-          </label>
+          <!-- YAN YANA İKİ SEÇENEK: Ödenmişler & Gelecek Ay -->
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--text-dim); cursor: pointer;">
+              <input type="checkbox" id="chkTimelineShowPaid" onchange="renderMainTimelineView()" style="accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer;">
+              Ödenmişler
+            </label>
+            <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--text-dim); cursor: pointer;">
+              <input type="checkbox" id="chkTimelineShowNext" onchange="renderMainTimelineView()" checked style="accent-color: var(--purple); width: 15px; height: 15px; cursor: pointer;">
+              Gelecek Ay
+            </label>
+          </div>
+
           <button type="button" id="timeline-btn-toggle-all" style="background: transparent; border: none; color: var(--accent); font-size: 12px; font-weight: 700; cursor: pointer; padding: 2px 0;" onclick="toggleAllCalendarBodies('main-timeline')">Tümünü Aç ▼</button>
         </div>
 
@@ -1210,7 +1218,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.5.3
+    Sürüm 3.5.4
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1439,7 +1447,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.5.3";
+    const CURRENT_VERSION = "3.5.4";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -4027,6 +4035,8 @@
       const container = document.getElementById('timelineListContainer');
       const chipBar = document.getElementById('timelineFilterChipBar');
       const showPaid = document.getElementById('chkTimelineShowPaid').checked;
+      const showNextEl = document.getElementById('chkTimelineShowNext');
+      const showNext = showNextEl ? showNextEl.checked : true;
 
       const curData = memoryCache["Mevcut Ay"];
       const nextData = memoryCache["Gelecek Ay"];
@@ -4084,7 +4094,7 @@
       let allRaw = [
         ...collectItems(pastData, 'past'),
         ...collectItems(curData, 'cur'),
-        ...collectItems(nextData, 'next')
+        ...(showNext ? collectItems(nextData, 'next') : [])
       ];
 
       // Çip Filtrelerini Hazırla
