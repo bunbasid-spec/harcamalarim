@@ -4240,7 +4240,7 @@
         return outHtml;
       }
 
-      // Standart Ay Özeti Kartı Üretici (2 Nolu Tasarım Hizalaması)
+      // Standart Ay Özeti Kartı Üretici (Sağa Yaslı & TL Başlık Yanında)
       function generateMonthSummaryCard(title, stats) {
         let net = stats.totalIncomeEUR - stats.totalExpenseEUR;
         let isNetPos = net > 0 || (net === 0 && !stats.hasExpenses);
@@ -4251,23 +4251,34 @@
         const acc = stats.accounts;
 
         function addLine(name, eurVal, tryVal = 0, isInc = false) {
-          let valHtml = '';
+          let eurFormatted = '';
           if (tryVal > 0) {
-            let eurText = eurVal > 0 ? `-€${eurVal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : `-€0,00`;
-            valHtml = `
-              <b style="color:var(--red); font-variant-numeric:tabular-nums;">${eurText}</b>
-              <span style="color:var(--text-dim); font-size:10px; font-weight:normal; margin-left:4px;">(-₺${tryVal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})})</span>
-            `;
+            eurFormatted = eurVal > 0 
+              ? `-€${eurVal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}` 
+              : `-€0,00`;
           } else if (isInc) {
-            valHtml = `<b style="color:var(--green); font-variant-numeric:tabular-nums;">+€${eurVal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b>`;
+            eurFormatted = `+€${eurVal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
           } else {
-            valHtml = `<b style="color:var(--red); font-variant-numeric:tabular-nums;">-€${eurVal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</b>`;
+            eurFormatted = `-€${eurVal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+          }
+
+          let color = isInc ? 'var(--green)' : 'var(--red)';
+
+          // TR için TL tutarını etiketin hemen sağına ekle
+          let labelHtml = `<span style="color:var(--text-dim); white-space:nowrap;">${name}:</span>`;
+          if (tryVal > 0) {
+            labelHtml = `
+              <div style="display:flex; align-items:center; gap:4px; white-space:nowrap;">
+                <span style="color:var(--text-dim);">${name}:</span>
+                <span style="color:var(--text-dim); font-size:10px; font-weight:normal;">(-₺${tryVal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})})</span>
+              </div>
+            `;
           }
 
           return `
-            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; margin-top:3px; gap:8px;">
-              <span style="color:var(--text-dim); white-space:nowrap; min-width:65px;">${name}:</span>
-              <div style="text-align:right; flex:1;">${valHtml}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; margin-top:3px; gap:16px;">
+              ${labelHtml}
+              <b style="color:${color}; font-variant-numeric:tabular-nums; text-align:right;">${eurFormatted}</b>
             </div>
           `;
         }
@@ -4283,7 +4294,7 @@
 
         return `
           <div class="calendar-summary-bottom-card" style="display:flex; flex-direction:column; margin-top: 10px; margin-bottom: 14px; padding: 12px 14px;">
-            <!-- ÜST SATIR: Başlık ve Büyük Net Toplam (Yan Yana) -->
+            <!-- ÜST SATIR: Başlık ve Büyük Net Toplam (İki Uca Yaslı) -->
             <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
               <span style="font-size:13px; color:var(--accent); font-weight:700;">${title}</span>
               <span style="font-size:16px; font-weight:800; color:${netColor}; font-variant-numeric:tabular-nums;">
@@ -4291,9 +4302,9 @@
               </span>
             </div>
 
-            <!-- ALT SATIR: Sol Tarafta Alt Alta Hesap Kırılımları -->
-            <div style="max-width: 250px; margin-top: 6px;">
-              ${lines || '<span style="font-size:11px; color:var(--text-dim);">Kayıt bulunamadı</span>'}
+            <!-- ALT SATIR: Sağa Yaslı Hesap Kırılımları -->
+            <div style="align-self:flex-end; min-width:180px; margin-top:6px;">
+              ${lines || '<span style="font-size:11px; color:var(--text-dim); display:block; text-align:right;">Kayıt bulunamadı</span>'}
             </div>
           </div>
         `;
