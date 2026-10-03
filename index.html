@@ -1218,7 +1218,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.5.7
+    Sürüm 3.5.8
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1447,7 +1447,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.5.7";
+    const CURRENT_VERSION = "3.5.8";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -4226,7 +4226,6 @@
         let sorted = Object.values(groupsDict).sort((a, b) => a.timestamp - b.timestamp);
         let outHtml = '';
 
-        // Sadece TR filtresi mi seçili?
         let isOnlyTR = (selectedFiltersTimeline.size === 1 && selectedFiltersTimeline.has('tr'));
 
         sorted.forEach((grp, idx) => {
@@ -4237,26 +4236,46 @@
           let formattedTot = "€" + Math.abs(grp.netEur).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
           let color = isNetPos ? 'var(--green)' : 'var(--red)';
 
-          // Sadece TR seçiliyse ve o gün TL harcaması varsa, başlıkta -€0,00'ın önüne (-₺...) ekle
+          // O gün içinde hangi tür kayıtların olduğunu tespit et
+          let hasCard = false;
+          let hasManual = false;
+          let hasTR = false;
+          let hasIncome = false;
           let dayTrTryTotal = 0;
-          if (isOnlyTR) {
-            grp.items.forEach(it => {
-              if (it.srcType === 'tr') {
-                dayTrTryTotal += (it.tryVal || parseAmountToNum(it.amount));
-              }
-            });
-          }
+
+          grp.items.forEach(it => {
+            if (it.srcType === 'card') hasCard = true;
+            else if (it.srcType === 'manual') hasManual = true;
+            else if (it.srcType === 'tr') {
+              hasTR = true;
+              if (isOnlyTR) dayTrTryTotal += (it.tryVal || parseAmountToNum(it.amount));
+            } else if (it.srcType === 'income') {
+              hasIncome = true;
+            }
+          });
 
           let dayTrSubHtml = (isOnlyTR && dayTrTryTotal > 0)
             ? `<span style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-right:5px;">(-₺${dayTrTryTotal.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>`
             : '';
 
+          // Sabit 4'lü Nokta Göstergesi (Kart: Mavi, Hesap: Turuncu, TR: Mor, Gelir: Yeşil)
+          // Yoksa boşluk korunur (visibility: hidden) böylece alt alta hizalama bozulmaz
+          let dotsIndicatorHtml = `
+            <div style="display:flex; align-items:center; gap:5px; margin-left:8px; padding-top:1px;">
+              <span style="width:6px; height:6px; border-radius:50%; background:var(--accent); ${hasCard ? '' : 'visibility:hidden;'}"></span>
+              <span style="width:6px; height:6px; border-radius:50%; background:var(--orange); ${hasManual ? '' : 'visibility:hidden;'}"></span>
+              <span style="width:6px; height:6px; border-radius:50%; background:var(--purple); ${hasTR ? '' : 'visibility:hidden;'}"></span>
+              <span style="width:6px; height:6px; border-radius:50%; background:var(--green); ${hasIncome ? '' : 'visibility:hidden;'}"></span>
+            </div>
+          `;
+
           outHtml += `
             <div class="calendar-timeline-card">
               <div class="calendar-day-header" onclick="toggleCalendarDayBody('${bodyId}', 'main-timeline')">
-                <div class="calendar-day-badge">
+                <div class="calendar-day-badge" style="display:flex; align-items:center;">
                   <span class="calendar-day-num">${grp.dayStr}</span>
-                  <span class="calendar-day-name">(${grp.dayName})</span>
+                  <span class="calendar-day-name" style="min-width: 82px;">(${grp.dayName})</span>
+                  ${dotsIndicatorHtml}
                 </div>
                 <div class="calendar-day-total" style="color:${color}; display:flex; align-items:center;">
                   ${dayTrSubHtml}
