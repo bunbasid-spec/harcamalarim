@@ -2499,6 +2499,7 @@
             dayStr: dInfo.dayStr,
             dayName: dInfo.dayName,
             netEur: 0,
+            hasExpense: false,
             items: []
           };
         }
@@ -2509,6 +2510,7 @@
           sumTotalIncomeEUR += numAmt;
         } else {
           dayGroups[key].netEur -= numAmt;
+          dayGroups[key].hasExpense = true;
           sumTotalExpenseEUR += numAmt;
         }
 
@@ -2578,12 +2580,31 @@
         return;
       }
 
+      // Sadece TR seçili mi kontrolü
+      let isOnlyTR = (filterSet.size === 1 && filterSet.has('tr'));
+
       sortedDays.forEach((group, gIdx) => {
         let bodyId = `${moduleType}-cal-day-body-${gIdx}`;
-        let isNetPositive = group.netEur >= 0;
+
+        // Net tutar 0 olsa bile içinde gider/TR varsa kırmızı '-', aksi halde '+'
+        let isNetPositive = group.netEur > 0 || (group.netEur === 0 && !group.hasExpense);
         let dayColor = isNetPositive ? 'var(--green)' : 'var(--red)';
         let formattedTotal = "€" + Math.abs(group.netEur).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         let sign = isNetPositive ? '+' : '-';
+
+        // Sadece TR seçiliyse o günün toplam TL tutarını hesapla
+        let dayTrTryTotal = 0;
+        if (isOnlyTR) {
+          group.items.forEach(it => {
+            if (it.srcType === 'tr') {
+              dayTrTryTotal += (it.tryVal || parseAmountToNum(it.amount));
+            }
+          });
+        }
+
+        let dayTrSubHtml = (isOnlyTR && dayTrTryTotal > 0)
+          ? `<span style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-right:5px;">(-₺${dayTrTryTotal.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>`
+          : '';
 
         html += `
           <div class="calendar-timeline-card">
@@ -2592,9 +2613,10 @@
                 <span class="calendar-day-num">${group.dayStr}</span>
                 <span class="calendar-day-name">(${group.dayName})</span>
               </div>
-              <div class="calendar-day-total" style="color: ${dayColor}">
+              <div class="calendar-day-total" style="color: ${dayColor}; display:flex; align-items:center;">
+                ${dayTrSubHtml}
                 <span>${sign}${formattedTotal}</span>
-                <span style="font-size:10px; color:var(--text-dim);">▼</span>
+                <span style="font-size:10px; color:var(--text-dim); margin-left:4px;">▼</span>
               </div>
             </div>
 
@@ -2612,9 +2634,11 @@
           let amountsHtml = '';
           if (it.srcType === 'tr') {
             let tryDisplay = formatAmount(it.amount);
-            let eurDisplay = "€" + (it.calculatedEur || 0).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            let eurDisplay = (it.calculatedEur > 0)
+              ? `${itemSign}€${it.calculatedEur.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : `-€0,00`;
             amountsHtml = `
-              <div class="cal-item-primary-amt" style="color: ${itemColor}">${itemSign}${eurDisplay}</div>
+              <div class="cal-item-primary-amt" style="color: ${itemColor}">${eurDisplay}</div>
               <div class="cal-item-secondary-amt">(-${tryDisplay})</div>
             `;
           } else {
