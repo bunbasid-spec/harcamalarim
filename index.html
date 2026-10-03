@@ -1190,15 +1190,19 @@
       <!-- SABİT ÜST KONTROL ALANI -->
       <div style="background: var(--bg); padding-bottom: 6px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <!-- YAN YANA İKİ SEÇENEK: Ödenmişler & Gelecek Ay (İkisi de Mor Tikli) -->
-          <div style="display: flex; align-items: center; gap: 14px;">
+          <!-- YAN YANA ÜÇ SEÇENEK: Ödenmişler & Geçmiş & Gelecek (Hepsi Mor Tikli, Açılışta Kapalı) -->
+          <div style="display: flex; align-items: center; gap: 12px;">
             <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--text-dim); cursor: pointer;">
               <input type="checkbox" id="chkTimelineShowPaid" onchange="renderMainTimelineView()" style="accent-color: var(--purple); width: 15px; height: 15px; cursor: pointer;">
               Ödenmişler
             </label>
             <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--text-dim); cursor: pointer;">
-              <input type="checkbox" id="chkTimelineShowNext" onchange="renderMainTimelineView()" checked style="accent-color: var(--purple); width: 15px; height: 15px; cursor: pointer;">
-              Gelecek Ay
+              <input type="checkbox" id="chkTimelineShowPast" onchange="renderMainTimelineView()" style="accent-color: var(--purple); width: 15px; height: 15px; cursor: pointer;">
+              Geçmiş
+            </label>
+            <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--text-dim); cursor: pointer;">
+              <input type="checkbox" id="chkTimelineShowNext" onchange="renderMainTimelineView()" style="accent-color: var(--purple); width: 15px; height: 15px; cursor: pointer;">
+              Gelecek
             </label>
           </div>
 
@@ -4072,16 +4076,24 @@
     function renderMainTimelineView() {
       const container = document.getElementById('timelineListContainer');
       const chipBar = document.getElementById('timelineFilterChipBar');
-      const showPaid = document.getElementById('chkTimelineShowPaid').checked;
+
+      // 3 Bağımsız Seçenek Kontrolü
+      const showPaidEl = document.getElementById('chkTimelineShowPaid');
+      const showPaid = showPaidEl ? showPaidEl.checked : false;
+
+      const showPastEl = document.getElementById('chkTimelineShowPast');
+      const showPast = showPastEl ? showPastEl.checked : false;
+
       const showNextEl = document.getElementById('chkTimelineShowNext');
-      const showNext = showNextEl ? showNextEl.checked : true;
+      const showNext = showNextEl ? showNextEl.checked : false;
 
       const curData = memoryCache["Mevcut Ay"];
       const nextData = memoryCache["Gelecek Ay"];
 
+      // Geçmiş Ay: SADECE 'Geçmiş' kutucuğu işaretliyse yüklenir
       const pastMonths = availableSheets.filter(s => s !== "Mevcut Ay" && s !== "Gelecek Ay");
       const latestPastSheet = pastMonths.length > 0 ? pastMonths[0] : null;
-      const pastData = (showPaid && latestPastSheet) ? memoryCache[latestPastSheet] : null;
+      const pastData = (showPast && latestPastSheet) ? memoryCache[latestPastSheet] : null;
 
       if (!curData) {
         container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--red);">Mevcut ay verisi bulunamadı.</div>';
@@ -4121,6 +4133,7 @@
           items.push({ ...it, srcType: 'tr', typeTag: 'TR KART', isIncome: false, eurVal, tryVal, filterCategory: 'tr', filterAccount: 'tr', monthTag: tag });
         });
 
+        // GELİRLER: Bekleyenler her zaman, ödenmişler yalnızca 'Ödenmişler' seçiliyken
         (dataObj.incomeItems || []).forEach(it => {
           let isPending = (!it.date || it.date.trim() === "");
           if (!showPaid && !isPending) return;
@@ -4138,8 +4151,9 @@
         return items;
       }
 
+      // Verileri topla (Geçmiş ve Gelecek yalnızca seçilmişse dahil edilir)
       let allRaw = [
-        ...collectItems(pastData, 'past'),
+        ...(showPast ? collectItems(pastData, 'past') : []),
         ...collectItems(curData, 'cur'),
         ...(showNext ? collectItems(nextData, 'next') : [])
       ];
@@ -4190,7 +4204,6 @@
         let targetDict = (it.monthTag === 'past') ? pastMonthGroups : ((it.monthTag === 'next') ? nextMonthGroups : curMonthGroups);
         let targetStats = (it.monthTag === 'past') ? statsPast : ((it.monthTag === 'next') ? statsNext : statsCur);
         
-        // GRUPLAMA ANAHTARI: Tam Tarih Zamanı (Timestamp) - Erken harcamalar 01'den önce sıralanır
         let dayKey = dInfo.timestamp;
 
         if (!targetDict[dayKey]) {
@@ -4268,8 +4281,7 @@
             ? `<span style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-right:5px;">(-₺${dayTrTryTotal.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>`
             : '';
 
-          // Rakamın HEMEN ÖNÜNDE DİKEY 4'LÜ SÜTUN (Mavi -> Turuncu -> Mor -> Yeşil)
-          // Opaklık: %70 (opacity: 0.7)
+          // Rakamın HEMEN ÖNÜNDE DİKEY 4'LÜ SÜTUN (Mavi -> Turuncu -> Mor -> Yeşil) - %70 Opaklık
           let verticalDotsHtml = `
             <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2.5px; width:7px; margin-right:8px; opacity:0.7;">
               <span style="width:5px; height:5px; border-radius:50%; background:var(--accent); ${hasCard ? '' : 'visibility:hidden;'}"></span>
@@ -4334,7 +4346,6 @@
         return outHtml;
       }
 
-      // Standart Ay Özeti Kartı Üretici (Eski Düzene Geri Alındı)
       function generateMonthSummaryCard(title, stats) {
         let net = stats.totalIncomeEUR - stats.totalExpenseEUR;
         let isNetPos = net > 0 || (net === 0 && !stats.hasExpenses);
@@ -4387,15 +4398,12 @@
 
         return `
           <div class="calendar-summary-bottom-card" style="display:flex; flex-direction:column; margin-top: 10px; margin-bottom: 14px; padding: 12px 14px;">
-            <!-- ÜST SATIR: Başlık ve Büyük Net Toplam -->
             <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
               <span style="font-size:13px; color:var(--accent); font-weight:700;">${title}</span>
               <span style="font-size:16px; font-weight:800; color:${netColor}; font-variant-numeric:tabular-nums;">
                 ${netSign}€${Math.abs(net).toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
               </span>
             </div>
-
-            <!-- ALT SATIR: Sağa Yaslı Hesap Kırılımları -->
             <div style="align-self:flex-end; min-width:180px; margin-top:6px;">
               ${lines || '<span style="font-size:11px; color:var(--text-dim); display:block; text-align:right;">Kayıt bulunamadı</span>'}
             </div>
@@ -4404,15 +4412,15 @@
       }
 
       let html = '';
-      let pastHtml = renderGroupList(pastMonthGroups, 'past');
+      let pastHtml = (showPast && pastData) ? renderGroupList(pastMonthGroups, 'past') : '';
       let curHtml = renderGroupList(curMonthGroups, 'cur');
-      let nextHtml = renderGroupList(nextMonthGroups, 'next');
+      let nextHtml = (showNext && nextData) ? renderGroupList(nextMonthGroups, 'next') : '';
 
       if (!pastHtml && !curHtml && !nextHtml) {
         html = '<div style="text-align:center; padding:30px; color:var(--text-dim);">Filtreye uygun kayıt bulunamadı.</div>';
       } else {
         // 1. GEÇMİŞ AY
-        if (pastHtml) {
+        if (showPast && pastHtml) {
           html += `
             <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin: 10px 0 18px 0; padding: 4px 0;">
               <div style="flex:1; height:1px; background:var(--border);"></div>
@@ -4427,7 +4435,7 @@
         // 2. MEVCUT AY
         html += `<div id="timelineCurrentMonthAnchor"></div>`;
 
-        if (pastHtml && curHtml) {
+        if (showPast && pastHtml && curHtml) {
           html += `
             <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin: 18px 0 18px 0; padding: 4px 0;">
               <div style="flex:1; height:1px; background:var(--border);"></div>
@@ -4457,9 +4465,11 @@
       }
 
       container.innerHTML = html;
+      
+      // Buton ID'si seninkiyle (timeline-btn-toggle-all) birebir eşleştirildi:
       updateToggleAllButtonState('main-timeline');
 
-      if (showPaid && pastHtml) {
+      if (showPast && pastHtml) {
         setTimeout(() => {
           const anchor = document.getElementById('timelineCurrentMonthAnchor');
           const listCont = document.getElementById('timelineListContainer');
