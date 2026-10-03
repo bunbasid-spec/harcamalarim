@@ -4121,9 +4121,19 @@
           items.push({ ...it, srcType: 'tr', typeTag: 'TR KART', isIncome: false, eurVal, tryVal, filterCategory: 'tr', filterAccount: 'tr', monthTag: tag });
         });
 
-        if (showPaid) {
-          (dataObj.incomeItems || []).forEach(it => items.push({ ...it, srcType: 'income', typeTag: 'GELİR', isIncome: true, filterCategory: 'income', filterAccount: 'income', monthTag: tag }));
-        }
+        (dataObj.incomeItems || []).forEach(it => {
+          let isPending = (!it.date || it.date.trim() === "");
+          if (!showPaid && !isPending) return;
+          items.push({ 
+            ...it, 
+            srcType: 'income', 
+            typeTag: 'GELİR', 
+            isIncome: true, 
+            filterCategory: 'income', 
+            filterAccount: 'income', 
+            monthTag: tag 
+          });
+        });
 
         return items;
       }
