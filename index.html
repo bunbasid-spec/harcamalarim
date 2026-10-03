@@ -1218,7 +1218,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.5.8
+    Sürüm 3.5.9
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1447,7 +1447,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.5.8";
+    const CURRENT_VERSION = "3.5.9";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -4258,14 +4258,14 @@
             ? `<span style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-right:5px;">(-₺${dayTrTryTotal.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>`
             : '';
 
-          // Sabit 4'lü Nokta Göstergesi (Kart: Mavi, Hesap: Turuncu, TR: Mor, Gelir: Yeşil)
-          // Yoksa boşluk korunur (visibility: hidden) böylece alt alta hizalama bozulmaz
-          let dotsIndicatorHtml = `
-            <div style="display:flex; align-items:center; gap:5px; margin-left:8px; padding-top:1px;">
-              <span style="width:6px; height:6px; border-radius:50%; background:var(--accent); ${hasCard ? '' : 'visibility:hidden;'}"></span>
-              <span style="width:6px; height:6px; border-radius:50%; background:var(--orange); ${hasManual ? '' : 'visibility:hidden;'}"></span>
-              <span style="width:6px; height:6px; border-radius:50%; background:var(--purple); ${hasTR ? '' : 'visibility:hidden;'}"></span>
-              <span style="width:6px; height:6px; border-radius:50%; background:var(--green); ${hasIncome ? '' : 'visibility:hidden;'}"></span>
+          // Rakamın HEMEN ÖNÜNDE DİKEY 4'LÜ SÜTUN (Mavi -> Turuncu -> Mor -> Yeşil)
+          // Opaklık: %70 (opacity: 0.7)
+          let verticalDotsHtml = `
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2.5px; width:7px; margin-right:8px; opacity:0.7;">
+              <span style="width:5px; height:5px; border-radius:50%; background:var(--accent); ${hasCard ? '' : 'visibility:hidden;'}"></span>
+              <span style="width:5px; height:5px; border-radius:50%; background:var(--orange); ${hasManual ? '' : 'visibility:hidden;'}"></span>
+              <span style="width:5px; height:5px; border-radius:50%; background:var(--purple); ${hasTR ? '' : 'visibility:hidden;'}"></span>
+              <span style="width:5px; height:5px; border-radius:50%; background:var(--green); ${hasIncome ? '' : 'visibility:hidden;'}"></span>
             </div>
           `;
 
@@ -4273,9 +4273,9 @@
             <div class="calendar-timeline-card">
               <div class="calendar-day-header" onclick="toggleCalendarDayBody('${bodyId}', 'main-timeline')">
                 <div class="calendar-day-badge" style="display:flex; align-items:center;">
+                  ${verticalDotsHtml}
                   <span class="calendar-day-num">${grp.dayStr}</span>
-                  <span class="calendar-day-name" style="min-width: 82px;">(${grp.dayName})</span>
-                  ${dotsIndicatorHtml}
+                  <span class="calendar-day-name">(${grp.dayName})</span>
                 </div>
                 <div class="calendar-day-total" style="color:${color}; display:flex; align-items:center;">
                   ${dayTrSubHtml}
