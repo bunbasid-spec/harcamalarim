@@ -1222,7 +1222,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.6.7
+    Sürüm 3.6.8
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1271,7 +1271,7 @@
       Ödenenler (0)
     </button>
     <button type="button" id="btnCtrlKalan" onclick="setControlSubTab('kalan')" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:var(--red); color:#fff;">
-       Kalanlar (0)
+      Kalanlar (0)
     </button>
   </div>
 
@@ -1520,7 +1520,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.6.7";
+    const CURRENT_VERSION = "3.6.8";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -3503,29 +3503,24 @@
 
       if (totalTrTRYAll > 0 && totalTrEURAll > 0) trRateEUR = totalTrEURAll / totalTrTRYAll;
 
-      // --- GENEL TOPLAMLAR ---
-      const totalKalan = remCard + totalRemManual + totalRemTrEUR;
-      const totalOdenen = paidCard + totalPaidManual + totalPaidTrEUR;
-      const grandBudget = totalOdenen + totalKalan;
-
-      let pctPaid = grandBudget > 0 ? Math.round((totalOdenen / grandBudget) * 100) : 0;
-      let pctRem = grandBudget > 0 ? (100 - pctPaid) : 0;
-
-      // Buton sayacında sadece Hesap (Diğer) ve TR giderleri sayılsın (Kart kotası ve Gelirler dahil edilmez)
+      // --- BUTON SAYAÇLARI (Sadece Hesap + TR) ---
       let countKalan = pendingManualItems.length + pendingTrItems.length;
       let countOdenen = paidManualItems.length + paidTrItems.length;
 
-      // SABİT SEGMENT BUTONLARININ YAZI VE RENKLERİNİ GÜNCELLE
+      // --- SABİT BUTONLARI GÜNCELLE (!important ve style.cssText ile kesin çözüm) ---
       const btnOdenen = document.getElementById('btnCtrlOdenen');
       const btnKalan = document.getElementById('btnCtrlKalan');
-      if (btnOdenen && btnKalan) {
-        btnOdenen.innerText = `Ödenenler (${countOdenen})`;
-        btnOdenen.style.background = isOdenen ? 'var(--green)' : 'transparent';
-        btnOdenen.style.color = isOdenen ? '#000' : 'var(--text-dim)';
 
+      if (btnOdenen) {
+        btnOdenen.innerText = `Ödenenler (${countOdenen})`;
+        btnOdenen.style.setProperty('background', isOdenen ? 'var(--green)' : 'transparent', 'important');
+        btnOdenen.style.setProperty('color', isOdenen ? '#000' : 'var(--text-dim)', 'important');
+      }
+
+      if (btnKalan) {
         btnKalan.innerText = `Kalanlar (${countKalan})`;
-        btnKalan.style.background = !isOdenen ? 'var(--red)' : 'transparent';
-        btnKalan.style.color = !isOdenen ? '#fff' : 'var(--text-dim)';
+        btnKalan.style.setProperty('background', !isOdenen ? 'var(--red)' : 'transparent', 'important');
+        btnKalan.style.setProperty('color', !isOdenen ? '#fff' : 'var(--text-dim)', 'important');
       }
 
       // --- AJANDA GÖRÜNÜMÜ ---
@@ -3534,6 +3529,14 @@
         renderGenericCalendarView(container, currentData, 'ctrl', selectedFiltersCtrl, !isOdenen, flowText);
         return;
       }
+
+      // --- GENEL TOPLAMLAR ---
+      const totalKalan = remCard + totalRemManual + totalRemTrEUR;
+      const totalOdenen = paidCard + totalPaidManual + totalPaidTrEUR;
+      const grandBudget = totalOdenen + totalKalan;
+
+      let pctPaid = grandBudget > 0 ? Math.round((totalOdenen / grandBudget) * 100) : 0;
+      let pctRem = grandBudget > 0 ? (100 - pctPaid) : 0;
 
       // --- GÖRÜNÜM 1: ÖZET MODU (SUMMARY) ---
       if (currentControlView === 'summary') {
