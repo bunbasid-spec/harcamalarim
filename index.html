@@ -1222,7 +1222,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.6.2
+    Sürüm 3.6.3
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1365,6 +1365,25 @@
     </div>
   </div>
 
+  <!-- TELEGRAM LİSTE GÖNDERİM ONAY MODALI -->
+  <div class="modal" id="modalSendTelegramList" style="display:none; align-items:center; justify-content:center; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999;">
+    <div class="modal-content" style="background:var(--card-bg, #1a1f2c); border:1px solid var(--border); border-radius:14px; padding:20px; width:90%; max-width:320px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+      <h3 id="lblSendListTitle" style="font-size:16px; margin:0 0 10px 0; color:#fff;">Listeyi Gönder</h3>
+      <p id="lblSendListDesc" style="font-size:13px; color:var(--text-dim); margin:0 0 18px 0; line-height:1.4;">
+        Listeyi yollamak istiyor musunuz?
+      </p>
+    
+      <div style="display:flex; gap:10px;">
+        <button type="button" onclick="closeModal('modalSendTelegramList')" style="flex:1; background:rgba(255,255,255,0.08); color:var(--text-dim); border:1px solid var(--border); padding:10px; border-radius:8px; font-weight:700; font-size:13px; cursor:pointer;">
+          Hayır
+        </button>
+        <button type="button" id="btnConfirmSendTelegram" style="flex:1; background:var(--green); color:#000; border:none; padding:10px; border-radius:8px; font-weight:700; font-size:13px; cursor:pointer;">
+          Gönder
+        </button>
+      </div>
+    </div>
+  </div>
+  
   <!-- GEÇEN AYDAN / MEVCUT AYDAN AKTARMA MODALI -->
   <div class="modal" id="modalLastMonth">
     <div class="modal-content">
@@ -1483,7 +1502,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.6.2";
+    const CURRENT_VERSION = "3.6.3";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -6018,6 +6037,162 @@
       });
       loadDebtsData();
     }
+
+    // =========================================================
+    // TELEGRAM LİSTE GÖNDERİMİ (ÖDENENLER / KALANLAR)
+    // =========================================================
+    let pendingTelegramPayload = null;
+
+    function triggerTelegramReportModal(type) {
+      if (!currentData) return;
+
+      const isOdenen = (type === 'odenen');
+      let itemsToSend = [];
+      let totalEur = 0;
+      let totalTry = 0;
+
+      // 1. Manuel Hesap Kalemleri
+      (currentData.manualItems || []).forEach(it => {
+        let amt = parseAmountToNum(it.amount);
+        let isPending = (!it.date || it.date.trim() === "");
+        if (amt <= 0) return;
+
+        if (isOdenen && !isPending) {
+          totalEur += amt;
+          let name = (it.merchant || 'Açıklamasız').replace(/\s*\(\d{1,2}[\.\/]\d{1,2}\)/, '').trim();
+          itemsToSend.push({ name: name, amount: `${amt.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} €` });
+        } else if (!isOdenen && isPending) {
+          totalEur += amt;
+          let rawName = it.merchant || 'Açıklamasız';
+          itemsToSend.push({ name: rawName, amount: `${amt.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} €` });
+        }
+      });
+
+      // 2. TR Kalemleri
+      (currentData.trItems || []).forEach(it => {
+        let amtTry = parseAmountToNum(it.amount);
+        let amtEur = parseAmountToNum(it.eurAmount || 0);
+        let isPending = (!it.date || it.date.trim() === "");
+        if (amtTry <= 0) return;
+
+        if (isOdenen && !isPending) {
+          totalTry += amtTry;
+          let name = (it.merchant || 'TR Kart').replace(/\s*\(\d{1,2}[\.\/]\d{1,2}\)/, '').trim();
+          itemsToSend.push({ name: name, amount: `${amtTry.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₺` });
+        } else if (!isOdenen && isPending) {
+          totalTry += amtTry;
+          let rawName = it.merchant || 'TR Kart';
+          itemsToSend.push({ name: rawName, amount: `${amtTry.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₺` });
+        }
+      });
+
+      if (itemsToSend.length === 0) {
+        alert("Gönderilecek kayıt bulunamadı.");
+        return;
+      }
+
+      // Toplam Metni Hazırla
+      let totalParts = [];
+      if (totalEur > 0 || totalTry === 0) totalParts.push(`${totalEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} €`);
+      if (totalTry > 0) totalParts.push(`${totalTry.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₺`);
+
+      let titleStr = isOdenen ? "Yapılan Ödemeler" : "Kalan Ödemeler";
+      let totalLabel = isOdenen ? `Ödenen Toplam: ${totalParts.join(" + ")}` : `Kalan Toplam: ${totalParts.join(" + ")}`;
+
+      pendingTelegramPayload = {
+        title: titleStr,
+        items: itemsToSend,
+        totalText: totalLabel
+      };
+
+      document.getElementById('lblSendListTitle').innerText = titleStr;
+      document.getElementById('lblSendListDesc').innerText = `${titleStr} listesini Telegram botuna yollamak istiyor musunuz?`;
+      
+      const modal = document.getElementById('modalSendTelegramList');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    // Onayla ve Gönder Butonu Tıklanınca
+    document.getElementById('btnConfirmSendTelegram').onclick = async function() {
+      if (!pendingTelegramPayload) return;
+      const btn = this;
+      btn.innerText = "Gönderiliyor...";
+      btn.disabled = true;
+
+      try {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(() => {
+              btn.innerText = "Evet, Gönder";
+              btn.disabled = false;
+              closeModal('modalSendTelegramList');
+            })
+            .sendCustomTelegramReport(pendingTelegramPayload.title, pendingTelegramPayload.items, pendingTelegramPayload.totalText);
+        } else {
+          await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'sendTelegramReport',
+              ...pendingTelegramPayload
+            })
+          });
+          btn.innerText = "Evet, Gönder";
+          btn.disabled = false;
+          closeModal('modalSendTelegramList');
+        }
+      } catch (e) {
+        alert("Gönderilemedi: " + e);
+        btn.innerText = "Evet, Gönder";
+        btn.disabled = false;
+      }
+    };
+
+    // Butonlara Basılı Tutma (Long Press - 500ms) Dinleyicileri
+    function initControlButtonsLongPress() {
+      const setupBtn = (btnId, type) => {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+
+        let timer = null;
+        let isLong = false;
+
+        const start = () => {
+          isLong = false;
+          timer = setTimeout(() => {
+            isLong = true;
+            triggerTelegramReportModal(type);
+          }, 500);
+        };
+
+        const stop = () => {
+          if (timer) {
+            clearTimeout(timer);
+            timer = null;
+          }
+        };
+
+        btn.addEventListener('touchstart', start, { passive: true });
+        btn.addEventListener('touchend', stop);
+        btn.addEventListener('touchmove', stop, { passive: true });
+
+        btn.addEventListener('mousedown', start);
+        btn.addEventListener('mouseup', stop);
+        btn.addEventListener('mouseleave', stop);
+
+        btn.addEventListener('click', (e) => {
+          if (isLong) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+          setControlSubTab(type);
+        });
+      };
+
+      setupBtn('btnCtrlOdenen', 'odenen');
+      setupBtn('btnCtrlKalan', 'kalan');
+    }
+    
   </script>
 </body>
 </html>
