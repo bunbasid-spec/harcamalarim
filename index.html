@@ -1113,7 +1113,7 @@
       </div>
 
       <div class="summary-grid">
-        <div class="summary-card rem clickable" onclick="toggleMask('rem')">
+        <div class="summary-card rem clickable" id="cardSummaryRem" data-mask-key="rem" data-card-title="Kalan Bakiye">
           <div class="summary-title">Kalan Bakiye</div>
           <div class="summary-val val-rem masked" id="remVal">••••••</div>
         </div>
@@ -1121,15 +1121,15 @@
           <div class="summary-title">Kart Harcaması</div>
           <div class="summary-val val-card" id="cardVal">...</div>
         </div>
-        <div class="summary-card manual-exp clickable" onclick="toggleMask('manual')">
+        <div class="summary-card manual-exp clickable" id="cardSummaryManual" data-mask-key="manual" data-card-title="Diğer Harcamalar">
           <div class="summary-title">Diğer Harcamalar</div>
           <div class="summary-val val-manual masked" id="manualVal">••••••</div>
         </div>
-        <div class="summary-card tr-exp clickable" onclick="toggleMask('tr')">
+        <div class="summary-card tr-exp clickable" id="cardSummaryTr" data-mask-key="tr" data-card-title="TR Ödemeleri">
           <div class="summary-title">TR Ödemeleri (€)</div>
           <div class="summary-val val-tr masked" id="trVal">••••••</div>
         </div>
-        <div class="summary-card income clickable" onclick="toggleMask('inc')">
+        <div class="summary-card income clickable" id="cardSummaryInc" data-mask-key="inc" data-card-title="Gelirler">
           <div class="summary-title">Gelirler</div>
           <div class="summary-val val-inc masked" id="incVal">••••••</div>
         </div>
@@ -1155,15 +1155,15 @@
     <!-- 2. BORÇLAR MODÜLÜ GÖRÜNÜMÜ -->
     <div id="viewDebts" style="display: none;">
       <div class="summary-grid">
-        <div class="summary-card debt-net clickable" onclick="toggleMask('debtNet')">
+        <div class="summary-card debt-net clickable" id="cardSummaryDebtNet" data-mask-key="debtNet" data-card-title="Net Borç / Alacak">
           <div class="summary-title" id="lblDebtNetTitle">Net Borç / Alacak Durumu</div>
           <div class="summary-val val-rem masked" id="debtNetVal">••••••</div>
         </div>
-        <div class="summary-card debt-give clickable" onclick="toggleMask('debtGive')">
+        <div class="summary-card debt-give clickable" id="cardSummaryDebtGive" data-mask-key="debtGive" data-card-title="Borçlarım">
           <div class="summary-title" id="lblDebtGiveTitle">Borçlarım (Aldıklarım)</div>
           <div class="summary-val masked" id="debtGiveVal" style="color:var(--red);">••••••</div>
         </div>
-        <div class="summary-card debt-get clickable" onclick="toggleMask('debtGet')">
+        <div class="summary-card debt-get clickable" id="cardSummaryDebtGet" data-mask-key="debtGet" data-card-title="Alacaklarım">
           <div class="summary-title" id="lblDebtGetTitle">Alacaklarım (Verdiklerim)</div>
           <div class="summary-val masked" id="debtGetVal" style="color:var(--green);">••••••</div>
         </div>
@@ -1222,7 +1222,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.6.1
+    Sürüm 3.6.2
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1404,6 +1404,28 @@
     </div>
   </div>
 
+  <!-- KART AÇILIŞ GİZLİLİK AYARI MODALI -->
+  <div class="modal" id="modalCardDefaultPrivacy" style="display:none; align-items:center; justify-content:center; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999;">
+    <div class="modal-content" style="background:var(--card-bg, #1a1f2c); border:1px solid var(--border); border-radius:14px; padding:20px; width:90%; max-width:320px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+      <h3 id="lblPrivacyCardTitle" style="font-size:16px; margin:0 0 10px 0; color:#fff;">Kart Başlığı</h3>
+      <p style="font-size:13px; color:var(--text-dim); margin:0 0 18px 0; line-height:1.4;">
+        Bu kart açılışta nasıl başlasın?
+      </p>
+      
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button type="button" onclick="saveCardDefaultPrivacy(false)" style="background:var(--green); color:#000; border:none; padding:10px; border-radius:8px; font-weight:700; font-size:13px; cursor:pointer;">
+          👁️ Açık Başlasın
+        </button>
+        <button type="button" onclick="saveCardDefaultPrivacy(true)" style="background:rgba(255,255,255,0.08); color:#fff; border:1px solid var(--border); padding:10px; border-radius:8px; font-weight:700; font-size:13px; cursor:pointer;">
+          🔒 Gizli Başlasın (••••••)
+        </button>
+        <button type="button" onclick="closeModal('modalCardDefaultPrivacy')" style="background:transparent; border:none; color:var(--text-dim); font-size:12px; margin-top:4px; cursor:pointer; padding:6px;">
+          Vazgeç
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- BORÇ EKLEME MODALI -->
   <div class="modal" id="modalDebt">
     <div class="modal-content">
@@ -1461,7 +1483,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.6.1";
+    const CURRENT_VERSION = "3.6.2";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1498,10 +1520,6 @@
     let selectedFiltersCtrl = new Set();
     let selectedFiltersPast = new Set();
     
-    let maskedState = {
-      rem: true, manual: true, tr: true, inc: true,
-      debtNet: true, debtGive: true, debtGet: true
-    };
 
     window.onload = function() {
       restoreCachedData();
@@ -1512,6 +1530,7 @@
       
       initPullToRefresh();
       initCardLimitLongPress();
+      initCardPrivacyLongPress();
       initFabTouchEngine();
       initComboboxGlobalClick();
 
@@ -5263,9 +5282,115 @@
       openModalWithScrollLock('modalPayment');
     }
 
+    // =========================================================
+    // KART MASKELEME VE AÇILIŞ GİZLİLİK YÖNETİMİ
+    // =========================================================
+    function loadMaskedStateDefaults() {
+      const defaultState = {
+        rem: true,
+        manual: true,
+        tr: true,
+        inc: true,
+        debtNet: true,
+        debtGive: true,
+        debtGet: true
+      };
+
+      try {
+        const saved = localStorage.getItem("app_card_privacy_defaults");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return { ...defaultState, ...parsed };
+        }
+      } catch (e) {}
+
+      return defaultState;
+    }
+
+    let maskedState = loadMaskedStateDefaults();
+    let currentPrivacyEditKey = null;
+
     function toggleMask(key) {
       maskedState[key] = !maskedState[key];
       updateMaskedDisplay();
+    }
+
+    function openCardPrivacyModal(key, title) {
+      currentPrivacyEditKey = key;
+      const titleEl = document.getElementById('lblPrivacyCardTitle');
+      if (titleEl) titleEl.innerText = title;
+      
+      const modal = document.getElementById('modalCardDefaultPrivacy');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function saveCardDefaultPrivacy(isMaskedByDefault) {
+      if (!currentPrivacyEditKey) return;
+
+      maskedState[currentPrivacyEditKey] = isMaskedByDefault;
+      updateMaskedDisplay();
+
+      try {
+        let saved = {};
+        const stored = localStorage.getItem("app_card_privacy_defaults");
+        if (stored) saved = JSON.parse(stored);
+        
+        saved[currentPrivacyEditKey] = isMaskedByDefault;
+        localStorage.setItem("app_card_privacy_defaults", JSON.stringify(saved));
+      } catch (e) {}
+
+      const modal = document.getElementById('modalCardDefaultPrivacy');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function initCardPrivacyLongPress() {
+      const cardIds = [
+        'cardSummaryRem', 'cardSummaryManual', 'cardSummaryTr', 'cardSummaryInc',
+        'cardSummaryDebtNet', 'cardSummaryDebtGive', 'cardSummaryDebtGet'
+      ];
+
+      cardIds.forEach(id => {
+        const card = document.getElementById(id);
+        if (!card) return;
+
+        const key = card.getAttribute('data-mask-key');
+        const title = card.getAttribute('data-card-title') || 'Kart Ayarı';
+
+        let pressTimer = null;
+        let isLongPress = false;
+
+        function startPress() {
+          isLongPress = false;
+          pressTimer = setTimeout(() => {
+            isLongPress = true;
+            openCardPrivacyModal(key, title);
+          }, 500);
+        }
+
+        function cancelPress() {
+          if (pressTimer) {
+            clearTimeout(pressTimer);
+            pressTimer = null;
+          }
+        }
+
+        card.addEventListener('touchstart', startPress, { passive: true });
+        card.addEventListener('touchend', cancelPress);
+        card.addEventListener('touchmove', cancelPress, { passive: true });
+
+        card.addEventListener('mousedown', startPress);
+        card.addEventListener('mouseup', cancelPress);
+        card.addEventListener('mouseleave', cancelPress);
+
+        card.addEventListener('click', (e) => {
+          if (isLongPress) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+          toggleMask(key);
+        });
+      });
     }
 
     function updateMaskedDisplay() {
