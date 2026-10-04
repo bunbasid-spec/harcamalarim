@@ -1288,13 +1288,23 @@
   <!-- AY İÇİ KONTROL MODALI (ÖZET | AJANDA | PLAN) -->
   <div class="modal" id="modalControl">
     <div class="modal-content" id="controlModalContent">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px;">
         <h3 style="font-size: 15px; white-space: nowrap; margin: 0;">Ay İçi Kontrol</h3>
         <div class="mini-view-switcher three-way">
           <button type="button" class="mini-view-btn active" id="btnCtrlViewSummary" onclick="switchControlView('summary')">Özet</button>
           <button type="button" class="mini-view-btn" id="btnCtrlViewCalendar" onclick="switchControlView('calendar')">Ajanda</button>
           <button type="button" class="mini-view-btn" id="btnCtrlViewPlan" onclick="switchControlView('plan')">Plan</button>
         </div>
+      </div>
+
+      <!-- SABİT ÖDENENLER / KALANLAR BUTONLARI (BAŞLIK İLE BİRLİKTE SABİT KALIR) -->
+      <div id="ctrlSegmentBar" style="display:flex; background:rgba(255,255,255,0.06); padding:3px; border-radius:10px; gap:4px; margin-bottom:12px;">
+        <button type="button" id="btnCtrlOdenen" onclick="setControlSubTab('odenen')" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:transparent; color:var(--text-dim);">
+          Ödenenler (0)
+        </button>
+        <button type="button" id="btnCtrlKalan" onclick="setControlSubTab('kalan')" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:var(--red); color:#fff;">
+          Kalanlar (0)
+        </button>
       </div>
 
       <div id="controlReportContent" style="max-height: 65vh; overflow-y: auto; padding-right: 2px;"></div>
@@ -3332,6 +3342,12 @@
         return;
       }
 
+      // Ajanda sekmesindeyken segment barını gizle, Özet ve Plan'da göster
+      const segmentBar = document.getElementById('ctrlSegmentBar');
+      if (segmentBar) {
+        segmentBar.style.display = (currentControlView === 'calendar') ? 'none' : 'flex';
+      }
+
       if (currentControlView === 'calendar') {
         renderGenericCalendarView(container, currentData, 'ctrl', selectedFiltersCtrl, true, "Beklenen ödeme akışı:");
         return;
@@ -3434,23 +3450,21 @@
       let pctPaid = grandBudget > 0 ? Math.round((totalOdenen / grandBudget) * 100) : 0;
       let pctRem = grandBudget > 0 ? (100 - pctPaid) : 0;
 
-      // Segment butonundaki adet sayıları
       let countKalan = (remCard > 0 ? 1 : 0) + pendingManualItems.length + pendingTrItems.length;
       let countOdenen = (paidCard > 0 ? 1 : 0) + paidManualItems.length + paidTrItems.length;
 
-      // SABİT (STICKY) SEGMENT BUTONLARI HTML (Kırmızı Kalanlar, Yeşil Ödenenler, İkonsuz)
-      let segmentHtml = `
-        <div style="position:sticky; top:0; z-index:10; background:var(--bg); padding-top:4px; padding-bottom:10px; margin-bottom:6px;">
-          <div style="display:flex; background:rgba(255,255,255,0.06); padding:3px; border-radius:10px; gap:4px;">
-            <button type="button" onclick="setControlSubTab('odenen')" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:${isOdenen ? 'var(--green)' : 'transparent'}; color:${isOdenen ? '#000' : 'var(--text-dim)'};">
-              Ödenenler (${countOdenen})
-            </button>
-            <button type="button" onclick="setControlSubTab('kalan')" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:${!isOdenen ? 'var(--red)' : 'transparent'}; color:${!isOdenen ? '#fff' : 'var(--text-dim)'};">
-              Kalanlar (${countKalan})
-            </button>
-          </div>
-        </div>
-      `;
+      // SABİT SEGMENT BUTONLARININ YAZI VE RENKLERİNİ GÜNCELLE
+      const btnOdenen = document.getElementById('btnCtrlOdenen');
+      const btnKalan = document.getElementById('btnCtrlKalan');
+      if (btnOdenen && btnKalan) {
+        btnOdenen.innerText = `Ödenenler (${countOdenen})`;
+        btnOdenen.style.background = isOdenen ? 'var(--green)' : 'transparent';
+        btnOdenen.style.color = isOdenen ? '#000' : 'var(--text-dim)';
+
+        btnKalan.innerText = `Kalanlar (${countKalan})`;
+        btnKalan.style.background = !isOdenen ? 'var(--red)' : 'transparent';
+        btnKalan.style.color = !isOdenen ? '#fff' : 'var(--text-dim)';
+      }
 
       // --- GÖRÜNÜM 1: ÖZET MODU (SUMMARY) ---
       if (currentControlView === 'summary') {
@@ -3476,7 +3490,7 @@
         let totalThemeColor = isOdenen ? 'var(--green)' : (totalKalan > 0 ? 'var(--red)' : 'var(--green)');
         let totalSign = isOdenen ? '+' : (totalKalan > 0 ? '-' : '');
 
-        let html = segmentHtml;
+        let html = '';
 
         // 1. KART HARCAMA KARTI
         html += `
@@ -3558,8 +3572,8 @@
             </div>
           </div>
 
-          <!-- İKİ PARÇALI ÖZET İLERLEME BARI (Ödenen / Kalan metinsiz sade rakamlar) -->
-          <div style="background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-top:10px;">
+          <!-- İKİ PARÇALI ÖZET İLERLEME BARI -->
+          <div style="background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-top:10px; margin-bottom:10px;">
             <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; margin-bottom:6px;">
               <span style="color:var(--green);">€${totalOdenen.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} (%${pctPaid})</span>
               <span style="color:var(--red);">€${totalKalan.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} (%${pctRem})</span>
@@ -3584,8 +3598,7 @@
       let planTitle = isOdenen ? 'Ödenen İşlemler:' : 'Bekleyen Ödemeler:';
       let planTotalColor = isOdenen ? 'var(--green)' : 'var(--red)';
 
-      let html = segmentHtml;
-      html += `
+      let html = `
         <div style="margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border);">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:6px;">
