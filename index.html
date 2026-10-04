@@ -1383,6 +1383,16 @@
       </div>
     </div>
   </div>
+
+  <!-- SABİT ÖDENENLER / KALANLAR BUTONLARI -->
+  <div id="ctrlSegmentBar" style="display:flex; background:rgba(255,255,255,0.06); padding:3px; border-radius:10px; gap:4px; margin-bottom:12px; -webkit-user-select:none; user-select:none;">
+    <button type="button" id="btnCtrlOdenen" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:transparent; color:var(--text-dim); -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;">
+      Ödenenler (0)
+    </button>
+    <button type="button" id="btnCtrlKalan" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:var(--red); color:#fff; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;">
+      Kalanlar (0)
+    </button>
+  </div>
   
   <!-- GEÇEN AYDAN / MEVCUT AYDAN AKTARMA MODALI -->
   <div class="modal" id="modalLastMonth">
@@ -6156,33 +6166,45 @@
         let timer = null;
         let isLong = false;
 
-        const start = () => {
+        const start = (e) => {
           isLong = false;
+          if (timer) clearTimeout(timer);
           timer = setTimeout(() => {
             isLong = true;
+            // Mobilde titreşim desteği varsa ufak bir titreşim verelim (hissiyat için)
+            if (navigator.vibrate) navigator.vibrate(50);
             triggerTelegramReportModal(type);
-          }, 500);
+          }, 550);
         };
 
-        const stop = () => {
+        const stop = (e) => {
           if (timer) {
             clearTimeout(timer);
             timer = null;
           }
         };
 
+        // Mobil Dokunmatik Olayları
         btn.addEventListener('touchstart', start, { passive: true });
-        btn.addEventListener('touchend', stop);
-        btn.addEventListener('touchmove', stop, { passive: true });
+        btn.addEventListener('touchend', (e) => {
+          stop(e);
+          if (isLong) {
+            e.preventDefault();
+          }
+        });
+        btn.addEventListener('touchcancel', stop);
 
+        // Masaüstü Fare Olayları
         btn.addEventListener('mousedown', start);
         btn.addEventListener('mouseup', stop);
         btn.addEventListener('mouseleave', stop);
 
+        // Kısa Tıklama (Sekme Değiştirme)
         btn.addEventListener('click', (e) => {
           if (isLong) {
             e.preventDefault();
             e.stopPropagation();
+            isLong = false;
             return;
           }
           setControlSubTab(type);
