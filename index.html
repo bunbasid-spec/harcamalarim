@@ -1222,7 +1222,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.6.4
+    Sürüm 3.6.5
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1386,12 +1386,18 @@
 
   <!-- SABİT ÖDENENLER / KALANLAR BUTONLARI -->
   <div id="ctrlSegmentBar" style="display:flex; background:rgba(255,255,255,0.06); padding:3px; border-radius:10px; gap:4px; margin-bottom:12px; -webkit-user-select:none; user-select:none;">
-    <button type="button" id="btnCtrlOdenen" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:transparent; color:var(--text-dim); -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;">
-      Ödenenler (0)
-    </button>
-    <button type="button" id="btnCtrlKalan" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:var(--red); color:#fff; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;">
+    <button type="button" id="btnCtrlOdenen" 
+       ontouchstart="handleCtrlPressStart('odenen')" ontouchend="handleCtrlPressEnd('odenen')" ontouchcancel="handleCtrlPressCancel()"
+       onmousedown="handleCtrlPressStart('odenen')" onmouseup="handleCtrlPressEnd('odenen')" onmouseleave="handleCtrlPressCancel()"
+      style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:transparent; color:var(--text-dim); -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;">
+       Ödenenler (0)
+     </button>
+     <button type="button" id="btnCtrlKalan" 
+       ontouchstart="handleCtrlPressStart('kalan')" ontouchend="handleCtrlPressEnd('kalan')" ontouchcancel="handleCtrlPressCancel()"
+      onmousedown="handleCtrlPressStart('kalan')" onmouseup="handleCtrlPressEnd('kalan')" onmouseleave="handleCtrlPressCancel()"
+       style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:var(--red); color:#fff; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;">
       Kalanlar (0)
-    </button>
+     </button>
   </div>
   
   <!-- GEÇEN AYDAN / MEVCUT AYDAN AKTARMA MODALI -->
@@ -1512,7 +1518,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.6.4";
+    const CURRENT_VERSION = "3.6.5";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -6157,64 +6163,41 @@
       }
     };
 
-    // Butonlara Basılı Tutma (Long Press - 500ms) Dinleyicileri
-    function initControlButtonsLongPress() {
-      const setupBtn = (btnId, type) => {
-        const btn = document.getElementById(btnId);
-        if (!btn) return;
+    let ctrlPressTimer = null;
+    let ctrlIsLongPress = false;
 
-        let timer = null;
-        let isLong = false;
+    function handleCtrlPressStart(type) {
+      ctrlIsLongPress = false;
+      if (ctrlPressTimer) clearTimeout(ctrlPressTimer);
 
-        const start = (e) => {
-          isLong = false;
-          if (timer) clearTimeout(timer);
-          timer = setTimeout(() => {
-            isLong = true;
-            // Mobilde titreşim desteği varsa ufak bir titreşim verelim (hissiyat için)
-            if (navigator.vibrate) navigator.vibrate(50);
-            triggerTelegramReportModal(type);
-          }, 550);
-        };
-
-        const stop = (e) => {
-          if (timer) {
-            clearTimeout(timer);
-            timer = null;
-          }
-        };
-
-        // Mobil Dokunmatik Olayları
-        btn.addEventListener('touchstart', start, { passive: true });
-        btn.addEventListener('touchend', (e) => {
-          stop(e);
-          if (isLong) {
-            e.preventDefault();
-          }
-        });
-        btn.addEventListener('touchcancel', stop);
-
-        // Masaüstü Fare Olayları
-        btn.addEventListener('mousedown', start);
-        btn.addEventListener('mouseup', stop);
-        btn.addEventListener('mouseleave', stop);
-
-        // Kısa Tıklama (Sekme Değiştirme)
-        btn.addEventListener('click', (e) => {
-          if (isLong) {
-            e.preventDefault();
-            e.stopPropagation();
-            isLong = false;
-            return;
-          }
-          setControlSubTab(type);
-        });
-      };
-
-      setupBtn('btnCtrlOdenen', 'odenen');
-      setupBtn('btnCtrlKalan', 'kalan');
+      ctrlPressTimer = setTimeout(() => {
+        ctrlIsLongPress = true;
+        if (navigator.vibrate) navigator.vibrate(50);
+        triggerTelegramReportModal(type);
+      }, 500); // 500 ms basılı tutunca modalı açar
     }
-    
+
+    function handleCtrlPressEnd(type) {
+      if (ctrlPressTimer) {
+        clearTimeout(ctrlPressTimer);
+        ctrlPressTimer = null;
+      }
+
+      // Eğer uzun basılmadıysa normal tek tık yapılmıştır -> Sekmeyi değiştir
+      if (!ctrlIsLongPress) {
+        setControlSubTab(type);
+      }
+      ctrlIsLongPress = false;
+    }
+
+    function handleCtrlPressCancel() {
+      if (ctrlPressTimer) {
+        clearTimeout(ctrlPressTimer);
+        ctrlPressTimer = null;
+      }
+      ctrlIsLongPress = false;
+    }
+      
   </script>
 </body>
 </html>
