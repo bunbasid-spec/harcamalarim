@@ -3474,8 +3474,9 @@
       let pctPaid = grandBudget > 0 ? Math.round((totalOdenen / grandBudget) * 100) : 0;
       let pctRem = grandBudget > 0 ? (100 - pctPaid) : 0;
 
-      let countKalan = (remCard > 0 ? 1 : 0) + pendingManualItems.length + pendingTrItems.length;
-      let countOdenen = (paidCard > 0 ? 1 : 0) + paidManualItems.length + paidTrItems.length;
+      // Buton sayacında sadece Hesap (Diğer) ve TR giderleri sayılsın (Kart kotası ve Gelirler dahil edilmez)
+      let countKalan = pendingManualItems.length + pendingTrItems.length;
+      let countOdenen = paidManualItems.length + paidTrItems.length;
 
       // SABİT SEGMENT BUTONLARININ YAZI VE RENKLERİNİ GÜNCELLE
       const btnOdenen = document.getElementById('btnCtrlOdenen');
