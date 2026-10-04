@@ -3438,15 +3438,17 @@
       let countKalan = (remCard > 0 ? 1 : 0) + pendingManualItems.length + pendingTrItems.length;
       let countOdenen = (paidCard > 0 ? 1 : 0) + paidManualItems.length + paidTrItems.length;
 
-      // SEGMENT BUTONLARI HTML (Ödenenler - X | Kalanlar - Y)
+      // SABİT (STICKY) SEGMENT BUTONLARI HTML (Kırmızı Kalanlar, Yeşil Ödenenler, İkonsuz)
       let segmentHtml = `
-        <div style="display:flex; background:rgba(255,255,255,0.06); padding:3px; border-radius:10px; margin-bottom:14px; gap:4px;">
-          <button type="button" onclick="setControlSubTab('odenen')" style="flex:1; border:none; padding:7px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:${isOdenen ? 'var(--green)' : 'transparent'}; color:${isOdenen ? '#000' : 'var(--text-dim)'};">
-            ✓ Ödenenler (${countOdenen})
-          </button>
-          <button type="button" onclick="setControlSubTab('kalan')" style="flex:1; border:none; padding:7px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:${!isOdenen ? 'var(--accent)' : 'transparent'}; color:${!isOdenen ? '#fff' : 'var(--text-dim)'};">
-            ⏳ Kalanlar (${countKalan})
-          </button>
+        <div style="position:sticky; top:0; z-index:10; background:var(--bg); padding-top:4px; padding-bottom:10px; margin-bottom:6px;">
+          <div style="display:flex; background:rgba(255,255,255,0.06); padding:3px; border-radius:10px; gap:4px;">
+            <button type="button" onclick="setControlSubTab('odenen')" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:${isOdenen ? 'var(--green)' : 'transparent'}; color:${isOdenen ? '#000' : 'var(--text-dim)'};">
+              Ödenenler (${countOdenen})
+            </button>
+            <button type="button" onclick="setControlSubTab('kalan')" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:${!isOdenen ? 'var(--red)' : 'transparent'}; color:${!isOdenen ? '#fff' : 'var(--text-dim)'};">
+              Kalanlar (${countKalan})
+            </button>
+          </div>
         </div>
       `;
 
@@ -3556,11 +3558,11 @@
             </div>
           </div>
 
-          <!-- İKİ PARÇALI ÖZET İLERLEME BARI (Yeşil: Ödenen, Kırmızı: Kalan) -->
+          <!-- İKİ PARÇALI ÖZET İLERLEME BARI (Ödenen / Kalan metinsiz sade rakamlar) -->
           <div style="background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-top:10px;">
             <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; margin-bottom:6px;">
-              <span style="color:var(--green);">Ödenen: €${totalOdenen.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} (%${pctPaid})</span>
-              <span style="color:var(--red);">Kalan: €${totalKalan.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} (%${pctRem})</span>
+              <span style="color:var(--green);">€${totalOdenen.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} (%${pctPaid})</span>
+              <span style="color:var(--red);">€${totalKalan.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} (%${pctRem})</span>
             </div>
             <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden; display:flex;">
               <div style="width:${pctPaid}%; background:var(--green); transition:width 0.3s ease;"></div>
