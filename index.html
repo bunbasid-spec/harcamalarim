@@ -1222,7 +1222,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.6.5
+    Sürüm 3.6.6
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1265,6 +1265,16 @@
     </div>
   </div>
 
+  <!-- SABİT ÖDENENLER / KALANLAR BUTONLARI -->
+  <div id="ctrlSegmentBar" style="display:flex; background:rgba(255,255,255,0.06); padding:3px; border-radius:10px; gap:4px; margin-bottom:12px;">
+    <button type="button" id="btnCtrlOdenen" onclick="setControlSubTab('odenen')" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:transparent; color:var(--text-dim);">
+      Ödenenler (0)
+    </button>
+    <button type="button" id="btnCtrlKalan" onclick="setControlSubTab('kalan')" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:var(--red); color:#fff;">
+       Kalanlar (0)
+    </button>
+  </div>
+
   <!-- LİKİDİTE PLANLAMASI MODALI (ÖZET | AJANDA | PLAN) -->
   <div class="modal" id="modalLiquidity">
     <div class="modal-content" id="liquidityModalContent">
@@ -1289,7 +1299,9 @@
   <div class="modal" id="modalControl">
     <div class="modal-content" id="controlModalContent">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px;">
-        <h3 style="font-size: 15px; white-space: nowrap; margin: 0;">Ay İçi Kontrol</h3>
+        <h3 style="font-size: 15px; white-space: nowrap; margin: 0; cursor: pointer; display: flex; align-items: center; gap: 4px;" onclick="openTelegramReportChooser()">
+          Ay İçi Kontrol <span style="font-size: 12px; opacity: 0.7;"></span>
+        </h3>
         <div class="mini-view-switcher three-way">
           <button type="button" class="mini-view-btn active" id="btnCtrlViewSummary" onclick="switchControlView('summary')">Özet</button>
           <button type="button" class="mini-view-btn" id="btnCtrlViewCalendar" onclick="switchControlView('calendar')">Ajanda</button>
@@ -1311,6 +1323,28 @@
 
       <div class="modal-actions" style="margin-top: 14px;">
         <button type="button" class="btn-cancel" onclick="closeModal('modalControl')">Kapat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TELEGRAM RAPOR SEÇİM VE GÖNDERİM MODALI -->
+  <div class="modal" id="modalTelegramChooser" style="display:none; align-items:center; justify-content:center; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999;">
+    <div class="modal-content" style="background:var(--card-bg, #1a1f2c); border:1px solid var(--border); border-radius:14px; padding:20px; width:90%; max-width:320px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+      <h3 style="font-size:16px; margin:0 0 8px 0; color:#fff;">Telegram'a Liste Gönder</h3>
+      <p style="font-size:13px; color:var(--text-dim); margin:0 0 16px 0;">
+        Hangi listeyi bota göndermek istiyorsunuz?
+      </p>
+      
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button type="button" id="btnSendOdenenlerTg" onclick="executeSendTelegramReport('odenen')" style="background:var(--green); color:#000; border:none; padding:12px; border-radius:8px; font-weight:700; font-size:13px; cursor:pointer;">
+          ✓ Yapılan Ödemeler Listesi
+        </button>
+        <button type="button" id="btnSendKalanlarTg" onclick="executeSendTelegramReport('kalan')" style="background:var(--red); color:#fff; border:none; padding:12px; border-radius:8px; font-weight:700; font-size:13px; cursor:pointer;">
+          ⏳ Kalan Ödemeler Listesi
+        </button>
+        <button type="button" onclick="closeModal('modalTelegramChooser')" style="background:transparent; border:none; color:var(--text-dim); font-size:12px; margin-top:4px; cursor:pointer; padding:6px;">
+          Vazgeç
+        </button>
       </div>
     </div>
   </div>
@@ -1365,41 +1399,6 @@
     </div>
   </div>
 
-  <!-- TELEGRAM LİSTE GÖNDERİM ONAY MODALI -->
-  <div class="modal" id="modalSendTelegramList" style="display:none; align-items:center; justify-content:center; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999;">
-    <div class="modal-content" style="background:var(--card-bg, #1a1f2c); border:1px solid var(--border); border-radius:14px; padding:20px; width:90%; max-width:320px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
-      <h3 id="lblSendListTitle" style="font-size:16px; margin:0 0 10px 0; color:#fff;">Listeyi Gönder</h3>
-      <p id="lblSendListDesc" style="font-size:13px; color:var(--text-dim); margin:0 0 18px 0; line-height:1.4;">
-        Listeyi yollamak istiyor musunuz?
-      </p>
-    
-      <div style="display:flex; gap:10px;">
-        <button type="button" onclick="closeModal('modalSendTelegramList')" style="flex:1; background:rgba(255,255,255,0.08); color:var(--text-dim); border:1px solid var(--border); padding:10px; border-radius:8px; font-weight:700; font-size:13px; cursor:pointer;">
-          Hayır
-        </button>
-        <button type="button" id="btnConfirmSendTelegram" style="flex:1; background:var(--green); color:#000; border:none; padding:10px; border-radius:8px; font-weight:700; font-size:13px; cursor:pointer;">
-          Gönder
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- SABİT ÖDENENLER / KALANLAR BUTONLARI -->
-  <div id="ctrlSegmentBar" style="display:flex; background:rgba(255,255,255,0.06); padding:3px; border-radius:10px; gap:4px; margin-bottom:12px; -webkit-user-select:none; user-select:none;">
-    <button type="button" id="btnCtrlOdenen" 
-       ontouchstart="handleCtrlPressStart('odenen')" ontouchend="handleCtrlPressEnd('odenen')" ontouchcancel="handleCtrlPressCancel()"
-       onmousedown="handleCtrlPressStart('odenen')" onmouseup="handleCtrlPressEnd('odenen')" onmouseleave="handleCtrlPressCancel()"
-      style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:transparent; color:var(--text-dim); -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;">
-       Ödenenler (0)
-     </button>
-     <button type="button" id="btnCtrlKalan" 
-       ontouchstart="handleCtrlPressStart('kalan')" ontouchend="handleCtrlPressEnd('kalan')" ontouchcancel="handleCtrlPressCancel()"
-      onmousedown="handleCtrlPressStart('kalan')" onmouseup="handleCtrlPressEnd('kalan')" onmouseleave="handleCtrlPressCancel()"
-       style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:var(--red); color:#fff; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;">
-      Kalanlar (0)
-     </button>
-  </div>
-  
   <!-- GEÇEN AYDAN / MEVCUT AYDAN AKTARMA MODALI -->
   <div class="modal" id="modalLastMonth">
     <div class="modal-content">
@@ -1518,7 +1517,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.6.5";
+    const CURRENT_VERSION = "3.6.6";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -6055,14 +6054,24 @@
     }
 
     // =========================================================
-    // TELEGRAM LİSTE GÖNDERİMİ (ÖDENENLER / KALANLAR)
+    // TELEGRAM LİSTE GÖNDERİMİ (BAŞLIKTAN SEÇİMLİ)
     // =========================================================
-    let pendingTelegramPayload = null;
+    function openTelegramReportChooser() {
+      const modal = document.getElementById('modalTelegramChooser');
+      if (modal) modal.style.display = 'flex';
+    }
 
-    function triggerTelegramReportModal(type) {
+    async function executeSendTelegramReport(type) {
       if (!currentData) return;
 
       const isOdenen = (type === 'odenen');
+      const btn = document.getElementById(isOdenen ? 'btnSendOdenenlerTg' : 'btnSendKalanlarTg');
+      const originalText = btn ? btn.innerText : '';
+      if (btn) {
+        btn.innerText = "Gönderiliyor...";
+        btn.disabled = true;
+      }
+
       let itemsToSend = [];
       let totalEur = 0;
       let totalTry = 0;
@@ -6104,6 +6113,7 @@
 
       if (itemsToSend.length === 0) {
         alert("Gönderilecek kayıt bulunamadı.");
+        if (btn) { btn.innerText = originalText; btn.disabled = false; }
         return;
       }
 
@@ -6115,89 +6125,33 @@
       let titleStr = isOdenen ? "Yapılan Ödemeler" : "Kalan Ödemeler";
       let totalLabel = isOdenen ? `Ödenen Toplam: ${totalParts.join(" + ")}` : `Kalan Toplam: ${totalParts.join(" + ")}`;
 
-      pendingTelegramPayload = {
-        title: titleStr,
-        items: itemsToSend,
-        totalText: totalLabel
-      };
-
-      document.getElementById('lblSendListTitle').innerText = titleStr;
-      document.getElementById('lblSendListDesc').innerText = `${titleStr} listesini Telegram botuna yollamak istiyor musunuz?`;
-      
-      const modal = document.getElementById('modalSendTelegramList');
-      if (modal) modal.style.display = 'flex';
-    }
-
-    // Onayla ve Gönder Butonu Tıklanınca
-    document.getElementById('btnConfirmSendTelegram').onclick = async function() {
-      if (!pendingTelegramPayload) return;
-      const btn = this;
-      btn.innerText = "Gönderiliyor...";
-      btn.disabled = true;
-
       try {
         if (typeof google !== 'undefined' && google.script && google.script.run) {
           google.script.run
             .withSuccessHandler(() => {
-              btn.innerText = "Evet, Gönder";
-              btn.disabled = false;
-              closeModal('modalSendTelegramList');
+              if (btn) { btn.innerText = originalText; btn.disabled = false; }
+              closeModal('modalTelegramChooser');
             })
-            .sendCustomTelegramReport(pendingTelegramPayload.title, pendingTelegramPayload.items, pendingTelegramPayload.totalText);
+            .sendCustomTelegramReport(titleStr, itemsToSend, totalLabel);
         } else {
           await fetch(API_URL, {
             method: 'POST',
             body: JSON.stringify({
               action: 'sendTelegramReport',
-              ...pendingTelegramPayload
+              title: titleStr,
+              items: itemsToSend,
+              totalText: totalLabel
             })
           });
-          btn.innerText = "Evet, Gönder";
-          btn.disabled = false;
-          closeModal('modalSendTelegramList');
+          if (btn) { btn.innerText = originalText; btn.disabled = false; }
+          closeModal('modalTelegramChooser');
         }
       } catch (e) {
-        alert("Gönderilemedi: " + e);
-        btn.innerText = "Evet, Gönder";
-        btn.disabled = false;
+        alert("Hata oluştu: " + e);
+        if (btn) { btn.innerText = originalText; btn.disabled = false; }
       }
-    };
-
-    let ctrlPressTimer = null;
-    let ctrlIsLongPress = false;
-
-    function handleCtrlPressStart(type) {
-      ctrlIsLongPress = false;
-      if (ctrlPressTimer) clearTimeout(ctrlPressTimer);
-
-      ctrlPressTimer = setTimeout(() => {
-        ctrlIsLongPress = true;
-        if (navigator.vibrate) navigator.vibrate(50);
-        triggerTelegramReportModal(type);
-      }, 500); // 500 ms basılı tutunca modalı açar
     }
-
-    function handleCtrlPressEnd(type) {
-      if (ctrlPressTimer) {
-        clearTimeout(ctrlPressTimer);
-        ctrlPressTimer = null;
-      }
-
-      // Eğer uzun basılmadıysa normal tek tık yapılmıştır -> Sekmeyi değiştir
-      if (!ctrlIsLongPress) {
-        setControlSubTab(type);
-      }
-      ctrlIsLongPress = false;
-    }
-
-    function handleCtrlPressCancel() {
-      if (ctrlPressTimer) {
-        clearTimeout(ctrlPressTimer);
-        ctrlPressTimer = null;
-      }
-      ctrlIsLongPress = false;
-    }
-      
+    
   </script>
 </body>
 </html>
