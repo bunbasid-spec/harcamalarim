@@ -2451,6 +2451,7 @@
       let allItems = [];
       let availableFilterKeys = new Set();
 
+      // KART KALEMLERİ: Sadece 'Ödenenler' (onlyPending = false) modunda listeye eklenir
       if (!onlyPending) {
         (data.cardItems || []).forEach(it => {
           allItems.push({ ...it, srcType: 'card', typeTag: 'KART', isIncome: false, filterCategory: 'card', filterAccount: 'card' });
@@ -2458,9 +2459,13 @@
         });
       }
 
+      // HESAP (MANUAL) KALEMLERİ:
+      // onlyPending = true ise sadece tarihi boş olanlar (bekleyenler)
+      // onlyPending = false ise sadece tarihi dolu olanlar (ödenenler)
       (data.manualItems || []).forEach(it => {
         let isPending = (!it.date || it.date.trim() === "");
         if (onlyPending && !isPending) return;
+        if (!onlyPending && isPending) return;
 
         let acc = (it.card || '').toLowerCase().trim();
         let filterAcc = 'other';
@@ -2473,9 +2478,12 @@
         availableFilterKeys.add(filterAcc);
       });
 
+      // TR KART KALEMLERİ:
+      // onlyPending = true ise bekleyenler, false ise ödenenler
       (data.trItems || []).forEach(it => {
         let isPending = (!it.date || it.date.trim() === "");
         if (onlyPending && !isPending) return;
+        if (!onlyPending && isPending) return;
 
         let eurVal = parseAmountToNum(it.eurAmount || 0);
         let tryVal = parseAmountToNum(it.amount || 0);
@@ -2485,8 +2493,11 @@
         availableFilterKeys.add('tr');
       });
 
+      // GELİRLER: Sadece Ödenenler modunda ve tarihi varsa görünür
       if (!onlyPending) {
         (data.incomeItems || []).forEach(it => {
+          let isPending = (!it.date || it.date.trim() === "");
+          if (isPending) return;
           allItems.push({ ...it, srcType: 'income', typeTag: 'GELİR', isIncome: true, filterCategory: 'income', filterAccount: 'income' });
           availableFilterKeys.add('income');
         });
@@ -2539,15 +2550,23 @@
 
       let html = '';
 
-      if (onlyPending) {
-        const targetCardLimit = parseAmountToNum(data.cardLimit || 0);
-        const spentCardTotal = parseAmountToNum(data.cardTotal || 0);
-        const remainingCardLimit = Math.max(0, targetCardLimit - spentCardTotal);
+      // KART KOTASI / HARCAMA BİLGİ KUTUSU (Ödenenler / Kalanlar Dinamik)
+      const targetCardLimit = parseAmountToNum(data.cardLimit || 0);
+      const spentCardTotal = parseAmountToNum(data.cardTotal || 0);
+      const remainingCardLimit = Math.max(0, targetCardLimit - spentCardTotal);
 
+      if (onlyPending) {
         html += `
           <div class="static-info-banner">
             <span style="color:var(--text);">Kalan Kart Harcama Kotası:</span>
             <span style="color:var(--accent); font-weight:700;">€${remainingCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} <span style="font-size:10px; font-weight:normal; color:var(--text-dim);">(Limit: €${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})})</span></span>
+          </div>
+        `;
+      } else {
+        html += `
+          <div class="static-info-banner">
+            <span style="color:var(--text);">Harcanan Kart Tutarı:</span>
+            <span style="color:var(--green); font-weight:700;">€${spentCardTotal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} <span style="font-size:10px; font-weight:normal; color:var(--text-dim);">(Limit: €${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})})</span></span>
           </div>
         `;
       }
@@ -2589,24 +2608,21 @@
       `;
 
       if (sortedDays.length === 0) {
-        html += `<div style="text-align:center; padding:30px; color:var(--text-dim);">${onlyPending ? 'Ödeme bekleyen tarihli borç bulunamadı.' : 'Filtreye uygun tarihli hareket bulunamadı.'}</div>`;
+        html += `<div style="text-align:center; padding:30px; color:var(--text-dim);">${onlyPending ? 'Ödeme bekleyen tarihli borç bulunamadı.' : 'Filtreye uygun tamamlanan hareket bulunamadı.'}</div>`;
         container.innerHTML = html;
         return;
       }
 
-      // Sadece TR seçili mi kontrolü
       let isOnlyTR = (filterSet.size === 1 && filterSet.has('tr'));
 
       sortedDays.forEach((group, gIdx) => {
         let bodyId = `${moduleType}-cal-day-body-${gIdx}`;
 
-        // Net tutar 0 olsa bile içinde gider/TR varsa kırmızı '-', aksi halde '+'
         let isNetPositive = group.netEur > 0 || (group.netEur === 0 && !group.hasExpense);
         let dayColor = isNetPositive ? 'var(--green)' : 'var(--red)';
         let formattedTotal = "€" + Math.abs(group.netEur).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         let sign = isNetPositive ? '+' : '-';
 
-        // Sadece TR seçiliyse o günün toplam TL tutarını hesapla
         let dayTrTryTotal = 0;
         if (isOnlyTR) {
           group.items.forEach(it => {
@@ -2700,7 +2716,7 @@
         let netColor = isNetPositive ? 'var(--green)' : 'var(--red)';
         let netSign = isNetPositive ? '+' : '-';
 
-        sumTitle = "Ajanda Genel Toplamı:";
+        sumTitle = onlyPending ? "Bekleyenler Toplamı:" : "Ödenenler Toplamı:";
         mainAmountHtml = `
           <span style="font-size:16px; font-weight:800; color:${netColor}; font-variant-numeric:tabular-nums;">
             ${netSign}€${Math.abs(netAllEUR).toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
@@ -3342,17 +3358,6 @@
         return;
       }
 
-      // Ajanda sekmesindeyken segment barını gizle, Özet ve Plan'da göster
-      const segmentBar = document.getElementById('ctrlSegmentBar');
-      if (segmentBar) {
-        segmentBar.style.display = (currentControlView === 'calendar') ? 'none' : 'flex';
-      }
-
-      if (currentControlView === 'calendar') {
-        renderGenericCalendarView(container, currentData, 'ctrl', selectedFiltersCtrl, true, "Beklenen ödeme akışı:");
-        return;
-      }
-
       const isOdenen = (currentControlSubTab === 'odenen');
 
       // --- KART HESAPLAMALARI ---
@@ -3466,10 +3471,17 @@
         btnKalan.style.color = !isOdenen ? '#fff' : 'var(--text-dim)';
       }
 
+      // --- AJANDA GÖRÜNÜMÜ ---
+      if (currentControlView === 'calendar') {
+        let flowText = isOdenen ? "Tamamlanan ödemeler:" : "Beklenen ödeme akışı:";
+        renderGenericCalendarView(container, currentData, 'ctrl', selectedFiltersCtrl, !isOdenen, flowText);
+        return;
+      }
+
       // --- GÖRÜNÜM 1: ÖZET MODU (SUMMARY) ---
       if (currentControlView === 'summary') {
         let activeCardVal = isOdenen ? paidCard : remCard;
-        let cardSubText = isOdenen ? `Harcanan Tutar / Limit: €${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})}` : `Kart Harcama Limiti (€${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})})`;
+        let cardSubText = `Kart Harcama Limiti (€${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})})`;
 
         let curManual = isOdenen ? totalPaidManual : totalRemManual;
         let curSparkasse = isOdenen ? paidSparkasse : remSparkasse;
@@ -3527,7 +3539,7 @@
 
           html += `
               <div class="liq-row total-row" style="color:var(--orange);">
-                <span>Toplam ${prefixTitle} Diğer Giderler</span>
+                <span>${prefixTitle} Diğer Giderler</span>
                 <span>€${curManual.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
               </div>
             </div>
@@ -3547,7 +3559,7 @@
 
           html += `
               <div class="liq-row total-row" style="color:var(--purple);">
-                <span>Toplam ${prefixTitle} TR Ödemeleri</span>
+                <span>${prefixTitle} TR Ödemeleri</span>
                 <span style="text-align:right;">
                   ₺${curTrTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                   <div style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-top:2px;">~€${curTrEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
@@ -3559,7 +3571,7 @@
 
         // 4. TOPLAM KART VE İKİ PARÇALI ÖZET BARI
         let totalTitleText = isOdenen ? 'Ödenen Toplam Tutar' : 'Kalan Toplam Tutar';
-        let statusSubText = isOdenen ? 'Gerçekleşen Ödemeler' : (totalKalan > 0 ? 'Ödeme Bekliyor' : 'Tümü Ödendi');
+        let statusSubText = isOdenen ? 'Gerçekleşen Ödemeler' : (totalKalan > 0 ? 'Bekleyen Ödemeler' : 'Tümü Ödendi');
 
         html += `
           <div class="liq-section-title">📊 ${totalTitleText}</div>
