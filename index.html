@@ -1222,7 +1222,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.6.8
+    Sürüm 3.6.9
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1312,15 +1312,7 @@
         </div>
       </div>
 
-      <!-- SABİT ÖDENENLER / KALANLAR BUTONLARI (BAŞLIK İLE BİRLİKTE SABİT KALIR) -->
-      <div id="ctrlSegmentBar" style="display:flex; background:rgba(255,255,255,0.06); padding:3px; border-radius:10px; gap:4px; margin-bottom:12px;">
-        <button type="button" id="btnCtrlOdenen" onclick="setControlSubTab('odenen')" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:transparent; color:var(--text-dim);">
-          Ödenenler (0)
-        </button>
-        <button type="button" id="btnCtrlKalan" onclick="setControlSubTab('kalan')" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:var(--red); color:#fff;">
-          Kalanlar (0)
-        </button>
-      </div>
+
 
       <div id="controlReportContent" style="max-height: 65vh; overflow-y: auto; padding-right: 2px;"></div>
 
@@ -1520,7 +1512,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.6.8";
+    const CURRENT_VERSION = "3.6.9";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -6100,97 +6092,6 @@
     function openTelegramReportChooser() {
       const modal = document.getElementById('modalTelegramChooser');
       if (modal) modal.style.display = 'flex';
-    }
-
-    async function executeSendTelegramReport(type) {
-      if (!currentData) return;
-
-      const isOdenen = (type === 'odenen');
-      const btn = document.getElementById(isOdenen ? 'btnSendOdenenlerTg' : 'btnSendKalanlarTg');
-      const originalText = btn ? btn.innerText : '';
-      if (btn) {
-        btn.innerText = "Gönderiliyor...";
-        btn.disabled = true;
-      }
-
-      let itemsToSend = [];
-      let totalEur = 0;
-      let totalTry = 0;
-
-      // 1. Manuel Hesap Kalemleri
-      (currentData.manualItems || []).forEach(it => {
-        let amt = parseAmountToNum(it.amount);
-        let isPending = (!it.date || it.date.trim() === "");
-        if (amt <= 0) return;
-
-        if (isOdenen && !isPending) {
-          totalEur += amt;
-          let name = (it.merchant || 'Açıklamasız').replace(/\s*\(\d{1,2}[\.\/]\d{1,2}\)/, '').trim();
-          itemsToSend.push({ name: name, amount: `${amt.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} €` });
-        } else if (!isOdenen && isPending) {
-          totalEur += amt;
-          let rawName = it.merchant || 'Açıklamasız';
-          itemsToSend.push({ name: rawName, amount: `${amt.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} €` });
-        }
-      });
-
-      // 2. TR Kalemleri
-      (currentData.trItems || []).forEach(it => {
-        let amtTry = parseAmountToNum(it.amount);
-        let amtEur = parseAmountToNum(it.eurAmount || 0);
-        let isPending = (!it.date || it.date.trim() === "");
-        if (amtTry <= 0) return;
-
-        if (isOdenen && !isPending) {
-          totalTry += amtTry;
-          let name = (it.merchant || 'TR Kart').replace(/\s*\(\d{1,2}[\.\/]\d{1,2}\)/, '').trim();
-          itemsToSend.push({ name: name, amount: `${amtTry.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₺` });
-        } else if (!isOdenen && isPending) {
-          totalTry += amtTry;
-          let rawName = it.merchant || 'TR Kart';
-          itemsToSend.push({ name: rawName, amount: `${amtTry.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₺` });
-        }
-      });
-
-      if (itemsToSend.length === 0) {
-        alert("Gönderilecek kayıt bulunamadı.");
-        if (btn) { btn.innerText = originalText; btn.disabled = false; }
-        return;
-      }
-
-      // Toplam Metni Hazırla
-      let totalParts = [];
-      if (totalEur > 0 || totalTry === 0) totalParts.push(`${totalEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} €`);
-      if (totalTry > 0) totalParts.push(`${totalTry.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₺`);
-
-      let titleStr = isOdenen ? "Yapılan Ödemeler" : "Kalan Ödemeler";
-      let totalLabel = isOdenen ? `Ödenen Toplam: ${totalParts.join(" + ")}` : `Kalan Toplam: ${totalParts.join(" + ")}`;
-
-      try {
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run
-            .withSuccessHandler(() => {
-              if (btn) { btn.innerText = originalText; btn.disabled = false; }
-              closeModal('modalTelegramChooser');
-            })
-            .sendCustomTelegramReport(titleStr, itemsToSend, totalLabel);
-        } else {
-          await fetch(API_URL, {
-            method: 'POST',
-            body: JSON.stringify({
-              action: 'sendTelegramReport',
-              title: titleStr,
-              items: itemsToSend,
-              totalText: totalLabel
-            })
-          });
-          if (btn) { btn.innerText = originalText; btn.disabled = false; }
-          closeModal('modalTelegramChooser');
-        }
-      } catch (e) {
-        alert("Hata oluştu: " + e);
-        if (btn) { btn.innerText = originalText; btn.disabled = false; }
-      }
     }
 
     async function executeSendTelegramReport(type) {
