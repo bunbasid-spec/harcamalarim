@@ -1265,17 +1265,7 @@
     </div>
   </div>
 
-  <!-- SABİT ÖDENENLER / KALANLAR BUTONLARI -->
-  <div id="ctrlSegmentBar" style="display:flex; background:rgba(255,255,255,0.06); padding:3px; border-radius:10px; gap:4px; margin-bottom:12px;">
-    <button type="button" id="btnCtrlOdenen" onclick="setControlSubTab('odenen')" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:transparent; color:var(--text-dim);">
-      Ödenenler (0)
-    </button>
-    <button type="button" id="btnCtrlKalan" onclick="setControlSubTab('kalan')" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:var(--red); color:#fff;">
-      Kalanlar (0)
-    </button>
-  </div>
-
-  <!-- LİKİDİTE PLANLAMASI MODALI (ÖZET | AJANDA | PLAN) -->
+    <!-- LİKİDİTE PLANLAMASI MODALI (ÖZET | AJANDA | PLAN) -->
   <div class="modal" id="modalLiquidity">
     <div class="modal-content" id="liquidityModalContent">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px;">
@@ -1312,7 +1302,15 @@
         </div>
       </div>
 
-
+      <!-- KESTİĞİNİZ BUTONLAR TAM BURAYA GELECEK: -->
+      <div id="ctrlSegmentBar" style="display:flex; background:rgba(255,255,255,0.06); padding:3px; border-radius:10px; gap:4px; margin-bottom:12px;">
+        <button type="button" id="btnCtrlOdenen" onclick="setControlSubTab('odenen')" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:transparent; color:var(--text-dim);">
+          Ödenenler (0)
+        </button>
+        <button type="button" id="btnCtrlKalan" onclick="setControlSubTab('kalan')" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:var(--red); color:#fff;">
+          Kalanlar (0)
+        </button>
+      </div>
 
       <div id="controlReportContent" style="max-height: 65vh; overflow-y: auto; padding-right: 2px;"></div>
 
