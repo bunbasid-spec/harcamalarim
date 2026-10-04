@@ -1222,7 +1222,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.6.0
+    Sürüm 3.6.1
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1451,7 +1451,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.6.0";
+    const CURRENT_VERSION = "3.6.1";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -3238,6 +3238,13 @@
     // =========================================================
     // AY İÇİ KONTROL RECALC & SEÇİM FONKSİYONLARI
     // =========================================================
+    let currentControlSubTab = 'kalan'; // 'kalan' veya 'odenen'
+
+    function setControlSubTab(tab) {
+      currentControlSubTab = tab;
+      renderControlContent();
+    }
+
     function recalcControlTotal() {
       const checkboxes = document.querySelectorAll('.chk-control:checked');
       let liveTotal = 0;
@@ -3266,12 +3273,16 @@
         }
       });
 
+      const isOdenen = (currentControlSubTab === 'odenen');
+      const sign = isOdenen ? '+' : '-';
+      const mainColor = isOdenen ? 'var(--green)' : 'var(--red)';
+
       const lbl = document.getElementById('lblControlLiveTotal');
       if (lbl) {
         let formatted = "€" + liveTotal.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         if (liveTotal > 0) {
-          lbl.innerText = "-" + formatted;
-          lbl.style.color = "var(--red)";
+          lbl.innerText = sign + formatted;
+          lbl.style.color = mainColor;
         } else {
           lbl.innerText = "€0,00";
           lbl.style.color = "var(--green)";
@@ -3283,47 +3294,22 @@
 
       let linesHtml = '';
 
-      if (sumSparkasse > 0) {
-        linesHtml += `
+      function renderLine(label, eur, tryVal = 0) {
+        let tryPart = tryVal > 0 ? `<div style="font-size:12px; font-weight:normal; color:var(--text-dim);">(-₺${tryVal.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</div>` : '';
+        return `
           <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
-            <div style="font-weight:700; font-size:14px; min-width:40px;">Sparkasse:</div>
-            <div style="font-weight:700; font-size:15px; color:var(--red);">-€${sumSparkasse.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div style="font-weight:700; font-size:14px; min-width:40px;">${label}:</div>
+            <div style="font-weight:700; font-size:15px; color:${mainColor};">${sign}€${eur.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            ${tryPart}
           </div>
         `;
       }
-      if (sumN26 > 0) {
-        linesHtml += `
-          <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
-            <div style="font-weight:700; font-size:14px; min-width:40px;">N26:</div>
-            <div style="font-weight:700; font-size:15px; color:var(--red);">-€${sumN26.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-          </div>
-        `;
-      }
-      if (sumC24 > 0) {
-        linesHtml += `
-          <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
-            <div style="font-weight:700; font-size:14px; min-width:40px;">C24:</div>
-            <div style="font-weight:700; font-size:15px; color:var(--red);">-€${sumC24.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-          </div>
-        `;
-      }
-      if (sumNakit > 0) {
-        linesHtml += `
-          <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
-            <div style="font-weight:700; font-size:14px; min-width:40px;">Nakit:</div>
-            <div style="font-weight:700; font-size:15px; color:var(--red);">-€${sumNakit.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-          </div>
-        `;
-      }
-      if (sumTrTRY > 0) {
-        linesHtml += `
-          <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
-            <div style="font-weight:700; font-size:14px; min-width:40px;">TR:</div>
-            <div style="font-weight:700; font-size:15px; color:var(--red);">-€${sumTrEUR.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            <div style="font-size:12px; font-weight:normal; color:var(--text-dim);">(-₺${sumTrTRY.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</div>
-          </div>
-        `;
-      }
+
+      if (sumSparkasse > 0) linesHtml += renderLine('Sparkasse', sumSparkasse);
+      if (sumN26 > 0) linesHtml += renderLine('N26', sumN26);
+      if (sumC24 > 0) linesHtml += renderLine('C24', sumC24);
+      if (sumNakit > 0) linesHtml += renderLine('Nakit', sumNakit);
+      if (sumTrTRY > 0 || sumTrEUR > 0) linesHtml += renderLine('TR', sumTrEUR, sumTrTRY);
 
       listArea.innerHTML = linesHtml;
     }
@@ -3351,38 +3337,58 @@
         return;
       }
 
+      const isOdenen = (currentControlSubTab === 'odenen');
+
+      // --- KART HESAPLAMALARI ---
       const targetCardLimit = parseAmountToNum(currentData.cardLimit || 0);
       const spentCardTotal = parseAmountToNum(currentData.cardTotal || 0);
-      const remainingCardLimit = Math.max(0, targetCardLimit - spentCardTotal);
+      const remCard = Math.max(0, targetCardLimit - spentCardTotal);
+      const paidCard = spentCardTotal;
 
-      let remSparkasse = 0, remN26 = 0, remNakit = 0, remC24 = 0, remOtherManual = 0;
-      let totalRemManual = 0;
+      // --- HESAP (MANUAL) HESAPLAMALARI ---
+      let remSparkasse = 0, remN26 = 0, remNakit = 0, remC24 = 0, remOtherManual = 0, totalRemManual = 0;
+      let paidSparkasse = 0, paidN26 = 0, paidNakit = 0, paidC24 = 0, paidOtherManual = 0, totalPaidManual = 0;
 
       let pendingManualItems = [];
+      let paidManualItems = [];
 
       (currentData.manualItems || []).forEach(item => {
         let amt = parseAmountToNum(item.amount);
         let acc = (item.card || '').toLowerCase().trim();
         let isPending = (!item.date || item.date.trim() === "");
 
-        if (acc.includes('sparkasse')) { if (isPending) { remSparkasse += amt; totalRemManual += amt; } }
-        else if (acc.includes('n26')) { if (isPending) { remN26 += amt; totalRemManual += amt; } }
-        else if (acc.includes('nakit') || acc.includes('bar')) { if (isPending) { remNakit += amt; totalRemManual += amt; } }
-        else if (acc.includes('c24')) { if (isPending) { remC24 += amt; totalRemManual += amt; } }
-        else { if (isPending) { remOtherManual += amt; totalRemManual += amt; } }
+        if (isPending) {
+          totalRemManual += amt;
+          if (acc.includes('sparkasse')) remSparkasse += amt;
+          else if (acc.includes('n26')) remN26 += amt;
+          else if (acc.includes('nakit') || acc.includes('bar')) remNakit += amt;
+          else if (acc.includes('c24')) remC24 += amt;
+          else remOtherManual += amt;
 
-        if (isPending && amt > 0) {
-          pendingManualItems.push(item);
+          if (amt > 0) pendingManualItems.push(item);
+        } else {
+          totalPaidManual += amt;
+          if (acc.includes('sparkasse')) paidSparkasse += amt;
+          else if (acc.includes('n26')) paidN26 += amt;
+          else if (acc.includes('nakit') || acc.includes('bar')) paidNakit += amt;
+          else if (acc.includes('c24')) paidC24 += amt;
+          else paidOtherManual += amt;
+
+          if (amt > 0) paidManualItems.push(item);
         }
       });
 
-      let sumMainRemTwo = remSparkasse + remN26;
-      let hasSecondaryRem = (remNakit > 0 || remC24 > 0 || remOtherManual > 0);
-
+      // --- TR HESAPLAMALARI ---
       let remWorldEkoTRY = 0, remEnparaTRY = 0, remFreeTRY = 0, remOtherTRY = 0;
-      let totalRemTrTRY = 0, totalRemTrEUR = 0, totalTrTRYAll = 0, totalTrEURAll = 0, trRateEUR = 0;
+      let totalRemTrTRY = 0, totalRemTrEUR = 0;
+
+      let paidWorldEkoTRY = 0, paidEnparaTRY = 0, paidFreeTRY = 0, paidOtherTRY = 0;
+      let totalPaidTrTRY = 0, totalPaidTrEUR = 0;
+
+      let totalTrTRYAll = 0, totalTrEURAll = 0, trRateEUR = 0;
 
       let pendingTrItems = [];
+      let paidTrItems = [];
 
       (currentData.trItems || []).forEach(item => {
         let amtTRY = parseAmountToNum(item.amount);
@@ -3405,107 +3411,160 @@
           else if (isFree) remFreeTRY += amtTRY;
           else remOtherTRY += amtTRY;
 
-          if (amtTRY > 0) {
-            pendingTrItems.push(item);
-          }
+          if (amtTRY > 0) pendingTrItems.push(item);
+        } else {
+          totalPaidTrTRY += amtTRY;
+          totalPaidTrEUR += amtEUR;
+          if (isWorld) paidWorldEkoTRY += amtTRY;
+          else if (isEnpara) paidEnparaTRY += amtTRY;
+          else if (isFree) paidFreeTRY += amtTRY;
+          else paidOtherTRY += amtTRY;
+
+          if (amtTRY > 0) paidTrItems.push(item);
         }
       });
 
       if (totalTrTRYAll > 0 && totalTrEURAll > 0) trRateEUR = totalTrEURAll / totalTrTRYAll;
-      const totalPendingObligation = remainingCardLimit + totalRemManual + totalRemTrEUR;
 
+      // --- GENEL TOPLAMLAR ---
+      const totalKalan = remCard + totalRemManual + totalRemTrEUR;
+      const totalOdenen = paidCard + totalPaidManual + totalPaidTrEUR;
+      const grandBudget = totalOdenen + totalKalan;
+
+      let pctPaid = grandBudget > 0 ? Math.round((totalOdenen / grandBudget) * 100) : 0;
+      let pctRem = grandBudget > 0 ? (100 - pctPaid) : 0;
+
+      // Segment butonundaki adet sayıları
+      let countKalan = (remCard > 0 ? 1 : 0) + pendingManualItems.length + pendingTrItems.length;
+      let countOdenen = (paidCard > 0 ? 1 : 0) + paidManualItems.length + paidTrItems.length;
+
+      // SEGMENT BUTONLARI HTML (Ödenenler - X | Kalanlar - Y)
+      let segmentHtml = `
+        <div style="display:flex; background:rgba(255,255,255,0.06); padding:3px; border-radius:10px; margin-bottom:14px; gap:4px;">
+          <button type="button" onclick="setControlSubTab('odenen')" style="flex:1; border:none; padding:7px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:${isOdenen ? 'var(--green)' : 'transparent'}; color:${isOdenen ? '#000' : 'var(--text-dim)'};">
+            ✓ Ödenenler (${countOdenen})
+          </button>
+          <button type="button" onclick="setControlSubTab('kalan')" style="flex:1; border:none; padding:7px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:${!isOdenen ? 'var(--accent)' : 'transparent'}; color:${!isOdenen ? '#fff' : 'var(--text-dim)'};">
+            ⏳ Kalanlar (${countKalan})
+          </button>
+        </div>
+      `;
+
+      // --- GÖRÜNÜM 1: ÖZET MODU (SUMMARY) ---
       if (currentControlView === 'summary') {
-        let html = `
-          <div class="liq-section-title">💳 Kart Harcama</div>
+        let activeCardVal = isOdenen ? paidCard : remCard;
+        let cardSubText = isOdenen ? `Harcanan Tutar / Limit: €${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})}` : `Kart Harcama Limiti (€${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})})`;
+
+        let curManual = isOdenen ? totalPaidManual : totalRemManual;
+        let curSparkasse = isOdenen ? paidSparkasse : remSparkasse;
+        let curN26 = isOdenen ? paidN26 : remN26;
+        let curNakit = isOdenen ? paidNakit : remNakit;
+        let curC24 = isOdenen ? paidC24 : remC24;
+        let curOtherManual = isOdenen ? paidOtherManual : remOtherManual;
+
+        let curTrTRY = isOdenen ? totalPaidTrTRY : totalRemTrTRY;
+        let curTrEUR = isOdenen ? totalPaidTrEUR : totalRemTrEUR;
+        let curWorldTRY = isOdenen ? paidWorldEkoTRY : remWorldEkoTRY;
+        let curEnparaTRY = isOdenen ? paidEnparaTRY : remEnparaTRY;
+        let curFreeTRY = isOdenen ? paidFreeTRY : remFreeTRY;
+        let curOtherTRY = isOdenen ? paidOtherTRY : remOtherTRY;
+
+        let prefixTitle = isOdenen ? 'Ödenen' : 'Kalan';
+        let currentDisplayTotal = isOdenen ? totalOdenen : totalKalan;
+        let totalThemeColor = isOdenen ? 'var(--green)' : (totalKalan > 0 ? 'var(--red)' : 'var(--green)');
+        let totalSign = isOdenen ? '+' : (totalKalan > 0 ? '-' : '');
+
+        let html = segmentHtml;
+
+        // 1. KART HARCAMA KARTI
+        html += `
+          <div class="liq-section-title">💳 ${prefixTitle} Kart Harcama</div>
           <div class="liq-card" style="border-left: 4px solid var(--accent);">
             <div class="liq-row">
-              <span style="font-weight:700; color:var(--accent);">Kart Harcama Limiti (€${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})})</span>
-              <span style="font-weight:700; color:var(--accent);">€${remainingCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+              <span style="font-weight:700; color:var(--accent); font-size:12px;">${cardSubText}</span>
+              <span style="font-weight:700; color:var(--accent);">€${activeCardVal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
           </div>
         `;
 
-        if (totalRemManual > 0) {
+        // 2. DİĞER GİDERLER KARTI
+        if (curManual > 0) {
+          let sumTwo = curSparkasse + curN26;
+          let hasSec = (curNakit > 0 || curC24 > 0 || curOtherManual > 0);
+
           html += `
-            <div class="liq-section-title">🏦 Diğer Giderler</div>
+            <div class="liq-section-title">🏦 ${prefixTitle} Diğer Giderler</div>
             <div class="liq-card" style="border-left: 4px solid var(--orange);">
           `;
 
-          if (remSparkasse > 0) {
-            html += `
-              <div class="liq-row">
-                <span>🏦 Sparkasse</span>
-                <span style="font-weight:600; color:#fff;">€${remSparkasse.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-              </div>
-            `;
-          }
-          if (remN26 > 0) {
-            html += `
-              <div class="liq-row">
-                <span>🏦 N26</span>
-                <span style="font-weight:600; color:#fff;">€${remN26.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-              </div>
-            `;
-          }
+          if (curSparkasse > 0) html += `<div class="liq-row"><span>🏦 Sparkasse</span><span style="font-weight:600; color:#fff;">€${curSparkasse.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+          if (curN26 > 0) html += `<div class="liq-row"><span>🏦 N26</span><span style="font-weight:600; color:#fff;">€${curN26.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
 
-          if (hasSecondaryRem) {
-            if (remSparkasse > 0 && remN26 > 0) {
-              html += `
-                <div class="liq-row total-row" style="color:var(--orange);">
-                  <span>Toplam</span>
-                  <span>€${sumMainRemTwo.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                </div>
-              `;
+          if (hasSec) {
+            if (curSparkasse > 0 && curN26 > 0) {
+              html += `<div class="liq-row total-row" style="color:var(--orange);"><span>Toplam</span><span>€${sumTwo.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
             }
-            if (remNakit > 0) html += `<div class="liq-row"><span>💵 Nakit</span><span style="font-weight:600; color:#fff;">€${remNakit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
-            if (remC24 > 0) html += `<div class="liq-row"><span>🏦 C24</span><span style="font-weight:600; color:#fff;">€${remC24.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
-            if (remOtherManual > 0) html += `<div class="liq-row"><span>Diğer</span><span style="font-weight:600; color:#fff;">€${remOtherManual.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+            if (curNakit > 0) html += `<div class="liq-row"><span>💵 Nakit</span><span style="font-weight:600; color:#fff;">€${curNakit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+            if (curC24 > 0) html += `<div class="liq-row"><span>🏦 C24</span><span style="font-weight:600; color:#fff;">€${curC24.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+            if (curOtherManual > 0) html += `<div class="liq-row"><span>Diğer</span><span style="font-weight:600; color:#fff;">€${curOtherManual.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
           }
 
           html += `
               <div class="liq-row total-row" style="color:var(--orange);">
-                <span>Toplam Diğer Giderler</span>
-                <span>€${totalRemManual.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                <span>Toplam ${prefixTitle} Diğer Giderler</span>
+                <span>€${curManual.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
               </div>
             </div>
           `;
         }
 
-        if (totalRemTrTRY > 0) {
+        // 3. TR ÖDEMELER KARTI
+        if (curTrTRY > 0) {
           html += `
-            <div class="liq-section-title">🇹🇷 TR Ödemeler</div>
+            <div class="liq-section-title">🇹🇷 ${prefixTitle} TR Ödemeler</div>
             <div class="liq-card" style="border-left: 4px solid var(--purple);">
           `;
-          if (remWorldEkoTRY > 0) html += `<div class="liq-row"><span>💳 World Eko</span><span style="font-weight:600; color:#fff;">₺${remWorldEkoTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
-          if (remEnparaTRY > 0) html += `<div class="liq-row"><span>💳 Enpara</span><span style="font-weight:600; color:#fff;">₺${remEnparaTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
-          if (remFreeTRY > 0) html += `<div class="liq-row"><span>💳 Free</span><span style="font-weight:600; color:#fff;">₺${remFreeTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
-          if (remOtherTRY > 0) html += `<div class="liq-row"><span>💳 Diğer</span><span style="font-weight:600; color:#fff;">₺${remOtherTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+          if (curWorldTRY > 0) html += `<div class="liq-row"><span>💳 World Eko</span><span style="font-weight:600; color:#fff;">₺${curWorldTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+          if (curEnparaTRY > 0) html += `<div class="liq-row"><span>💳 Enpara</span><span style="font-weight:600; color:#fff;">₺${curEnparaTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+          if (curFreeTRY > 0) html += `<div class="liq-row"><span>💳 Free</span><span style="font-weight:600; color:#fff;">₺${curFreeTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+          if (curOtherTRY > 0) html += `<div class="liq-row"><span>💳 Diğer</span><span style="font-weight:600; color:#fff;">₺${curOtherTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
 
           html += `
               <div class="liq-row total-row" style="color:var(--purple);">
-                <span>Toplam TR Ödemeleri</span>
+                <span>Toplam ${prefixTitle} TR Ödemeleri</span>
                 <span style="text-align:right;">
-                  ₺${totalRemTrTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                  <div style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-top:2px;">~€${totalRemTrEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                  ₺${curTrTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                  <div style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-top:2px;">~€${curTrEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                 </span>
               </div>
             </div>
           `;
         }
 
-        let isPending = totalPendingObligation > 0;
-        let colorTheme = isPending ? 'var(--red)' : 'var(--green)';
+        // 4. TOPLAM KART VE İKİ PARÇALI ÖZET BARI
+        let totalTitleText = isOdenen ? 'Ödenen Toplam Tutar' : 'Kalan Toplam Tutar';
+        let statusSubText = isOdenen ? 'Gerçekleşen Ödemeler' : (totalKalan > 0 ? 'Ödeme Bekliyor' : 'Tümü Ödendi');
 
         html += `
-          <div class="liq-section-title">📊 Kalan Toplam Tutar</div>
-          <div class="liq-card" style="border-left: 4px solid ${colorTheme};">
+          <div class="liq-section-title">📊 ${totalTitleText}</div>
+          <div class="liq-card" style="border-left: 4px solid ${totalThemeColor}; margin-bottom:8px;">
             <div class="liq-row" style="border-bottom:none; padding:6px 0; align-items:center;">
-              <span style="font-weight:700; font-size:15px; color:${colorTheme};">
-                ${isPending ? 'Ödeme Bekliyor' : 'Tümü Ödendi'}
+              <span style="font-weight:700; font-size:15px; color:${totalThemeColor};">${statusSubText}</span>
+              <span style="font-weight:700; font-size:18px; color:${totalThemeColor};">
+                ${totalSign}€${currentDisplayTotal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
               </span>
-              <span style="font-weight:700; font-size:18px; color:${colorTheme};">
-                ${isPending ? '-' : ''}€${totalPendingObligation.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-              </span>
+            </div>
+          </div>
+
+          <!-- İKİ PARÇALI ÖZET İLERLEME BARI (Yeşil: Ödenen, Kırmızı: Kalan) -->
+          <div style="background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-top:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; margin-bottom:6px;">
+              <span style="color:var(--green);">Ödenen: €${totalOdenen.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} (%${pctPaid})</span>
+              <span style="color:var(--red);">Kalan: €${totalKalan.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} (%${pctRem})</span>
+            </div>
+            <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden; display:flex;">
+              <div style="width:${pctPaid}%; background:var(--green); transition:width 0.3s ease;"></div>
+              <div style="width:${pctRem}%; background:var(--red); transition:width 0.3s ease;"></div>
             </div>
           </div>
         `;
@@ -3515,12 +3574,21 @@
         return;
       }
 
-      let html = `
+      // --- GÖRÜNÜM 2: PLAN MODU (CHECKBOX LİSTESİ) ---
+      let targetManualList = isOdenen ? paidManualItems : pendingManualItems;
+      let targetTrList = isOdenen ? paidTrItems : pendingTrItems;
+      let targetCardAmt = isOdenen ? paidCard : remCard;
+
+      let planTitle = isOdenen ? 'Ödenen İşlemler:' : 'Bekleyen Ödemeler:';
+      let planTotalColor = isOdenen ? 'var(--green)' : 'var(--red)';
+
+      let html = segmentHtml;
+      html += `
         <div style="margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border);">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:6px;">
-              <div style="font-weight:700; font-size:14px;">Bekleyen Ödemeler:</div>
-              <div id="lblControlLiveTotal" style="font-weight:700; font-size:15px; color:var(--red);">€0,00</div>
+              <div style="font-weight:700; font-size:14px;">${planTitle}</div>
+              <div id="lblControlLiveTotal" style="font-weight:700; font-size:15px; color:${planTotalColor};">€0,00</div>
             </div>
             <button type="button" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;" onclick="toggleAllControlCheckboxes()">Tümünü Seç / Kaldır</button>
           </div>
@@ -3531,25 +3599,26 @@
         <div id="controlItemsList">
       `;
 
-      if (remainingCardLimit > 0) {
+      if (targetCardAmt > 0) {
+        let cardSubDesc = isOdenen ? `Bu ay yapılan toplam kart harcaması` : `Kalan Limit (Limit: €${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})})`;
         html += `
           <label class="template-item">
             <div style="display:flex; align-items:center;">
-              <input type="checkbox" class="chk-control" data-eur="${remainingCardLimit}" data-try="0" data-account="n26" onchange="recalcControlTotal()" checked>
+              <input type="checkbox" class="chk-control" data-eur="${targetCardAmt}" data-try="0" data-account="n26" onchange="recalcControlTotal()" checked>
               <div>
                 <div style="font-weight:600; font-size:13px;">
                   <span class="template-tag tag-card">KART</span>
                   N26
                 </div>
-                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Kart Harcama Limiti: €${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})}</div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">${cardSubDesc}</div>
               </div>
             </div>
-            <div style="font-weight:700; font-size:14px; color:#fff;">€${remainingCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            <div style="font-weight:700; font-size:14px; color:#fff;">€${targetCardAmt.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
           </label>
         `;
       }
 
-      pendingManualItems.forEach(item => {
+      targetManualList.forEach(item => {
         let numAmt = parseAmountToNum(item.amount);
         let cleanName = item.merchant || 'Açıklamasız';
         let rawAcc = (item.card || '').toLowerCase().trim();
@@ -3560,7 +3629,7 @@
         else if (rawAcc.includes('c24')) accType = 'c24';
         else if (rawAcc.includes('nakit') || rawAcc.includes('bar')) accType = 'nakit';
 
-        let subInfo = item.card ? `Hesap: ${item.card}` : 'Diğer Gider';
+        let subInfo = item.date ? `${item.date} • ${item.card || 'Hesap'}` : (item.card ? `Hesap: ${item.card}` : 'Diğer Gider');
 
         html += `
           <label class="template-item">
@@ -3579,13 +3648,14 @@
         `;
       });
 
-      pendingTrItems.forEach(item => {
+      targetTrList.forEach(item => {
         let amtTRY = parseAmountToNum(item.amount);
         let amtEUR = parseAmountToNum(item.eurAmount || 0);
         if (amtEUR === 0 && trRateEUR > 0) {
           amtEUR = amtTRY * trRateEUR;
         }
         let cleanName = item.merchant || 'TR Kart';
+        let subInfo = item.date ? `${item.date} • ₺${amtTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : `₺${amtTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
         html += `
           <label class="template-item">
@@ -3596,7 +3666,7 @@
                   <span class="template-tag tag-tr">TR KART</span>
                   ${cleanName}
                 </div>
-                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">₺${amtTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">${subInfo}</div>
               </div>
             </div>
             <div style="font-weight:700; font-size:14px; color:#fff;">€${amtEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
