@@ -1299,8 +1299,11 @@
   <div class="modal" id="modalControl">
     <div class="modal-content" id="controlModalContent">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px;">
-        <h3 style="font-size: 15px; white-space: nowrap; margin: 0; cursor: pointer; display: flex; align-items: center; gap: 4px;" onclick="openTelegramReportChooser()">
-          Ay İçi Kontrol <span style="font-size: 12px; opacity: 0.7;"></span>
+        <h3 id="lblControlHeaderTitle" 
+            ontouchstart="handleHeaderPressStart()" ontouchend="handleHeaderPressEnd()" ontouchcancel="handleHeaderPressCancel()"
+            onmousedown="handleHeaderPressStart()" onmouseup="handleHeaderPressEnd()" onmouseleave="handleHeaderPressCancel()"
+            style="font-size: 15px; white-space: nowrap; margin: 0; cursor: pointer; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;">
+          Ay İçi Kontrol
         </h3>
         <div class="mini-view-switcher three-way">
           <button type="button" class="mini-view-btn active" id="btnCtrlViewSummary" onclick="switchControlView('summary')">Özet</button>
@@ -6053,6 +6056,41 @@
       loadDebtsData();
     }
 
+    let headerPressTimer = null;
+    let headerIsLongPress = false;
+
+    function handleHeaderPressStart() {
+      headerIsLongPress = false;
+      if (headerPressTimer) clearTimeout(headerPressTimer);
+
+      headerPressTimer = setTimeout(() => {
+        headerIsLongPress = true;
+        if (navigator.vibrate) navigator.vibrate(50);
+        openTelegramReportChooser();
+      }, 500); // 500ms basılı tutunca modalı açar
+    }
+
+    function handleHeaderPressEnd() {
+      if (headerPressTimer) {
+        clearTimeout(headerPressTimer);
+        headerPressTimer = null;
+      }
+      headerIsLongPress = false;
+    }
+
+    function handleHeaderPressCancel() {
+      if (headerPressTimer) {
+        clearTimeout(headerPressTimer);
+        headerPressTimer = null;
+      }
+      headerIsLongPress = false;
+    }
+
+    function openTelegramReportChooser() {
+      const modal = document.getElementById('modalTelegramChooser');
+      if (modal) modal.style.display = 'flex';
+    }
+    
     // =========================================================
     // TELEGRAM LİSTE GÖNDERİMİ (BAŞLIKTAN SEÇİMLİ)
     // =========================================================
