@@ -3644,13 +3644,13 @@
             </div>
           </div>
 
-          <!-- İKİ PARÇALI ÖZET İLERLEME BARI -->
-          <div style="background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-top:10px; margin-bottom:10px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; margin-bottom:6px;">
+          <!-- İKİ PARÇALI ÖZET İLERLEME BARI (STANDART KART GÖRÜNÜMÜ - KENAR RENKSİZ) -->
+          <div class="liq-card" style="border-left: 1px solid var(--border); margin-top:10px; margin-bottom:10px; padding:12px 14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; margin-bottom:8px;">
               <span style="color:var(--green);">€${totalOdenen.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} (%${pctPaid})</span>
               <span style="color:var(--red);">€${totalKalan.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} (%${pctRem})</span>
             </div>
-            <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden; display:flex;">
+            <div style="width:100%; height:8px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; display:flex;">
               <div style="width:${pctPaid}%; background:var(--green); transition:width 0.3s ease;"></div>
               <div style="width:${pctRem}%; background:var(--red); transition:width 0.3s ease;"></div>
             </div>
