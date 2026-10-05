@@ -6103,7 +6103,7 @@
         btn.disabled = true;
       }
 
-      let itemsToSend = [];
+      let rawCollectedItems = [];
       let totalEur = 0;
       let totalTry = 0;
 
@@ -6116,11 +6116,21 @@
         if (isOdenen && !isPending) {
           totalEur += amt;
           let name = (it.merchant || 'Açıklamasız').replace(/\s*\(\d{1,2}[\.\/]\d{1,2}\)/, '').trim();
-          itemsToSend.push({ name: name, amount: `${amt.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} €` });
+          rawCollectedItems.push({
+            name: name,
+            amount: `${amt.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} €`,
+            rawDate: it.date,
+            merchantText: it.merchant || ''
+          });
         } else if (!isOdenen && isPending) {
           totalEur += amt;
           let rawName = it.merchant || 'Açıklamasız';
-          itemsToSend.push({ name: rawName, amount: `${amt.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} €` });
+          rawCollectedItems.push({
+            name: rawName,
+            amount: `${amt.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} €`,
+            rawDate: it.date,
+            merchantText: it.merchant || ''
+          });
         }
       });
 
@@ -6133,21 +6143,61 @@
         if (isOdenen && !isPending) {
           totalTry += amtTry;
           let name = (it.merchant || 'TR Kart').replace(/\s*\(\d{1,2}[\.\/]\d{1,2}\)/, '').trim();
-          itemsToSend.push({ name: name, amount: `${amtTry.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₺` });
+          rawCollectedItems.push({
+            name: name,
+            amount: `${amtTry.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₺`,
+            rawDate: it.date,
+            merchantText: it.merchant || ''
+          });
         } else if (!isOdenen && isPending) {
           totalTry += amtTry;
           let rawName = it.merchant || 'TR Kart';
-          itemsToSend.push({ name: rawName, amount: `${amtTry.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₺` });
+          rawCollectedItems.push({
+            name: rawName,
+            amount: `${amtTry.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₺`,
+            rawDate: it.date,
+            merchantText: it.merchant || ''
+          });
         }
       });
 
-      if (itemsToSend.length === 0) {
+      if (rawCollectedItems.length === 0) {
         alert("Gönderilecek kayıt bulunamadı.");
         if (btn) { btn.innerText = originalText; btn.disabled = false; }
         return;
       }
 
-      // Toplam Metni
+      // --- TARİHE GÖRE SIRALAMA MOTORU ---
+      function getItemSortTimestamp(it) {
+        // 1. Hücredeki tam tarih (DD.MM.YYYY)
+        if (it.rawDate && it.rawDate.trim() !== "") {
+          let p = it.rawDate.trim().split(".");
+          if (p.length === 3) {
+            return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0])).getTime();
+          }
+        }
+        // 2. Parantez içindeki tarih (örn: (04.10))
+        let match = (it.merchantText || "").match(/\((\d{1,2})[\.\/](\d{1,2})\)/);
+        if (match) {
+          let day = parseInt(match[1], 10);
+          let month = parseInt(match[2], 10) - 1;
+          let year = new Date().getFullYear();
+          return new Date(year, month, day).getTime();
+        }
+        // 3. Hiç tarih yoksa listenin sonuna at
+        return Number.MAX_SAFE_INTEGER;
+      }
+
+      // Küçük tarihten büyük tarihe doğru (1'den 31'e) sırala
+      rawCollectedItems.sort((a, b) => getItemSortTimestamp(a) - getItemSortTimestamp(b));
+
+      // Telegram formatı için temiz nesne listesi
+      let itemsToSend = rawCollectedItems.map(it => ({
+        name: it.name,
+        amount: it.amount
+      }));
+
+      // Toplam Metni Hazırla
       let totalParts = [];
       if (totalEur > 0 || totalTry === 0) totalParts.push(`${totalEur.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} €`);
       if (totalTry > 0) totalParts.push(`${totalTry.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₺`);
