@@ -1222,7 +1222,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.7.0
+    Sürüm 3.7.1
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1510,7 +1510,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.7.0";
+    const CURRENT_VERSION = "3.7.1";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -3432,7 +3432,8 @@
           else if (acc.includes('c24')) remC24 += amt;
           else remOtherManual += amt;
 
-          if (amt > 0) pendingManualItems.push(item);
+          // Tutarı 0 olsa bile bekleyen olarak say ve listeye al
+          pendingManualItems.push(item);
         } else {
           totalPaidManual += amt;
           if (acc.includes('sparkasse')) paidSparkasse += amt;
@@ -3478,7 +3479,8 @@
           else if (isFree) remFreeTRY += amtTRY;
           else remOtherTRY += amtTRY;
 
-          if (amtTRY > 0) pendingTrItems.push(item);
+          // Tutarı 0 olsa bile bekleyen olarak say ve listeye al
+          pendingTrItems.push(item);
         } else {
           totalPaidTrTRY += amtTRY;
           totalPaidTrEUR += amtEUR;
@@ -3497,7 +3499,7 @@
       let countKalan = pendingManualItems.length + pendingTrItems.length;
       let countOdenen = paidManualItems.length + paidTrItems.length;
 
-      // --- SABİT BUTONLARI GÜNCELLE (!important ve style.cssText ile kesin çözüm) ---
+      // --- SABİT BUTONLARI GÜNCELLE ---
       const btnOdenen = document.getElementById('btnCtrlOdenen');
       const btnKalan = document.getElementById('btnCtrlKalan');
 
@@ -3566,7 +3568,7 @@
         `;
 
         // 2. DİĞER GİDERLER KARTI
-        if (curManual > 0) {
+        if (curManual > 0 || (!isOdenen && pendingManualItems.length > 0)) {
           let sumTwo = curSparkasse + curN26;
           let hasSec = (curNakit > 0 || curC24 > 0 || curOtherManual > 0);
 
@@ -3596,16 +3598,24 @@
           `;
         }
 
-        // 3. TR ÖDEMELER KARTI
-        if (curTrTRY > 0) {
+        // 3. TR ÖDEMELER KARTI (0 tutarlı World Eko vb. varsa da görünsün)
+        let hasTrPending = (!isOdenen && pendingTrItems.length > 0);
+        let hasTrPaid = (isOdenen && paidTrItems.length > 0);
+
+        if (curTrTRY > 0 || hasTrPending || hasTrPaid) {
+          let hasWorld = (!isOdenen && pendingTrItems.some(it => (it.merchant||'').toLowerCase().includes('world') || (it.merchant||'').toLowerCase().includes('eko'))) || curWorldTRY > 0;
+          let hasEnpara = (!isOdenen && pendingTrItems.some(it => (it.merchant||'').toLowerCase().includes('enpara'))) || curEnparaTRY > 0;
+          let hasFree = (!isOdenen && pendingTrItems.some(it => (it.merchant||'').toLowerCase().includes('free') || (it.merchant||'').toLowerCase().includes('bonus'))) || curFreeTRY > 0;
+          let hasOther = (!isOdenen && pendingTrItems.some(it => !((it.merchant||'').toLowerCase().includes('world') || (it.merchant||'').toLowerCase().includes('eko') || (it.merchant||'').toLowerCase().includes('enpara') || (it.merchant||'').toLowerCase().includes('free') || (it.merchant||'').toLowerCase().includes('bonus')))) || curOtherTRY > 0;
+
           html += `
             <div class="liq-section-title">🇹🇷 ${prefixTitle} TR Ödemeler</div>
             <div class="liq-card" style="border-left: 4px solid var(--purple);">
           `;
-          if (curWorldTRY > 0) html += `<div class="liq-row"><span>💳 World Eko</span><span style="font-weight:600; color:#fff;">₺${curWorldTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
-          if (curEnparaTRY > 0) html += `<div class="liq-row"><span>💳 Enpara</span><span style="font-weight:600; color:#fff;">₺${curEnparaTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
-          if (curFreeTRY > 0) html += `<div class="liq-row"><span>💳 Free</span><span style="font-weight:600; color:#fff;">₺${curFreeTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
-          if (curOtherTRY > 0) html += `<div class="liq-row"><span>💳 Diğer</span><span style="font-weight:600; color:#fff;">₺${curOtherTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+          if (hasWorld) html += `<div class="liq-row"><span>💳 World Eko</span><span style="font-weight:600; color:#fff;">₺${curWorldTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+          if (hasEnpara) html += `<div class="liq-row"><span>💳 Enpara</span><span style="font-weight:600; color:#fff;">₺${curEnparaTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+          if (hasFree) html += `<div class="liq-row"><span>💳 Free</span><span style="font-weight:600; color:#fff;">₺${curFreeTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+          if (hasOther) html += `<div class="liq-row"><span>💳 Diğer</span><span style="font-weight:600; color:#fff;">₺${curOtherTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
 
           html += `
               <div class="liq-row total-row" style="color:var(--purple);">
@@ -6111,9 +6121,8 @@
       (currentData.manualItems || []).forEach(it => {
         let amt = parseAmountToNum(it.amount);
         let isPending = (!it.date || it.date.trim() === "");
-        if (amt <= 0) return;
 
-        if (isOdenen && !isPending) {
+        if (isOdenen && !isPending && amt > 0) {
           totalEur += amt;
           let name = (it.merchant || 'Açıklamasız').replace(/\s*\(\d{1,2}[\.\/]\d{1,2}\)/, '').trim();
           rawCollectedItems.push({
@@ -6123,6 +6132,7 @@
             merchantText: it.merchant || ''
           });
         } else if (!isOdenen && isPending) {
+          // Kalanlarda tutar 0 olsa bile listeye al
           totalEur += amt;
           let rawName = it.merchant || 'Açıklamasız';
           rawCollectedItems.push({
@@ -6138,9 +6148,8 @@
       (currentData.trItems || []).forEach(it => {
         let amtTry = parseAmountToNum(it.amount);
         let isPending = (!it.date || it.date.trim() === "");
-        if (amtTry <= 0) return;
 
-        if (isOdenen && !isPending) {
+        if (isOdenen && !isPending && amtTry > 0) {
           totalTry += amtTry;
           let name = (it.merchant || 'TR Kart').replace(/\s*\(\d{1,2}[\.\/]\d{1,2}\)/, '').trim();
           rawCollectedItems.push({
@@ -6150,6 +6159,7 @@
             merchantText: it.merchant || ''
           });
         } else if (!isOdenen && isPending) {
+          // Kalanlarda tutar 0 olsa bile (World Eko gibi) listeye al
           totalTry += amtTry;
           let rawName = it.merchant || 'TR Kart';
           rawCollectedItems.push({
@@ -6167,16 +6177,14 @@
         return;
       }
 
-      // --- TARİHE GÖRE SIRALAMA MOTORU ---
+      // Tarihe göre sıralama motoru (Hücre tarihi yoksa parantez içi tarihe göre)
       function getItemSortTimestamp(it) {
-        // 1. Hücredeki tam tarih (DD.MM.YYYY)
         if (it.rawDate && it.rawDate.trim() !== "") {
           let p = it.rawDate.trim().split(".");
           if (p.length === 3) {
             return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0])).getTime();
           }
         }
-        // 2. Parantez içindeki tarih (örn: (04.10))
         let match = (it.merchantText || "").match(/\((\d{1,2})[\.\/](\d{1,2})\)/);
         if (match) {
           let day = parseInt(match[1], 10);
@@ -6184,14 +6192,11 @@
           let year = new Date().getFullYear();
           return new Date(year, month, day).getTime();
         }
-        // 3. Hiç tarih yoksa listenin sonuna at
         return Number.MAX_SAFE_INTEGER;
       }
 
-      // Küçük tarihten büyük tarihe doğru (1'den 31'e) sırala
       rawCollectedItems.sort((a, b) => getItemSortTimestamp(a) - getItemSortTimestamp(b));
 
-      // Telegram formatı için temiz nesne listesi
       let itemsToSend = rawCollectedItems.map(it => ({
         name: it.name,
         amount: it.amount
