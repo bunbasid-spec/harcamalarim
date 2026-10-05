@@ -3551,26 +3551,17 @@
           // 'ALL' / TÜMÜ ÖZETİ (ÖZEL İSTEK DÜZENİ)
           // =========================================================
 
-          // 1. KART HARCAMA PENCERESİ (İNTERAKTİF)
+          // 1. KART HARCAMA PENCERESİ (DOĞRUDAN 2 SATIR HALİNDE AÇIK)
           html += `
             <div class="liq-section-title">💳 Kart Harcama (€${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})})</div>
-            <div class="liq-card" style="border-left: 4px solid var(--accent); cursor: pointer;" onclick="toggleCtrlAllCardDetails()">
-              <div class="liq-acc-header">
-                <div>
-                  <span style="font-weight:700; color:var(--accent); font-size:12px;">Kart Harcama Limiti</span>
-                  <div style="font-weight:700; color:#fff; font-size:15px; margin-top:2px;">€${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                </div>
-                <div id="ctrlAllCardArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Detay ▼</div>
+            <div class="liq-card" style="border-left: 4px solid var(--accent);">
+              <div class="liq-row">
+                <span>Kart Harcanan</span>
+                <span style="font-weight:600; color:var(--red);">-€${paidCard.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
               </div>
-              <div id="ctrlAllCardBody" style="display:none; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
-                <div class="liq-row">
-                  <span>Kart Harcanan</span>
-                  <span style="font-weight:600; color:var(--red);">-€${paidCard.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                </div>
-                <div class="liq-row">
-                  <span>Kart Kalan</span>
-                  <span style="font-weight:600; color:var(--green);">€${remCard.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                </div>
+              <div class="liq-row">
+                <span>Kart Kalan</span>
+                <span style="font-weight:600; color:var(--green);">€${remCard.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
               </div>
             </div>
           `;
