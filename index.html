@@ -6383,19 +6383,6 @@
         if (btn) { btn.innerText = originalText; btn.disabled = false; }
       }
     }
-
-    function toggleCtrlAllCardDetails() {
-      const body = document.getElementById('ctrlAllCardBody');
-      const arrow = document.getElementById('ctrlAllCardArrow');
-      if (!body) return;
-      if (body.style.display === 'none' || body.style.display === '') {
-        body.style.display = 'block';
-        if (arrow) arrow.innerText = 'Gizle ▲';
-      } else {
-        body.style.display = 'none';
-        if (arrow) arrow.innerText = 'Detay ▼';
-      }
-    }
     
   </script>
 </body>
