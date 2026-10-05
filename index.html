@@ -1302,10 +1302,13 @@
         </div>
       </div>
 
-      <!-- KESTİĞİNİZ BUTONLAR TAM BURAYA GELECEK: -->
+      <!-- SABİT ÖDENENLER / (TOPLAM) / KALANLAR BUTONLARI -->
       <div id="ctrlSegmentBar" style="display:flex; background:rgba(255,255,255,0.06); padding:3px; border-radius:10px; gap:4px; margin-bottom:12px;">
         <button type="button" id="btnCtrlOdenen" onclick="setControlSubTab('odenen')" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:transparent; color:var(--text-dim);">
           Ödenenler (0)
+        </button>
+        <button type="button" id="btnCtrlAll" onclick="setControlSubTab('all')" style="flex:0.7; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:transparent; color:var(--text-dim);">
+          (0)
         </button>
         <button type="button" id="btnCtrlKalan" onclick="setControlSubTab('kalan')" style="flex:1; border:none; padding:8px 0; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:0.2s; background:var(--red); color:#fff;">
           Kalanlar (0)
@@ -3395,7 +3398,7 @@
     }
 
     // =========================================================
-    // AY İÇİ KONTROL RENDER (ÖZET | AJANDA | PLAN)
+    // AY İÇİ KONTROL RENDER (ÖZET | AJANDA | PLAN) - 'ALL' MODU DESTEKLİ
     // =========================================================
     function renderControlContent() {
       const container = document.getElementById('controlReportContent');
@@ -3405,6 +3408,8 @@
       }
 
       const isOdenen = (currentControlSubTab === 'odenen');
+      const isAll = (currentControlSubTab === 'all');
+      const isKalan = (currentControlSubTab === 'kalan');
 
       // --- KART HESAPLAMALARI ---
       const targetCardLimit = parseAmountToNum(currentData.cardLimit || 0);
@@ -3432,7 +3437,6 @@
           else if (acc.includes('c24')) remC24 += amt;
           else remOtherManual += amt;
 
-          // Tutarı 0 olsa bile bekleyen olarak say ve listeye al
           pendingManualItems.push(item);
         } else {
           totalPaidManual += amt;
@@ -3479,7 +3483,6 @@
           else if (isFree) remFreeTRY += amtTRY;
           else remOtherTRY += amtTRY;
 
-          // Tutarı 0 olsa bile bekleyen olarak say ve listeye al
           pendingTrItems.push(item);
         } else {
           totalPaidTrTRY += amtTRY;
@@ -3498,9 +3501,11 @@
       // --- BUTON SAYAÇLARI (Sadece Hesap + TR) ---
       let countKalan = pendingManualItems.length + pendingTrItems.length;
       let countOdenen = paidManualItems.length + paidTrItems.length;
+      let countAll = countOdenen + countKalan;
 
-      // --- SABİT BUTONLARI GÜNCELLE ---
+      // --- SABİT 3'LÜ BUTONLARI GÜNCELLE ---
       const btnOdenen = document.getElementById('btnCtrlOdenen');
+      const btnAll = document.getElementById('btnCtrlAll');
       const btnKalan = document.getElementById('btnCtrlKalan');
 
       if (btnOdenen) {
@@ -3509,16 +3514,23 @@
         btnOdenen.style.setProperty('color', isOdenen ? '#000' : 'var(--text-dim)', 'important');
       }
 
+      if (btnAll) {
+        btnAll.innerText = `(${countAll})`;
+        btnAll.style.setProperty('background', isAll ? 'var(--orange)' : 'transparent', 'important');
+        btnAll.style.setProperty('color', isAll ? '#000' : 'var(--text-dim)', 'important');
+      }
+
       if (btnKalan) {
         btnKalan.innerText = `Kalanlar (${countKalan})`;
-        btnKalan.style.setProperty('background', !isOdenen ? 'var(--red)' : 'transparent', 'important');
-        btnKalan.style.setProperty('color', !isOdenen ? '#fff' : 'var(--text-dim)', 'important');
+        btnKalan.style.setProperty('background', isKalan ? 'var(--red)' : 'transparent', 'important');
+        btnKalan.style.setProperty('color', isKalan ? '#fff' : 'var(--text-dim)', 'important');
       }
 
       // --- AJANDA GÖRÜNÜMÜ ---
       if (currentControlView === 'calendar') {
-        let flowText = isOdenen ? "Tamamlanan ödemeler:" : "Beklenen ödeme akışı:";
-        renderGenericCalendarView(container, currentData, 'ctrl', selectedFiltersCtrl, !isOdenen, flowText);
+        let flowText = isAll ? "Tüm ödeme akışı:" : (isOdenen ? "Tamamlanan ödemeler:" : "Beklenen ödeme akışı:");
+        // isAll modunda hem ödenenler hem bekleyenler gösterilir
+        renderGenericCalendarView(container, currentData, 'ctrl', selectedFiltersCtrl, !isOdenen && !isAll, flowText);
         return;
       }
 
@@ -3532,6 +3544,157 @@
 
       // --- GÖRÜNÜM 1: ÖZET MODU (SUMMARY) ---
       if (currentControlView === 'summary') {
+        let html = '';
+
+        if (isAll) {
+          // =========================================================
+          // 'ALL' / TÜMÜ ÖZETİ (ÖZEL İSTEK DÜZENİ)
+          // =========================================================
+
+          // 1. KART HARCAMA PENCERESİ (İNTERAKTİF)
+          html += `
+            <div class="liq-section-title">💳 Kart Harcama (€${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})})</div>
+            <div class="liq-card" style="border-left: 4px solid var(--accent); cursor: pointer;" onclick="toggleCtrlAllCardDetails()">
+              <div class="liq-acc-header">
+                <div>
+                  <span style="font-weight:700; color:var(--accent); font-size:12px;">Kart Harcama Limiti</span>
+                  <div style="font-weight:700; color:#fff; font-size:15px; margin-top:2px;">€${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                </div>
+                <div id="ctrlAllCardArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Detay ▼</div>
+              </div>
+              <div id="ctrlAllCardBody" style="display:none; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
+                <div class="liq-row">
+                  <span>Kart Harcanan</span>
+                  <span style="font-weight:600; color:var(--red);">-€${paidCard.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+                <div class="liq-row">
+                  <span>Kart Kalan</span>
+                  <span style="font-weight:600; color:var(--green);">€${remCard.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+              </div>
+            </div>
+          `;
+
+          // 2. DİĞER GİDERLER PENCERESİ (TÜMÜ)
+          let allSparkasse = paidSparkasse + remSparkasse;
+          let allN26 = paidN26 + remN26;
+          let allNakit = paidNakit + remNakit;
+          let allC24 = paidC24 + remC24;
+          let allOtherManual = paidOtherManual + remOtherManual;
+          let allManualTotal = totalPaidManual + totalRemManual;
+
+          if (allManualTotal > 0) {
+            let sumTwo = allSparkasse + allN26;
+            let hasSec = (allNakit > 0 || allC24 > 0 || allOtherManual > 0);
+
+            html += `
+              <div class="liq-section-title">🏦 Diğer Giderler</div>
+              <div class="liq-card" style="border-left: 4px solid var(--orange);">
+            `;
+            if (allSparkasse > 0) html += `<div class="liq-row"><span>🏦 Sparkasse</span><span style="font-weight:600; color:#fff;">€${allSparkasse.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+            if (allN26 > 0) html += `<div class="liq-row"><span>🏦 N26</span><span style="font-weight:600; color:#fff;">€${allN26.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+
+            if (hasSec) {
+              if (allSparkasse > 0 && allN26 > 0) {
+                html += `<div class="liq-row total-row" style="color:var(--orange);"><span>Toplam</span><span>€${sumTwo.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+              }
+              if (allNakit > 0) html += `<div class="liq-row"><span>💵 Nakit</span><span style="font-weight:600; color:#fff;">€${allNakit.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+              if (allC24 > 0) html += `<div class="liq-row"><span>🏦 C24</span><span style="font-weight:600; color:#fff;">€${allC24.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+              if (allOtherManual > 0) html += `<div class="liq-row"><span>Diğer</span><span style="font-weight:600; color:#fff;">€${allOtherManual.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+            }
+
+            html += `
+                <div class="liq-row total-row" style="color:var(--orange);">
+                  <span>Toplam Diğer Giderler</span>
+                  <span>€${allManualTotal.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+              </div>
+            `;
+          }
+
+          // 3. TR ÖDEMELER PENCERESİ (TÜMÜ)
+          let allWorldTRY = paidWorldEkoTRY + remWorldEkoTRY;
+          let allEnparaTRY = paidEnparaTRY + remEnparaTRY;
+          let allFreeTRY = paidFreeTRY + remFreeTRY;
+          let allOtherTRY = paidOtherTRY + remOtherTRY;
+          let allTrTRY = totalPaidTrTRY + totalRemTrTRY;
+          let allTrEUR = totalPaidTrEUR + totalRemTrEUR;
+
+          if (allTrTRY > 0 || pendingTrItems.length > 0 || paidTrItems.length > 0) {
+            html += `
+              <div class="liq-section-title">🇹🇷 TR Ödemeler</div>
+              <div class="liq-card" style="border-left: 4px solid var(--purple);">
+            `;
+            if (allWorldTRY > 0 || pendingTrItems.some(it => (it.merchant||'').toLowerCase().includes('world') || (it.merchant||'').toLowerCase().includes('eko'))) {
+              html += `<div class="liq-row"><span>💳 World Eko</span><span style="font-weight:600; color:#fff;">₺${allWorldTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+            }
+            if (allEnparaTRY > 0 || pendingTrItems.some(it => (it.merchant||'').toLowerCase().includes('enpara'))) {
+              html += `<div class="liq-row"><span>💳 Enpara</span><span style="font-weight:600; color:#fff;">₺${allEnparaTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+            }
+            if (allFreeTRY > 0 || pendingTrItems.some(it => (it.merchant||'').toLowerCase().includes('free') || (it.merchant||'').toLowerCase().includes('bonus'))) {
+              html += `<div class="liq-row"><span>💳 Free</span><span style="font-weight:600; color:#fff;">₺${allFreeTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+            }
+            if (allOtherTRY > 0 || pendingTrItems.some(it => !((it.merchant||'').toLowerCase().includes('world') || (it.merchant||'').toLowerCase().includes('eko') || (it.merchant||'').toLowerCase().includes('enpara') || (it.merchant||'').toLowerCase().includes('free') || (it.merchant||'').toLowerCase().includes('bonus')))) {
+              html += `<div class="liq-row"><span>💳 Diğer</span><span style="font-weight:600; color:#fff;">₺${allOtherTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>`;
+            }
+
+            html += `
+                <div class="liq-row total-row" style="color:var(--purple);">
+                  <span>Toplam TR Ödemeleri</span>
+                  <span style="text-align:right;">
+                    ₺${allTrTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                    <div style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-top:2px;">~€${allTrEUR.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                  </span>
+                </div>
+              </div>
+            `;
+          }
+
+          // 4. TOPLAM TUTAR BAŞLIĞI VE ALTINDAKİ 2 AYRI KUTU (GERÇEKLEŞEN + BEKLEYEN)
+          html += `
+            <div class="liq-section-title">📊 Toplam Tutar</div>
+
+            <!-- GERÇEKLEŞEN ÖDEMELER KUTUSU -->
+            <div class="liq-card" style="border-left: 4px solid var(--green); margin-bottom:8px;">
+              <div class="liq-row" style="border-bottom:none; padding:6px 0; align-items:center;">
+                <span style="font-weight:700; font-size:15px; color:var(--green);">Gerçekleşen Ödemeler</span>
+                <span style="font-weight:700; font-size:18px; color:var(--green);">
+                  +€${totalOdenen.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                </span>
+              </div>
+            </div>
+
+            <!-- BEKLEYEN ÖDEMELER KUTUSU -->
+            <div class="liq-card" style="border-left: 4px solid var(--red); margin-bottom:8px;">
+              <div class="liq-row" style="border-bottom:none; padding:6px 0; align-items:center;">
+                <span style="font-weight:700; font-size:15px; color:var(--red);">Bekleyen Ödemeler</span>
+                <span style="font-weight:700; font-size:18px; color:var(--red);">
+                  ${totalKalan > 0 ? '-' : ''}€${totalKalan.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                </span>
+              </div>
+            </div>
+
+            <!-- İKİ PARÇALI ÖZET İLERLEME BARI -->
+            <div class="liq-card" style="border-left: 1px solid var(--border); margin-top:10px; margin-bottom:10px; padding:12px 14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; margin-bottom:8px;">
+                <span style="color:var(--green);">€${totalOdenen.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} (%${pctPaid})</span>
+                <span style="color:var(--red);">€${totalKalan.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} (%${pctRem})</span>
+              </div>
+              <div style="width:100%; height:8px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; display:flex;">
+                <div style="width:${pctPaid}%; background:var(--green); transition:width 0.3s ease;"></div>
+                <div style="width:${pctRem}%; background:var(--red); transition:width 0.3s ease;"></div>
+              </div>
+            </div>
+          `;
+
+          container.innerHTML = html;
+          container.scrollTop = 0;
+          return;
+        }
+
+        // =========================================================
+        // MEVCUT ÖDENENLER / KALANLAR MODU ÖZETİ
+        // =========================================================
         let activeCardVal = isOdenen ? paidCard : remCard;
         let cardSubText = `Kart Harcama Limiti (€${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})})`;
 
@@ -3553,8 +3716,6 @@
         let currentDisplayTotal = isOdenen ? totalOdenen : totalKalan;
         let totalThemeColor = isOdenen ? 'var(--green)' : (totalKalan > 0 ? 'var(--red)' : 'var(--green)');
         let totalSign = isOdenen ? '+' : (totalKalan > 0 ? '-' : '');
-
-        let html = '';
 
         // 1. KART HARCAMA KARTI
         html += `
@@ -3598,7 +3759,7 @@
           `;
         }
 
-        // 3. TR ÖDEMELER KARTI (0 tutarlı World Eko vb. varsa da görünsün)
+        // 3. TR ÖDEMELER KARTI
         let hasTrPending = (!isOdenen && pendingTrItems.length > 0);
         let hasTrPaid = (isOdenen && paidTrItems.length > 0);
 
@@ -3644,7 +3805,7 @@
             </div>
           </div>
 
-          <!-- İKİ PARÇALI ÖZET İLERLEME BARI (STANDART KART GÖRÜNÜMÜ - KENAR RENKSİZ) -->
+          <!-- İKİ PARÇALI ÖZET İLERLEME BARI -->
           <div class="liq-card" style="border-left: 1px solid var(--border); margin-top:10px; margin-bottom:10px; padding:12px 14px;">
             <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; margin-bottom:8px;">
               <span style="color:var(--green);">€${totalOdenen.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} (%${pctPaid})</span>
@@ -3663,12 +3824,12 @@
       }
 
       // --- GÖRÜNÜM 2: PLAN MODU (CHECKBOX LİSTESİ) ---
-      let targetManualList = isOdenen ? paidManualItems : pendingManualItems;
-      let targetTrList = isOdenen ? paidTrItems : pendingTrItems;
-      let targetCardAmt = isOdenen ? paidCard : remCard;
+      let targetManualList = isAll ? [...paidManualItems, ...pendingManualItems] : (isOdenen ? paidManualItems : pendingManualItems);
+      let targetTrList = isAll ? [...paidTrItems, ...pendingTrItems] : (isOdenen ? paidTrItems : pendingTrItems);
+      let targetCardAmt = isAll ? targetCardLimit : (isOdenen ? paidCard : remCard);
 
-      let planTitle = isOdenen ? 'Ödenen İşlemler:' : 'Bekleyen Ödemeler:';
-      let planTotalColor = isOdenen ? 'var(--green)' : 'var(--red)';
+      let planTitle = isAll ? 'Tüm İşlemler:' : (isOdenen ? 'Ödenen İşlemler:' : 'Bekleyen Ödemeler:');
+      let planTotalColor = isAll ? 'var(--orange)' : (isOdenen ? 'var(--green)' : 'var(--red)');
 
       let html = `
         <div style="margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border);">
@@ -3687,7 +3848,10 @@
       `;
 
       if (targetCardAmt > 0) {
-        let cardSubDesc = isOdenen ? `Bu ay yapılan toplam kart harcaması` : `Kalan Limit (Limit: €${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})})`;
+        let cardSubDesc = isAll 
+          ? `Kart Harcama Limiti (Harcanan: €${paidCard.toLocaleString("de-DE", {minimumFractionDigits: 2})}, Kalan: €${remCard.toLocaleString("de-DE", {minimumFractionDigits: 2})})`
+          : (isOdenen ? `Bu ay yapılan toplam kart harcaması` : `Kalan Limit (Limit: €${targetCardLimit.toLocaleString("de-DE", {minimumFractionDigits: 2})})`);
+        
         html += `
           <label class="template-item">
             <div style="display:flex; align-items:center;">
@@ -3716,7 +3880,7 @@
         else if (rawAcc.includes('c24')) accType = 'c24';
         else if (rawAcc.includes('nakit') || rawAcc.includes('bar')) accType = 'nakit';
 
-        let subInfo = item.date ? `${item.date} • ${item.card || 'Hesap'}` : (item.card ? `Hesap: ${item.card}` : 'Diğer Gider');
+        let subInfo = item.date ? `${item.date} • ${item.card || 'Hesap'}` : (item.card ? `⏳ Bekliyor • ${item.card}` : '⏳ Bekleyen Gider');
 
         html += `
           <label class="template-item">
@@ -3742,7 +3906,7 @@
           amtEUR = amtTRY * trRateEUR;
         }
         let cleanName = item.merchant || 'TR Kart';
-        let subInfo = item.date ? `${item.date} • ₺${amtTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : `₺${amtTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        let subInfo = item.date ? `${item.date} • ₺${amtTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : `⏳ Bekliyor • ₺${amtTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
         html += `
           <label class="template-item">
@@ -6226,6 +6390,19 @@
       } catch (e) {
         alert("Hata oluştu: " + e);
         if (btn) { btn.innerText = originalText; btn.disabled = false; }
+      }
+    }
+
+    function toggleCtrlAllCardDetails() {
+      const body = document.getElementById('ctrlAllCardBody');
+      const arrow = document.getElementById('ctrlAllCardArrow');
+      if (!body) return;
+      if (body.style.display === 'none' || body.style.display === '') {
+        body.style.display = 'block';
+        if (arrow) arrow.innerText = 'Gizle ▲';
+      } else {
+        body.style.display = 'none';
+        if (arrow) arrow.innerText = 'Detay ▼';
       }
     }
     
