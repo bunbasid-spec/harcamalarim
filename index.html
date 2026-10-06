@@ -1222,7 +1222,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.7.1
+    Sürüm 3.7.2
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1513,7 +1513,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.7.1";
+    const CURRENT_VERSION = "3.7.2";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -2489,32 +2489,44 @@
     }
 
     function renderGenericCalendarView(container, data, moduleType, filterSet, onlyPending = false, flowTitleText = "Gün bazında ödeme akışı:") {
+      // DİNAMİK VE GÜVENİLİR TR KURU ÇÖZÜCÜ
       let trRateEUR = 0;
-      let totalTrTRYAll = 0, totalTrEURAll = 0;
+      let validTrTRY = 0, validTrEUR = 0;
       (data.trItems || []).forEach(it => {
-        totalTrTRYAll += parseAmountToNum(it.amount);
-        totalTrEURAll += parseAmountToNum(it.eurAmount || 0);
+        let t = parseAmountToNum(it.amount);
+        let e = parseAmountToNum(it.eurAmount || 0);
+        if (t > 0 && e > 0) {
+          validTrTRY += t;
+          validTrEUR += e;
+        }
       });
-      if (totalTrTRYAll > 0 && totalTrEURAll > 0) trRateEUR = totalTrEURAll / totalTrTRYAll;
+      if (validTrTRY > 0 && validTrEUR > 0) {
+        trRateEUR = validTrEUR / validTrTRY;
+      } else {
+        // Eğer tabloda hiç karşılık yoksa genel ortalama kur (örn: 1 EUR ~ 38 TRY)
+        trRateEUR = 1 / 38;
+      }
 
       let allItems = [];
       let availableFilterKeys = new Set();
 
-      // KART KALEMLERİ: Sadece 'Ödenenler' (onlyPending = false) modunda listeye eklenir
-      if (!onlyPending) {
+      const isCtrlAllMode = (moduleType === 'ctrl' && typeof currentControlSubTab !== 'undefined' && currentControlSubTab === 'all');
+
+      // 1. KART KALEMLERİ
+      if (!onlyPending || isCtrlAllMode) {
         (data.cardItems || []).forEach(it => {
           allItems.push({ ...it, srcType: 'card', typeTag: 'KART', isIncome: false, filterCategory: 'card', filterAccount: 'card' });
           availableFilterKeys.add('card');
         });
       }
 
-      // HESAP (MANUAL) KALEMLERİ:
-      // onlyPending = true ise sadece tarihi boş olanlar (bekleyenler)
-      // onlyPending = false ise sadece tarihi dolu olanlar (ödenenler)
+      // 2. HESAP (MANUAL) KALEMLERİ
       (data.manualItems || []).forEach(it => {
         let isPending = (!it.date || it.date.trim() === "");
-        if (onlyPending && !isPending) return;
-        if (!onlyPending && isPending) return;
+        if (!isCtrlAllMode) {
+          if (onlyPending && !isPending) return;
+          if (!onlyPending && isPending) return;
+        }
 
         let acc = (it.card || '').toLowerCase().trim();
         let filterAcc = 'other';
@@ -2527,26 +2539,29 @@
         availableFilterKeys.add(filterAcc);
       });
 
-      // TR KART KALEMLERİ:
-      // onlyPending = true ise bekleyenler, false ise ödenenler
+      // 3. TR KART KALEMLERİ
       (data.trItems || []).forEach(it => {
         let isPending = (!it.date || it.date.trim() === "");
-        if (onlyPending && !isPending) return;
-        if (!onlyPending && isPending) return;
+        if (!isCtrlAllMode) {
+          if (onlyPending && !isPending) return;
+          if (!onlyPending && isPending) return;
+        }
 
-        let eurVal = parseAmountToNum(it.eurAmount || 0);
         let tryVal = parseAmountToNum(it.amount || 0);
-        if (eurVal === 0 && trRateEUR > 0) eurVal = tryVal * trRateEUR;
+        let eurVal = parseAmountToNum(it.eurAmount || 0);
+        if (eurVal === 0 && tryVal > 0 && trRateEUR > 0) {
+          eurVal = tryVal * trRateEUR;
+        }
 
         allItems.push({ ...it, srcType: 'tr', typeTag: 'TR KART', isIncome: false, eurVal: eurVal, tryVal: tryVal, filterCategory: 'tr', filterAccount: 'tr' });
         availableFilterKeys.add('tr');
       });
 
-      // GELİRLER: Sadece Ödenenler modunda ve tarihi varsa görünür
-      if (!onlyPending) {
+      // 4. GELİRLER
+      if (!onlyPending || isCtrlAllMode) {
         (data.incomeItems || []).forEach(it => {
           let isPending = (!it.date || it.date.trim() === "");
-          if (isPending) return;
+          if (isPending && !isCtrlAllMode) return;
           allItems.push({ ...it, srcType: 'income', typeTag: 'GELİR', isIncome: true, filterCategory: 'income', filterAccount: 'income' });
           availableFilterKeys.add('income');
         });
@@ -2566,9 +2581,11 @@
         let dInfo = extractDayAndDateInfo(it);
         if (!dInfo) return;
 
-        let key = dInfo.dayNum;
+        // EH / EG işlemlerinin ayın 1'inden önce gelmesi için grup anahtarı olarak TIMESTAMP kullanıyoruz
+        let key = dInfo.timestamp;
         if (!dayGroups[key]) {
           dayGroups[key] = {
+            timestamp: dInfo.timestamp,
             dayNum: dInfo.dayNum,
             dayStr: dInfo.dayStr,
             dayName: dInfo.dayName,
@@ -2595,7 +2612,8 @@
         dayGroups[key].items.push({ ...it, calculatedEur: numAmt });
       });
 
-      let sortedDays = Object.values(dayGroups).sort((a, b) => a.dayNum - b.dayNum);
+      // Kronolojik sıralama: Küçük tarihten büyüğe doğru (Geçmiş aydan taşınanlar ayın 1'inden önce gelir)
+      let sortedDays = Object.values(dayGroups).sort((a, b) => a.timestamp - b.timestamp);
 
       let html = '';
 
@@ -3839,6 +3857,28 @@
       let targetTrList = isAll ? [...paidTrItems, ...pendingTrItems] : (isOdenen ? paidTrItems : pendingTrItems);
       let targetCardAmt = isAll ? targetCardLimit : (isOdenen ? paidCard : remCard);
 
+      // TARİHE GÖRE SIRALAMA FONKSİYONU
+      function getPlanSortTimestamp(item) {
+        if (item.date && item.date.trim() !== "") {
+          let p = item.date.trim().split(".");
+          if (p.length === 3) {
+            return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0])).getTime();
+          }
+        }
+        let match = (item.merchant || "").match(/\((\d{1,2})[\.\/](\d{1,2})\)/);
+        if (match) {
+          let day = parseInt(match[1], 10);
+          let month = parseInt(match[2], 10) - 1;
+          let year = new Date().getFullYear();
+          return new Date(year, month, day).getTime();
+        }
+        return Number.MAX_SAFE_INTEGER;
+      }
+
+      // Her iki listeyi de kendi içinde tarihe göre (1'den 31'e) sırala
+      targetManualList.sort((a, b) => getPlanSortTimestamp(a) - getPlanSortTimestamp(b));
+      targetTrList.sort((a, b) => getPlanSortTimestamp(a) - getPlanSortTimestamp(b));
+
       let planTitle = isAll ? 'Tüm İşlemler:' : (isOdenen ? 'Ödenen İşlemler:' : 'Bekleyen Ödemeler:');
       let planTotalColor = isAll ? 'var(--orange)' : (isOdenen ? 'var(--green)' : 'var(--red)');
 
@@ -3913,9 +3953,12 @@
       targetTrList.forEach(item => {
         let amtTRY = parseAmountToNum(item.amount);
         let amtEUR = parseAmountToNum(item.eurAmount || 0);
-        if (amtEUR === 0 && trRateEUR > 0) {
+
+        // Kuru kesin ve doğru uygula:
+        if (amtEUR === 0 && amtTRY > 0 && trRateEUR > 0) {
           amtEUR = amtTRY * trRateEUR;
         }
+
         let cleanName = item.merchant || 'TR Kart';
         let subInfo = item.date ? `${item.date} • ₺${amtTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : `⏳ Bekliyor • ₺${amtTRY.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
@@ -3939,6 +3982,7 @@
       html += `</div>`;
       container.innerHTML = html;
       recalcControlTotal();
+    
     }
 
     function toggleLiqIncomeDetails() {
