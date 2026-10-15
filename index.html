@@ -155,6 +155,7 @@
       color: #0f172a;
       box-shadow: 0 2px 6px rgba(56, 189, 248, 0.3);
     }
+
     /* AJANDA (GÜN) BUTONU SEÇİLİ DURUMU (BÜTÇE İLE BİREBİR AYNI STİL) */
     #btnTimelineView.active {
       background: var(--accent) !important;
@@ -162,6 +163,7 @@
       border-color: var(--accent) !important;
       box-shadow: 0 2px 6px rgba(56, 189, 248, 0.35) !important;
     }
+    
     .mod-btn#modDebts.active {
       background: var(--orange);
       color: #0f172a;
@@ -1231,7 +1233,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.7.4
+    Sürüm 3.7.3
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1522,7 +1524,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.7.4";
+    const CURRENT_VERSION = "3.7.3";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -2165,16 +2167,16 @@
 
       html += `
         <div class="liq-section-title">📊 Toplam Likidite Raporu</div>
-        <div class="liq-card" id="liqBalCard" style="border-left: 4px solid ${netThemeColor};">
-          <div class="liq-acc-header" onclick="toggleLiqBalanceDetails()">
+        <div class="liq-card" id="pastLiqBalCard" style="border-left: 4px solid var(--accent);">
+          <div class="liq-acc-header" onclick="togglePastLiqBalanceDetails()">
             <div>
               <div style="font-size:11px; color:var(--text-dim); font-weight:600;">Net Kalan</div>
-              <div id="liqNetDisplay" style="font-weight:700; font-size:16px; margin-top:2px; color:${netThemeColor};">${isNetPos ? '+' : ''}€${netBuffer.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+              <div id="pastLiqNetDisplay" class="masked" style="font-weight:700; font-size:16px; margin-top:2px;">••••••</div>
             </div>
-            <div id="liqBalArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Gizle ▲</div>
+            <div id="pastLiqBalArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Detay ▼</div>
           </div>
 
-          <div id="liqBalBody" style="display:block; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
+          <div id="pastLiqBalBody" style="display:none; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
             <div class="liq-row">
               <span>Toplam Yapılan Harcama</span>
               <span style="font-weight:600; color:#fff;">€${totalPaidExpenses.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
@@ -2184,11 +2186,14 @@
               <span style="font-weight:600; color:#fff;">€${totalIncome.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
             <div class="liq-row total-row" style="color: ${netThemeColor};">
-              <span>Net Kalan</span>
-              <span>${isNetPos ? '+' : ''}€${netBuffer.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+              <span style="display:flex; align-items:center; gap:4px;">
+                Net Kalan
+                <span style="cursor:pointer; font-weight:bold; font-size:13px;" onclick="navigateToPastMonth('card')">↗</span>
+              </span>
+              <span>${isNetPos ? '+' : ''}€${netFinalBalance.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
           </div>
-        </div>        
+        </div>
       `;
 
       container.innerHTML = html;
@@ -4025,20 +4030,7 @@
 
       if (!body) return;
 
-      const isCurrentlyVisible = (body.style.display !== 'none' && body.style.display !== '');
-
-      if (isCurrentlyVisible) {
-        // Açıksa kapat
-        body.style.display = 'none';
-        if (arrow) arrow.innerText = 'Detay ▼';
-        if (display) {
-          display.classList.add('masked');
-          display.innerText = '••••••';
-          display.style.color = '';
-        }
-        if (card) card.style.borderLeftColor = 'var(--accent)';
-      } else {
-        // Kapalıysa aç
+      if (body.style.display === 'none' || body.style.display === '') {
         body.style.display = 'block';
         if (arrow) arrow.innerText = 'Gizle ▲';
         if (display) {
@@ -4047,6 +4039,15 @@
           display.style.color = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
         }
         if (card) card.style.borderLeftColor = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
+      } else {
+        body.style.display = 'none';
+        if (arrow) arrow.innerText = 'Detay ▼';
+        if (display) {
+          display.classList.add('masked');
+          display.innerText = '••••••';
+          display.style.color = '';
+        }
+        if (card) card.style.borderLeftColor = 'var(--accent)';
       }
     }
 
@@ -4473,7 +4474,7 @@
     }
 
     
-    function renderMainTimelineView() {      
+    function renderMainTimelineView() {
       const container = document.getElementById('timelineListContainer');
       const chipBar = document.getElementById('timelineFilterChipBar');
 
