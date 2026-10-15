@@ -2253,6 +2253,9 @@
       updateLiquidityViewSwitcher();
       renderLiquidityContent();
       openModalWithScrollLock('modalLiquidity');
+
+      // Modal açılır açılmaz rapor alanını otomatik olarak açtırır:
+      togglePastLiqBalanceDetails(); // veya toggleLiqBalanceDetails();
     }
 
     function switchLiquidityView(view) {
