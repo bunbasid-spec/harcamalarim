@@ -2165,16 +2165,16 @@
 
       html += `
         <div class="liq-section-title">📊 Toplam Likidite Raporu</div>
-        <div class="liq-card" id="pastLiqBalCard" style="border-left: 4px solid var(--accent);">
-          <div class="liq-acc-header" onclick="togglePastLiqBalanceDetails()">
+        <div class="liq-card" id="liqBalCard" style="border-left: 4px solid ${netThemeColor};">
+          <div class="liq-acc-header" onclick="toggleLiqBalanceDetails()">
             <div>
               <div style="font-size:11px; color:var(--text-dim); font-weight:600;">Net Kalan</div>
-              <div id="pastLiqNetDisplay" class="masked" style="font-weight:700; font-size:16px; margin-top:2px;">••••••</div>
+              <div id="liqNetDisplay" style="font-weight:700; font-size:16px; margin-top:2px; color:${netThemeColor};">${isNetPos ? '+' : ''}€${netBuffer.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
             </div>
-            <div id="pastLiqBalArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Detay ▼</div>
+            <div id="liqBalArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Gizle ▲</div>
           </div>
 
-          <div id="pastLiqBalBody" style="display:none; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
+          <div id="liqBalBody" style="display:block; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
             <div class="liq-row">
               <span>Toplam Yapılan Harcama</span>
               <span style="font-weight:600; color:#fff;">€${totalPaidExpenses.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
@@ -2184,14 +2184,11 @@
               <span style="font-weight:600; color:#fff;">€${totalIncome.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
             <div class="liq-row total-row" style="color: ${netThemeColor};">
-              <span style="display:flex; align-items:center; gap:4px;">
-                Net Kalan
-                <span style="cursor:pointer; font-weight:bold; font-size:13px;" onclick="navigateToPastMonth('card')">↗</span>
-              </span>
-              <span>${isNetPos ? '+' : ''}€${netFinalBalance.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+              <span>Net Kalan</span>
+              <span>${isNetPos ? '+' : ''}€${netBuffer.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
           </div>
-        </div>
+        </div>        
       `;
 
       container.innerHTML = html;
@@ -4028,16 +4025,10 @@
 
       if (!body) return;
 
-      if (body.style.display === 'none' || body.style.display === '') {
-        body.style.display = 'block';
-        if (arrow) arrow.innerText = 'Gizle ▲';
-        if (display) {
-          display.classList.remove('masked');
-          display.innerText = `${liqNetBufferValue >= 0 ? '+' : ''}€${liqNetBufferValue.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-          display.style.color = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
-        }
-        if (card) card.style.borderLeftColor = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
-      } else {
+      const isCurrentlyVisible = (body.style.display !== 'none' && body.style.display !== '');
+
+      if (isCurrentlyVisible) {
+        // Açıksa kapat
         body.style.display = 'none';
         if (arrow) arrow.innerText = 'Detay ▼';
         if (display) {
@@ -4046,6 +4037,16 @@
           display.style.color = '';
         }
         if (card) card.style.borderLeftColor = 'var(--accent)';
+      } else {
+        // Kapalıysa aç
+        body.style.display = 'block';
+        if (arrow) arrow.innerText = 'Gizle ▲';
+        if (display) {
+          display.classList.remove('masked');
+          display.innerText = `${liqNetBufferValue >= 0 ? '+' : ''}€${liqNetBufferValue.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+          display.style.color = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
+        }
+        if (card) card.style.borderLeftColor = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
       }
     }
 
