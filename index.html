@@ -1554,7 +1554,6 @@
     let liqNetBufferValue = 0;
 
     let currentLiquidityView = 'summary';
-    let isLiqBalanceOpen = true; // Standart olarak AÇIK başlasın
     let currentControlView = 'summary';
     let currentPastReportView = 'summary';
 
@@ -2166,40 +2165,36 @@
       const isNetPos = netFinalBalance >= 0;
       const netThemeColor = isNetPos ? 'var(--green)' : 'var(--red)';
 
-      let balBodyStyle = isLiqBalanceOpen ? 'display:block;' : 'display:none;';
-        let balArrowText = isLiqBalanceOpen ? 'Gizle ▲' : 'Detay ▼';
-        let balBorderColor = isLiqBalanceOpen ? netThemeColor : 'var(--accent)';
-        let balDisplayHtml = isLiqBalanceOpen 
-          ? `<div id="liqNetDisplay" style="font-weight:700; font-size:16px; margin-top:2px; color:${netThemeColor};">${isNetPos ? '+' : ''}€${netBuffer.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>`
-          : `<div id="liqNetDisplay" class="masked" style="font-weight:700; font-size:16px; margin-top:2px;">••••••</div>`;
-
-        html += `
-          <div class="liq-section-title">📊 Toplam Likidite Raporu</div>
-          <div class="liq-card" id="liqBalCard" style="border-left: 4px solid ${balBorderColor};">
-            <div class="liq-acc-header" onclick="toggleLiqBalanceDetails()">
-              <div>
-                <div style="font-size:11px; color:var(--text-dim); font-weight:600;">Net Kalan</div>
-                ${balDisplayHtml}
-              </div>
-              <div id="liqBalArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">${balArrowText}</div>
+      html += `
+        <div class="liq-section-title">📊 Toplam Likidite Raporu</div>
+        <div class="liq-card" id="pastLiqBalCard" style="border-left: 4px solid var(--accent);">
+          <div class="liq-acc-header" onclick="togglePastLiqBalanceDetails()">
+            <div>
+              <div style="font-size:11px; color:var(--text-dim); font-weight:600;">Net Kalan</div>
+              <div id="pastLiqNetDisplay" class="masked" style="font-weight:700; font-size:16px; margin-top:2px;">••••••</div>
             </div>
+            <div id="pastLiqBalArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Detay ▼</div>
+          </div>
 
-            <div id="liqBalBody" style="${balBodyStyle} margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
-              <div class="liq-row">
-                <span>Toplam Yapılan Harcama</span>
-                <span style="font-weight:600; color:#fff;">€${totalPaidExpenses.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-              </div>
-              <div class="liq-row">
-                <span>Toplam Gelir</span>
-                <span style="font-weight:600; color:#fff;">€${totalIncome.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-              </div>
-              <div class="liq-row total-row" style="color: ${netThemeColor};">
-                <span>Net Kalan</span>
-                <span>${isNetPos ? '+' : ''}€${netBuffer.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-              </div>
+          <div id="pastLiqBalBody" style="display:none; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
+            <div class="liq-row">
+              <span>Toplam Yapılan Harcama</span>
+              <span style="font-weight:600; color:#fff;">€${totalPaidExpenses.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
+            <div class="liq-row">
+              <span>Toplam Gelir</span>
+              <span style="font-weight:600; color:#fff;">€${totalIncome.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
+            <div class="liq-row total-row" style="color: ${netThemeColor};">
+              <span style="display:flex; align-items:center; gap:4px;">
+                Net Kalan
+                <span style="cursor:pointer; font-weight:bold; font-size:13px;" onclick="navigateToPastMonth('card')">↗</span>
+              </span>
+              <span>${isNetPos ? '+' : ''}€${netFinalBalance.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
           </div>
-        `;
+        </div>
+      `;
 
       container.innerHTML = html;
       container.scrollTop = 0;
@@ -2258,6 +2253,9 @@
       updateLiquidityViewSwitcher();
       renderLiquidityContent();
       openModalWithScrollLock('modalLiquidity');
+
+      // Modal açılır açılmaz rapor alanını otomatik olarak açtırır:
+      togglePastLiqBalanceDetails(); // veya toggleLiqBalanceDetails();
     }
 
     function switchLiquidityView(view) {
@@ -3151,16 +3149,16 @@
 
         html += `
           <div class="liq-section-title">📊 Toplam Likidite Raporu</div>
-          <div class="liq-card" id="liqBalCard" style="border-left: 4px solid ${netThemeColor};">
+          <div class="liq-card" id="liqBalCard" style="border-left: 4px solid var(--accent);">
             <div class="liq-acc-header" onclick="toggleLiqBalanceDetails()">
               <div>
                 <div style="font-size:11px; color:var(--text-dim); font-weight:600;">Net Kalan</div>
-                <div id="liqNetDisplay" style="font-weight:700; font-size:16px; margin-top:2px; color:${netThemeColor};">${isNetPos ? '+' : ''}€${netBuffer.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                <div id="liqNetDisplay" class="masked" style="font-weight:700; font-size:16px; margin-top:2px;">••••••</div>
               </div>
-              <div id="liqBalArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Gizle ▲</div>
+              <div id="liqBalArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Detay ▼</div>
             </div>
 
-            <div id="liqBalBody" style="display:block; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
+            <div id="liqBalBody" style="display:none; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
               <div class="liq-row">
                 <span>Toplam Yapılan Harcama</span>
                 <span style="font-weight:600; color:#fff;">€${totalPaidExpenses.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
@@ -4035,21 +4033,7 @@
 
       if (!body) return;
 
-      // Alan şu an görünür durumda mı?
-      const isVisible = (body.style.display === 'block');
-
-      if (isVisible) {
-        // Açıksa kapat ve maskele
-        body.style.display = 'none';
-        if (arrow) arrow.innerText = 'Detay ▼';
-        if (display) {
-          display.classList.add('masked');
-          display.innerText = '••••••';
-          display.style.color = '';
-        }
-        if (card) card.style.borderLeftColor = 'var(--accent)';
-      } else {
-        // Kapalıysa aç ve net tutarı renkle göster
+      if (body.style.display === 'none' || body.style.display === '') {
         body.style.display = 'block';
         if (arrow) arrow.innerText = 'Gizle ▲';
         if (display) {
@@ -4058,6 +4042,15 @@
           display.style.color = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
         }
         if (card) card.style.borderLeftColor = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
+      } else {
+        body.style.display = 'none';
+        if (arrow) arrow.innerText = 'Detay ▼';
+        if (display) {
+          display.classList.add('masked');
+          display.innerText = '••••••';
+          display.style.color = '';
+        }
+        if (card) card.style.borderLeftColor = 'var(--accent)';
       }
     }
 
