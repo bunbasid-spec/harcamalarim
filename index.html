@@ -155,6 +155,13 @@
       color: #0f172a;
       box-shadow: 0 2px 6px rgba(56, 189, 248, 0.3);
     }
+    /* AJANDA (GÜN) BUTONU SEÇİLİ DURUMU (BÜTÇE İLE BİREBİR AYNI STİL) */
+    #btnTimelineView.active {
+      background: var(--accent) !important;
+      color: #0f172a !important;
+      border-color: var(--accent) !important;
+      box-shadow: 0 2px 6px rgba(56, 189, 248, 0.35) !important;
+    }
     .mod-btn#modDebts.active {
       background: var(--orange);
       color: #0f172a;
@@ -1095,9 +1102,9 @@
         <button class="mod-btn" id="modDebts" onclick="switchModule('debts')">Borçlar</button>
       </div>
       
-      <!-- ORTADAKİ TEK İKON AJANDA BUTONU -->
-      <button type="button" id="btnTimelineView" style="height:38px; width:38px; background:var(--card-bg); border:1px solid var(--border); border-radius:8px; color:var(--accent); font-size:14px; font-weight:800; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:all 0.2s; line-height:1;" onclick="switchModule('timeline')">
-      <span id="btnTimelineDayNum">--</span>
+      <!-- ORTADAKİ DİNAMİK GÜN BUTONU -->
+      <button type="button" id="btnTimelineView" style="height:38px; width:38px; background:var(--card-bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:14px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;" onclick="switchModule('timeline')">
+        <span id="btnTimelineDayNum">--</span>
       </button>
 
       <select id="sheetSelect" class="sheet-select" onchange="onFilterChange()"></select>
@@ -4387,9 +4394,7 @@
 
       const btnTime = document.getElementById('btnTimelineView');
       if (btnTime) {
-        btnTime.style.borderColor = isTimeline ? 'var(--accent)' : 'var(--border)';
-        btnTime.style.color = isTimeline ? 'var(--accent)' : 'var(--text-dim)';
-        btnTime.style.background = isTimeline ? 'rgba(56, 189, 248, 0.15)' : 'var(--card-bg)';
+        btnTime.classList.toggle('active', isTimeline);
       }
 
       document.getElementById('viewBudget').style.display = isBudget ? 'block' : 'none';
