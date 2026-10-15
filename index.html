@@ -1096,7 +1096,9 @@
       </div>
       
       <!-- ORTADAKİ TEK İKON AJANDA BUTONU -->
-      <button type="button" id="btnTimelineView" style="height:38px; width:38px; background:var(--card-bg); border:1px solid var(--border); border-radius:8px; color:var(--text-dim); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;" onclick="switchModule('timeline')">📅</button>
+      <button type="button" id="btnTimelineView" style="height:38px; width:38px; background:var(--card-bg); border:1px solid var(--border); border-radius:8px; color:var(--accent); font-size:14px; font-weight:800; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:all 0.2s; line-height:1;" onclick="switchModule('timeline')">
+      <span id="btnTimelineDayNum">--</span>
+      </button>
 
       <select id="sheetSelect" class="sheet-select" onchange="onFilterChange()"></select>
     </div>
@@ -1222,7 +1224,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.7.2
+    Sürüm 3.7.3
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1513,7 +1515,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.7.2";
+    const CURRENT_VERSION = "3.7.3";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1552,6 +1554,11 @@
     
 
     window.onload = function() {
+      // Butona o günün tarihini bas (Örn: 15)
+      const todayDayNum = new Date().getDate();
+      const dayBtnEl = document.getElementById('btnTimelineDayNum');
+      if (dayBtnEl) dayBtnEl.innerText = todayDayNum.toString().padStart(2, '0');
+      
       restoreCachedData();
 
       document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
@@ -4419,37 +4426,48 @@
 
     async function loadAndRenderMainTimeline() {
       const container = document.getElementById('timelineListContainer');
-      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-dim);">Ajanda hazırlanıyor...</div>';
 
-      // 1. Mevcut ve Gelecek Ay'ı yükle
-      if (!memoryCache["Mevcut Ay"]) {
+      // 1. MEVCUT AY HAFIZADA VARSA HİÇ BEKLEMEDEN ANINDA EKRANA BAS
+      if (currentData && !memoryCache["Mevcut Ay"]) {
+        memoryCache["Mevcut Ay"] = currentData;
+      }
+
+      if (memoryCache["Mevcut Ay"]) {
+        renderMainTimelineView();
+      } else {
+        container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-dim);">Ajanda hazırlanıyor...</div>';
         try {
           const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent("Mevcut Ay")}`);
           memoryCache["Mevcut Ay"] = await res.json();
-        } catch(e){}
-      }
-      if (!memoryCache["Gelecek Ay"]) {
-        try {
-          const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent("Gelecek Ay")}`);
-          memoryCache["Gelecek Ay"] = await res.json();
-        } catch(e){}
+          renderMainTimelineView();
+        } catch(e) {}
       }
 
-      // 2. Ödenmişler için en son geçmiş ayı yükle
-      const pastMonths = availableSheets.filter(s => s !== "Mevcut Ay" && s !== "Gelecek Ay");
-      const latestPastSheet = pastMonths.length > 0 ? pastMonths[0] : null;
-      if (latestPastSheet && !memoryCache[latestPastSheet]) {
-        try {
-          const res = await fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(latestPastSheet)}`);
-          memoryCache[latestPastSheet] = await res.json();
-        } catch(e){}
-      }
+      // 2. KULLANICI MEVCUT AYA BAKARKEN GELECEK VE GEÇMİŞ AYI ARKA PLANDA SESSİZCE İNDİR
+      // (Kullanıcı hiç beklemez, tıkladığında veriler hazır olur)
+      setTimeout(() => {
+        // Gelecek Ay'ı arkadan çek
+        if (!memoryCache["Gelecek Ay"]) {
+          fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent("Gelecek Ay")}`)
+            .then(r => r.json())
+            .then(d => { if (d) memoryCache["Gelecek Ay"] = d; })
+            .catch(() => {});
+        }
 
-      renderMainTimelineView();
+        // Geçmiş Ay'ı arkadan çek
+        const pastMonths = availableSheets.filter(s => s !== "Mevcut Ay" && s !== "Gelecek Ay");
+        const latestPastSheet = pastMonths.length > 0 ? pastMonths[0] : null;
+        if (latestPastSheet && !memoryCache[latestPastSheet]) {
+          fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(latestPastSheet)}`)
+            .then(r => r.json())
+            .then(d => { if (d) memoryCache[latestPastSheet] = d; })
+            .catch(() => {});
+        }
+      }, 50);
     }
 
     
-    function renderMainTimelineView() {
+    function renderMainTimelineView() {      
       const container = document.getElementById('timelineListContainer');
       const chipBar = document.getElementById('timelineFilterChipBar');
 
@@ -4470,6 +4488,30 @@
       const pastMonths = availableSheets.filter(s => s !== "Mevcut Ay" && s !== "Gelecek Ay");
       const latestPastSheet = pastMonths.length > 0 ? pastMonths[0] : null;
       const pastData = (showPast && latestPastSheet) ? memoryCache[latestPastSheet] : null;
+
+      // Eğer kullanıcı Geçmiş kutusunu açtıysa ve arka planda henüz inmemişse hemen indirip ekrana bas
+      if (showPast && latestPastSheet && !memoryCache[latestPastSheet]) {
+        fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent(latestPastSheet)}`)
+          .then(r => r.json())
+          .then(d => {
+            if (d) {
+              memoryCache[latestPastSheet] = d;
+              renderMainTimelineView();
+            }
+          });
+      }
+
+      // Eğer kullanıcı Gelecek kutusunu açtıysa ve arka planda henüz inmemişse hemen indirip ekrana bas
+      if (showNext && !memoryCache["Gelecek Ay"]) {
+        fetch(`${API_URL}?action=getDashboardData&sheet=${encodeURIComponent("Gelecek Ay")}`)
+          .then(r => r.json())
+          .then(d => {
+            if (d) {
+              memoryCache["Gelecek Ay"] = d;
+              renderMainTimelineView();
+            }
+          });
+      }
 
       if (!curData) {
         container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--red);">Mevcut ay verisi bulunamadı.</div>';
