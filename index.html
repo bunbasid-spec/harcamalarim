@@ -1233,7 +1233,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.7.3
+    Sürüm 3.7.4
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1378,7 +1378,7 @@
       </div>
       <div class="form-group">
         <label id="lblAmount">Tutar (€)</label>
-        <input type="text" id="mAmount" placeholder="örn: 50,00 €">
+        <input type="text" inputmode="decimal" id="mAmount" placeholder="örn: 50,00 €">
       </div>
       
       <div class="form-group" id="lblDescGroup">
@@ -1435,7 +1435,7 @@
 
       <div class="form-group">
         <label>Yeni Kart Harcama Limiti (€)</label>
-        <input type="text" id="mNewCardLimit" placeholder="örn: 1.500,00 €">
+        <input type="text" inputmode="decimal" id="mNewCardLimit" placeholder="örn: 1.500,00 €">
       </div>
 
       <div class="modal-actions">
@@ -1487,7 +1487,7 @@
       </div>
       <div class="form-group">
         <label>Toplam Tutar (€)</label>
-        <input type="text" id="mDebtAmount" placeholder="örn: 1.000,00 €">
+        <input type="text" inputmode="decimal" id="mDebtAmount" placeholder="örn: 1.000,00 €">
       </div>
 
       <div class="modal-actions">
@@ -1513,7 +1513,7 @@
       </div>
       <div class="form-group">
         <label id="lblPaymentAmount">Ödenen Tutar (€)</label>
-        <input type="text" id="payAmount" placeholder="örn: 200,00 €">
+        <input type="text" inputmode="decimal" id="payAmount" placeholder="örn: 200,00 €">
       </div>
 
       <div class="modal-actions">
@@ -1524,7 +1524,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.7.3";
+    const CURRENT_VERSION = "3.7.4";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1560,6 +1560,13 @@
     let selectedFiltersLiq = new Set();
     let selectedFiltersCtrl = new Set();
     let selectedFiltersPast = new Set();
+
+
+    function getLocalTodayISO() {
+      const d = new Date();
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      return d.toISOString().split('T')[0];
+    }
     
 
     window.onload = function() {
@@ -1570,9 +1577,9 @@
       
       restoreCachedData();
 
-      document.getElementById('mDate').value = new Date().toISOString().split('T')[0];
-      document.getElementById('mDebtDate').value = new Date().toISOString().split('T')[0];
-      document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('mDate').value = getLocalTodayISO();
+      document.getElementById('mDebtDate').value = getLocalTodayISO();
+      document.getElementById('payDate').value = getLocalTodayISO();
       
       initPullToRefresh();
       initCardLimitLongPress();
@@ -2255,7 +2262,7 @@
       openModalWithScrollLock('modalLiquidity');
 
       // Modal açılır açılmaz rapor alanını otomatik olarak açtırır:
-      togglePastLiqBalanceDetails(); // veya toggleLiqBalanceDetails();
+      toggleLiqBalanceDetails();
     }
 
     function switchLiquidityView(view) {
@@ -4078,7 +4085,7 @@
 
         openBudgetAddModal();
       } else {
-        document.getElementById('mDebtDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('mDebtDate').value = getLocalTodayISO();
         openModalWithScrollLock('modalDebt');
       }
     }
@@ -4089,7 +4096,7 @@
       document.getElementById('btnBudgetSubmit').innerText = 'Kaydet';
       document.getElementById('budgetTypeSwitcher').style.display = 'flex';
       document.getElementById('btnMoveMonthAction').style.display = 'none';
-      document.getElementById('mDate').value = (activeBudgetTab === 'card') ? new Date().toISOString().split('T')[0] : '';
+      document.getElementById('mDate').value = (activeBudgetTab === 'card') ? getLocalTodayISO() : '';
       document.getElementById('mAmount').value = '';
       document.getElementById('mDesc').value = '';
       document.getElementById('mAccount').value = '';
@@ -6038,50 +6045,61 @@
       }
     }
 
+    let isSubmittingAction = false;
+
     async function submitBudgetEntry() {
-      const type = modalSelectedType;
-      const rawDate = document.getElementById('mDate').value;
-      let dateFormatted = "";
-      if (rawDate) {
-        const p = rawDate.split("-");
-        dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
+      if (isSubmittingAction) return;
+      isSubmittingAction = true;
+
+      try {
+        const type = modalSelectedType;
+        const rawDate = document.getElementById('mDate').value;
+        let dateFormatted = "";
+        if (rawDate) {
+          const p = rawDate.split("-");
+          dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
+        }
+
+        let merchantText = document.getElementById('mDesc').value.trim();
+
+        if (dateFormatted) {
+          merchantText = merchantText.replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
+        }
+
+        const payload = {
+          date: dateFormatted,
+          amount: document.getElementById('mAmount').value,
+          merchant: merchantText,
+          card: document.getElementById('mAccount').value
+        };
+
+        const isEdit = (editingBudgetRowIndex !== null);
+        const targetRowIndex = editingBudgetRowIndex;
+        const sheet = document.getElementById('sheetSelect').value || "Mevcut Ay";
+
+        closeModal('modalBudget');
+        delete memoryCache[sheet];
+
+        await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: isEdit ? 'editEntry' : 'addEntry',
+            sheet: sheet,
+            type: type,
+            rowIndex: targetRowIndex,
+            payload: payload
+          })
+        });
+
+        onFilterChange();
+      } finally {
+        isSubmittingAction = false;
       }
-
-      let merchantText = document.getElementById('mDesc').value.trim();
-
-      if (dateFormatted) {
-        merchantText = merchantText.replace(/\s*\(\d{1,2}\.\d{1,2}\)\s*$/, '').trim();
-      }
-
-      const payload = {
-        date: dateFormatted,
-        amount: document.getElementById('mAmount').value,
-        merchant: merchantText,
-        card: document.getElementById('mAccount').value
-      };
-
-      const isEdit = (editingBudgetRowIndex !== null);
-      const targetRowIndex = editingBudgetRowIndex;
-      const sheet = document.getElementById('sheetSelect').value || "Mevcut Ay";
-
-      closeModal('modalBudget');
-      delete memoryCache[sheet];
-
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: isEdit ? 'editEntry' : 'addEntry',
-          sheet: sheet,
-          type: type,
-          rowIndex: targetRowIndex,
-          payload: payload
-        })
-      });
-
-      onFilterChange();
     }
 
     async function submitMoveMonthEntry() {
+      if (isSubmittingAction) return;
+
       const select = document.getElementById('sheetSelect');
       const currentSheet = select ? select.value : "Mevcut Ay";
       const isMovingToNext = (currentSheet === "Mevcut Ay");
@@ -6094,53 +6112,55 @@
 
       if (!confirm(confirmMsg)) return;
 
-      const rawDate = document.getElementById('mDate').value;
-      let dateFormatted = "";
-      if (rawDate) {
-        const p = rawDate.split("-");
-        dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
-      }
-
-      let merchantVal = document.getElementById('mDesc').value.trim();
-
-      if (isMovingToNext) {
-        // Gelecek aya taşırken etiketi ekle (önceden yoksa)
-        if (!merchantVal.includes("- EH") && !merchantVal.includes("- EG")) {
-          merchantVal = `${merchantVal} ${tagSuffix}`;
+      isSubmittingAction = true;
+      try {
+        const rawDate = document.getElementById('mDate').value;
+        let dateFormatted = "";
+        if (rawDate) {
+          const p = rawDate.split("-");
+          dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
         }
-      } else {
-        // Geri taşırken etiketi temizle
-        merchantVal = merchantVal.replace(/\s*-\s*E[HG]/gi, '').trim();
+
+        let merchantVal = document.getElementById('mDesc').value.trim();
+
+        if (isMovingToNext) {
+          if (!merchantVal.includes("- EH") && !merchantVal.includes("- EG")) {
+            merchantVal = `${merchantVal} ${tagSuffix}`;
+          }
+        } else {
+          merchantVal = merchantVal.replace(/\s*-\s*E[HG]/gi, '').trim();
+        }
+
+        const payload = {
+          date: dateFormatted,
+          amount: document.getElementById('mAmount').value,
+          merchant: merchantVal,
+          card: document.getElementById('mAccount').value
+        };
+
+        const type = modalSelectedType;
+        const targetRowIndex = editingBudgetRowIndex;
+
+        closeModal('modalBudget');
+
+        delete memoryCache["Mevcut Ay"];
+        delete memoryCache["Gelecek Ay"];
+
+        await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'moveBudgetItem',
+            sourceSheet: currentSheet,
+            type: type,
+            rowIndex: targetRowIndex,
+            payload: payload
+          })
+        });
+
+        onFilterChange();
+      } finally {
+        isSubmittingAction = false;
       }
-
-      const payload = {
-        date: dateFormatted,
-        amount: document.getElementById('mAmount').value,
-        merchant: merchantVal,
-        card: document.getElementById('mAccount').value
-      };
-
-      const type = modalSelectedType;
-      const targetRowIndex = editingBudgetRowIndex;
-
-      closeModal('modalBudget');
-
-      // Önbellekleri temizle
-      delete memoryCache["Mevcut Ay"];
-      delete memoryCache["Gelecek Ay"];
-
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'moveBudgetItem',
-          sourceSheet: currentSheet,
-          type: type,
-          rowIndex: targetRowIndex,
-          payload: payload
-        })
-      });
-
-      onFilterChange();
     }
 
     function openPaymentModal(debtType, rowIndex, personName) {
@@ -6167,7 +6187,7 @@
         btnSubmit.innerText = 'Tahsilatı Kaydet';
       }
 
-      document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('payDate').value = getLocalTodayISO();
       document.getElementById('payAmount').value = '';
       openModalWithScrollLock('modalPayment');
     }
@@ -6180,40 +6200,45 @@
       const amount = document.getElementById('payAmount').value;
       const isHistoryEdit = document.getElementById('payIsHistoryEdit').value === 'true';
 
-      if (!amount) return;
+      if (!amount || isSubmittingAction) return;
+      isSubmittingAction = true;
 
-      let dateFormatted = "";
-      if (rawDate) {
-        const p = rawDate.split("-");
-        dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
+      try {
+        let dateFormatted = "";
+        if (rawDate) {
+          const p = rawDate.split("-");
+          dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
+        }
+
+        closeModal('modalPayment');
+
+        if (isHistoryEdit) {
+          await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'editHistoryEntry',
+              rowIndex: rowIndex,
+              amount: amount,
+              date: dateFormatted
+            })
+          });
+        } else {
+          await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'updateDebtPayment',
+              debtType: debtType,
+              rowIndex: rowIndex,
+              amount: amount,
+              date: dateFormatted,
+              person: personName
+            })
+          });
+        }
+        loadDebtsData();
+      } finally {
+        isSubmittingAction = false;
       }
-
-      closeModal('modalPayment');
-
-      if (isHistoryEdit) {
-        await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'editHistoryEntry',
-            rowIndex: rowIndex,
-            amount: amount,
-            date: dateFormatted
-          })
-        });
-      } else {
-        await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'updateDebtPayment',
-            debtType: debtType,
-            rowIndex: rowIndex,
-            amount: amount,
-            date: dateFormatted,
-            person: personName
-          })
-        });
-      }
-      loadDebtsData();
     }
 
     async function undoHistoryEntry(rowIndex) {
@@ -6301,33 +6326,40 @@
     }
 
     async function submitDebtEntry() {
-      const rawDate = document.getElementById('mDebtDate').value;
-      let dateFormatted = "";
-      if (rawDate) {
-        const p = rawDate.split("-");
-        dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
+      if (isSubmittingAction) return;
+      isSubmittingAction = true;
+
+      try {
+        const rawDate = document.getElementById('mDebtDate').value;
+        let dateFormatted = "";
+        if (rawDate) {
+          const p = rawDate.split("-");
+          dateFormatted = `${p[2]}.${p[1]}.${p[0]}`;
+        }
+
+        const payload = {
+          person: document.getElementById('mDebtPerson').value,
+          date: dateFormatted,
+          amount: document.getElementById('mDebtAmount').value,
+          paid: "0"
+        };
+
+        closeModal('modalDebt');
+        document.getElementById('mDebtPerson').value = '';
+        document.getElementById('mDebtAmount').value = '';
+
+        await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'addDebt',
+            debtType: modalDebtSelectedType,
+            payload: payload
+          })
+        });
+        loadDebtsData();
+      } finally {
+        isSubmittingAction = false;
       }
-
-      const payload = {
-        person: document.getElementById('mDebtPerson').value,
-        date: dateFormatted,
-        amount: document.getElementById('mDebtAmount').value,
-        paid: "0"
-      };
-
-      closeModal('modalDebt');
-      document.getElementById('mDebtPerson').value = '';
-      document.getElementById('mDebtAmount').value = '';
-
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'addDebt',
-          debtType: modalDebtSelectedType,
-          payload: payload
-        })
-      });
-      loadDebtsData();
     }
 
     let headerPressTimer = null;
@@ -6360,11 +6392,6 @@
       headerIsLongPress = false;
     }
 
-    function openTelegramReportChooser() {
-      const modal = document.getElementById('modalTelegramChooser');
-      if (modal) modal.style.display = 'flex';
-    }
-    
     // =========================================================
     // TELEGRAM LİSTE GÖNDERİMİ (BAŞLIKTAN SEÇİMLİ)
     // =========================================================
