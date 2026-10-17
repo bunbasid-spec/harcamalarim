@@ -2205,6 +2205,7 @@
 
       container.innerHTML = html;
       container.scrollTop = 0;
+      togglePastLiqBalanceDetails(); // <-- SADECE BU SATIRI EKLE
     }
 
     function togglePastIncomeDetails() {
@@ -2260,9 +2261,6 @@
       updateLiquidityViewSwitcher();
       renderLiquidityContent();
       openModalWithScrollLock('modalLiquidity');
-
-      // Modal açılır açılmaz rapor alanını otomatik olarak açtırır:
-      toggleLiqBalanceDetails();
     }
 
     function switchLiquidityView(view) {
@@ -3184,7 +3182,7 @@
 
         container.innerHTML = html;
         container.scrollTop = 0;
-        togglePastLiqBalanceDetails(); // <-- SADECE BU SATIRI EKLE
+        toggleLiqBalanceDetails(); // <-- BU SATIRI EKLE
         return;
       }
 
