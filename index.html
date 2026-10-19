@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-title" content="Harcama Takip">
   
@@ -56,11 +56,13 @@
       padding: 0;
     }
     
-    /* 2. Sayfa Üst Boşluğu (Butonları yukarı çektik) */
+    
+
+    /* 2. Butonların Başlangıç Hizası */
     body { 
       background-color: var(--bg);
       color: var(--text); 
-      padding-top: 48px; /* Şeridin bittiği yerin hemen 6px altından başlar */
+      padding-top: 44px; /* Butonları doğrudan şeridin 4px altına çeker */
       padding-left: 16px;
       padding-right: 16px;
       padding-bottom: 24px;
@@ -68,14 +70,14 @@
       min-height: 100vh;
     }
 
-    /* 1. Sabit Lacivert Üst Şerit (Yüksekliği azaltıldı) */
+    /* 1. Sabit Lacivert Şerit (İnce tutuyoruz) */
     .status-bar-shield {
       display: block !important;
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
-      height: 42px; /* Fazla yüksekliği aldık, tam saat hizasında bitiyor */
+      height: 40px; /* Saati tam örten kompakt yükseklik */
       background-color: var(--bg);
       z-index: 150;
       pointer-events: none;
