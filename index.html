@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#e11d48">
@@ -56,43 +56,32 @@
       padding: 0;
     }
     
-        /* 1. Kırmızı Şerit (Ölçüsü tam istediğiniz gibi korundu) */
+            /* 1. Sabit Kırmızı Üst Bar (Ölçüsü ve konumu tam istediğiniz gibi) */
     .status-bar-shield {
       display: block !important;
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
-      height: calc(max(44px, env(safe-area-inset-top)) + 4px); /* Ölçüsü aynı kaldı */
+      height: 4px; /* Sadece istediğiniz ince şerit boyu */
       background-color: #e11d48 !important;
       z-index: 500;
       pointer-events: none;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
-      
-      /* iOS'un blur katmanını yok eden kurallar */
-      -webkit-backdrop-filter: none !important;
-      backdrop-filter: none !important;
-      transform: translateZ(0); /* Donanım katmanını izole eder */
     }
 
     /* 2. Sayfa Gövdesi */
     body { 
       background-color: var(--bg);
       color: var(--text); 
-      padding-top: calc(max(44px, env(safe-area-inset-top)) + 14px); /* Ölçüsü aynı kaldı */
+      padding-top: 10px; /* Butonların üstündeki temiz nefes payı */
       padding-left: 16px;
       padding-right: 16px;
       padding-bottom: 24px;
       margin: 0;
       min-height: 100vh;
-
-      /* iOS sistem blur filtresini kapatma */
-      -webkit-backdrop-filter: none !important;
-      backdrop-filter: none !important;
     }
 
-
-    /* 3. Butonlar (Sayfa ile birlikte doğal akışında aşağı/yukarı kayar) */
+    /* 3. Butonlar (Doğal akışta aşağı/yukarı kayar) */
     .header { 
       display: grid; 
       grid-template-columns: 1fr 38px 1fr; 
@@ -100,6 +89,7 @@
       margin-bottom: 16px; 
       align-items: center; 
     }
+
 
 
     body.modal-open {
