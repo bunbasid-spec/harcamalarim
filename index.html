@@ -2,7 +2,9 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-title" content="Harcama Takip">
   
@@ -57,26 +59,12 @@
     body { 
       background-color: var(--bg);
       color: var(--text); 
-      padding-top: calc(env(safe-area-inset-top) + 8px);
+      padding-top: max(44px, env(safe-area-inset-top));
       padding-left: 16px;
       padding-right: 16px;
       padding-bottom: 24px;
       margin: 0;
       min-height: 100vh;
-    }
-
-    /* CityPilot'ta böyle bir yapay kalkan yok, tamamen kapatıyoruz */
-    .status-bar-shield {
-      display: none !important;
-    }
-
-    /* Butonlar sayfa ile birlikte doğal akışında kaysın */
-    .header { 
-      display: grid; 
-      grid-template-columns: 1fr 38px 1fr; 
-      gap: 8px; 
-      margin-bottom: 16px; 
-      align-items: center; 
     }
 
     body.modal-open {
@@ -87,6 +75,17 @@
     #appContent {
       transition: transform 0.2s ease-out;
       will-change: transform;
+    }
+
+    .status-bar-shield {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: max(44px, env(safe-area-inset-top));
+      background-color: var(--bg);
+      z-index: 150;
+      pointer-events: none;
     }
 
     #pullIndicator {
@@ -115,6 +114,15 @@
     @keyframes spin { 
       0% { transform: translateX(-50%) rotate(0deg); }
       100% { transform: translateX(-50%) rotate(360deg); }
+    }
+
+    .header { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 12px; 
+      margin-bottom: 16px; 
+      padding-top: 6px; 
+      align-items: center; 
     }
 
     .module-switcher {
