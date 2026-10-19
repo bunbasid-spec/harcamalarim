@@ -59,7 +59,7 @@
     body { 
       background-color: var(--bg);
       color: var(--text); 
-      padding-top: 6px; /* 44px yerine doğrudan 6px */
+      padding-top: calc(max(44px, env(safe-area-inset-top)) + 6px);
       padding-left: 16px;
       padding-right: 16px;
       padding-bottom: 24px;
@@ -68,20 +68,24 @@
     }
 
     .status-bar-shield {
-      display: none !important;
+      display: block !important;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: max(44px, env(safe-area-inset-top));
+      background-color: var(--bg);
+      z-index: 150;
+      pointer-events: none;
     }
 
     .header { 
-      position: sticky;
-      top: 0; /* max(44px, ...) yerine tam 0 */
-      z-index: 140;
-      background-color: var(--bg);
       display: grid; 
       grid-template-columns: 1fr 38px 1fr; 
       gap: 8px; 
       margin-bottom: 14px; 
       padding-top: 4px; 
-      padding-bottom: 8px;
+      padding-bottom: 4px;
       align-items: center; 
     }
 
