@@ -78,9 +78,21 @@
       will-change: transform;
     }
 
+    /* iOS 27 ÜST BLUR ÇÖZÜMÜ: ekranın en üstünde, opak, sabit, en az 6px yüksek ve geniş şerit.
+       pointer-events:none KULLANMA (iOS'un şeridi görmesini engelleyebilir). */
+    .ios-top-strip {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 8px;
+      background-color: var(--bg);
+      z-index: 151;
+    }
+
     .status-bar-shield {
       position: fixed;
-      top: 1px;
+      top: 0;
       left: 0;
       right: 0;
       height: max(44px, env(safe-area-inset-top));
@@ -1096,6 +1108,7 @@
 
   <div id="edgeIndicator"></div>
   <div class="status-bar-shield"></div>
+  <div class="ios-top-strip"></div>
   <div id="pullIndicator">↓</div>
 
   <div id="appContent">
@@ -1234,7 +1247,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.7.4
+    Sürüm 3.7.8
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1525,7 +1538,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.7.5";
+    const CURRENT_VERSION = "3.7.8";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
