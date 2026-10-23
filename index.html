@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-title" content="Harcama Takip">
   
@@ -60,7 +60,7 @@
     body { 
       background-color: var(--bg);
       color: var(--text); 
-      padding-top: max(44px, env(safe-area-inset-top));
+      padding-top: env(safe-area-inset-top, 0px);
       padding-left: 16px;
       padding-right: 16px;
       padding-bottom: 24px;
@@ -78,20 +78,32 @@
       will-change: transform;
     }
 
-    .status-bar-shield {
+    /* iOS 27 ÜST BLUR ÇÖZÜMÜ: ekranın en üstünde, opak, sabit, en az 6px yüksek ve geniş şerit.
+       pointer-events:none KULLANMA (iOS'un şeridi görmesini engelleyebilir). */
+    .ios-top-strip {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
-      height: max(44px, env(safe-area-inset-top));
+      height: 6px;
+      background-color: var(--bg);
+      z-index: 151;
+    }
+
+    .status-bar-shield {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: max(8px, env(safe-area-inset-top, 0px));
       background-color: var(--bg);
       z-index: 150;
-      pointer-events: none;
     }
 
     #pullIndicator {
       position: fixed;
-      top: calc(max(44px, env(safe-area-inset-top)) + 15px);
+      top: calc(max(8px, env(safe-area-inset-top, 0px)) + 15px);
       left: 50%;
       transform: translateX(-50%) scale(0);
       background: var(--card-bg);
@@ -1096,6 +1108,7 @@
 
   <div id="edgeIndicator"></div>
   <div class="status-bar-shield"></div>
+  <div class="ios-top-strip"></div>
   <div id="pullIndicator">↓</div>
 
   <div id="appContent">
@@ -1234,7 +1247,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.7.4
+    Sürüm 3.8.0
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1525,7 +1538,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.7.4";
+    const CURRENT_VERSION = "3.8.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
