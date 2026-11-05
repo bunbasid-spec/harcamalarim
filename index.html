@@ -1247,7 +1247,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.8.0
+    Sürüm 3.8.1
   </div>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1538,7 +1538,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.8.0";
+    const CURRENT_VERSION = "3.8.1";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -4264,7 +4264,7 @@
         rowEl.className = 'template-item';
         if (isAlreadyExists) {
           rowEl.style.opacity = '0.85';
-          rowEl.style.borderColor = '2px rgba(245, 158, 11, 0.8)';
+          rowEl.style.borderColor = '2px solid var(--orange)';
         }
 
         rowEl.innerHTML = `
