@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -563,7 +562,7 @@
       animation: popUp 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     #badgeVersionAction {
-      bottom: 355px;
+      bottom: 405px;
       background: #1e293b;
       color: var(--text-dim);
       border: 1px solid var(--border);
@@ -572,6 +571,11 @@
       padding: 5px 12px;
       pointer-events: none;
       box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    #btnProjectsAction {
+      bottom: 355px;
+      background: var(--primary-blue);
+      color: #fff;
     }
     #btnPastMonthReportAction {
       bottom: 305px;
@@ -1247,8 +1251,11 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.7.15
+    Sürüm 3.8.0
   </div>
+  <button id="btnProjectsAction" class="fab-mini-action" onclick="openProjects()">
+    📁 Projeler
+  </button>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
   </button>
@@ -1538,7 +1545,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.7.15";
+    const CURRENT_VERSION = "3.8.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1640,7 +1647,8 @@
         const html = await response.text();
         const match = html.match(/CURRENT_VERSION\s*=\s*["']([^"']+)["']/);
         if (match && match[1] && match[1] !== CURRENT_VERSION) {
-          localStorage.clear();
+          // proje.html ayarları ("proje_" önekli) silinmesin
+          Object.keys(localStorage).forEach(k => { if (!k.startsWith('proje_')) localStorage.removeItem(k); });
           window.location.reload(true);
         }
       } catch (e) {}
@@ -1834,6 +1842,7 @@
 
     function showFabAction() {
       document.getElementById('badgeVersionAction').style.display = 'flex';
+      document.getElementById('btnProjectsAction').style.display = 'flex';
       document.getElementById('btnPastMonthReportAction').style.display = 'flex';
       document.getElementById('btnControlAction').style.display = 'flex';
       document.getElementById('btnToggleSearchAction').style.display = 'flex';
@@ -1850,11 +1859,17 @@
 
     function hideFabAction() {
       document.getElementById('badgeVersionAction').style.display = 'none';
+      document.getElementById('btnProjectsAction').style.display = 'none';
       document.getElementById('btnPastMonthReportAction').style.display = 'none';
       document.getElementById('btnControlAction').style.display = 'none';
       document.getElementById('btnToggleSearchAction').style.display = 'none';
       document.getElementById('btnLiquidityAction').style.display = 'none';
       document.getElementById('btnLastMonthAction').style.display = 'none';
+    }
+
+    function openProjects() {
+      hideFabAction();
+      window.location.href = 'proje.html';
     }
 
     function toggleSearchFromFab() {
