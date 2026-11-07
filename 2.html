@@ -1251,7 +1251,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.8.0
+    Sürüm 3.8.1
   </div>
   <button id="btnProjectsAction" class="fab-mini-action" onclick="openProjects()">
     📁 Projeler
@@ -1271,6 +1271,10 @@
   <button id="btnLastMonthAction" class="fab-mini-action" onclick="openLastMonthTemplateModal()">
     📋 Kayıtları Aktar
   </button>
+
+  <div id="projeFrameWrap" style="display:none; position:fixed; inset:0; z-index:100000; background:#0f172a;">
+    <iframe id="projeFrame" title="Projeler" style="width:100%; height:100%; border:0; background:#0f172a;"></iframe>
+  </div>
 
   <button class="fab" id="mainFab"><span>+</span></button>
 
@@ -1545,7 +1549,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.8.0";
+    const CURRENT_VERSION = "3.8.1";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1867,10 +1871,30 @@
       document.getElementById('btnLastMonthAction').style.display = 'none';
     }
 
+    // Projeler sayfası, uygulamadan çıkmadan tam ekran katmanda açılır (iOS uygulama içi tarayıcıya atmasın diye)
     function openProjects() {
       hideFabAction();
-      window.location.href = 'proje.html';
+      const probe = document.createElement('div');
+      probe.style.cssText = 'position:fixed;top:0;left:0;visibility:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
+      document.body.appendChild(probe);
+      const cs = getComputedStyle(probe);
+      const sat = parseFloat(cs.paddingTop) || 0;
+      const sab = parseFloat(cs.paddingBottom) || 0;
+      probe.remove();
+      document.getElementById('projeFrame').src = 'proje.html?embed=1&sat=' + sat + '&sab=' + sab + '&t=' + Date.now();
+      document.getElementById('projeFrameWrap').style.display = 'block';
+      document.body.style.overflow = 'hidden';
     }
+
+    function closeProjects() {
+      document.getElementById('projeFrameWrap').style.display = 'none';
+      document.getElementById('projeFrame').src = 'about:blank';
+      document.body.style.overflow = '';
+    }
+
+    window.addEventListener('message', function (e) {
+      if (e.origin === window.location.origin && e.data && e.data.type === 'proje-close') closeProjects();
+    });
 
     function toggleSearchFromFab() {
       hideFabAction();
