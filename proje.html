@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-title" content="Harcama Takip">
+
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <link rel="apple-touch-icon" href="./icon.png">
+  <link rel="icon" type="image/png" href="./icon.png">
+
+  <title>Projeler</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #38bdf8;
+      --primary-blue: #2563eb;
+      --text: #f8fafc;
+      --text-dim: #94a3b8;
+      --border: #334155;
+      --green: #10b981;
+      --red: #f43f5e;
+      --orange: #f59e0b;
+      --purple: #a855f7;
+    }
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    input, textarea, select {
+      -webkit-user-select: text !important;
+      user-select: text !important;
+      -webkit-touch-callout: default !important;
+    }
+    ::-webkit-scrollbar { display: none; }
+    * { -ms-overflow-style: none; scrollbar-width: none; }
+
+    html { background-color: var(--bg); }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding-top: max(44px, env(safe-area-inset-top));
+      padding-left: 16px;
+      padding-right: 16px;
+      padding-bottom: max(40px, env(safe-area-inset-bottom));
+      min-height: 100vh;
+    }
+    body.modal-open { overflow: hidden !important; touch-action: none !important; }
+    button { font-family: inherit; color: inherit; }
+
+    .status-bar-shield {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: max(44px, env(safe-area-inset-top));
+      background-color: var(--bg);
+      z-index: 150;
+      pointer-events: none;
+    }
+
+    /* ÜST BAŞLIK */
+    .ph { display: flex; align-items: center; gap: 12px; padding-top: 6px; }
+    .pt { flex: 1; font-size: 22px; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hb {
+      width: 38px; height: 38px; flex-shrink: 0;
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text);
+    }
+    .hb svg { width: 20px; height: 20px; }
+    .hb:disabled { opacity: .4; cursor: default; }
+    .hb:active:not(:disabled) { opacity: .8; }
+
+    /* ÖZET KARTI (GRAFİK) */
+    .hero {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 14px; padding: 14px; margin-top: 16px;
+    }
+    .hr1 { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .hbt {
+      width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+      border: 1px solid var(--border); background: var(--bg); color: var(--text-dim);
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .hbt svg { width: 18px; height: 18px; }
+    .lbl { font-size: 12px; color: var(--text-dim); }
+    .sub0 { font-size: 16px; font-weight: 500; margin-top: 2px; }
+    .dw { position: relative; margin: 6px auto 0; width: 200px; height: 200px; }
+    .dc { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+    .tv { font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; line-height: 1.2; }
+    .tv.big { font-size: 24px; }
+    .lgd { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; margin-top: 12px; font-size: 12px; color: var(--text-dim); }
+    .lgd span { display: flex; align-items: center; gap: 6px; }
+    .lgd i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .pillx {
+      display: inline-flex; align-items: center; font-size: 13px; font-weight: 500;
+      color: var(--green); background: rgba(16,185,129,.14); border: 1px solid rgba(16,185,129,.35);
+      padding: 5px 14px; border-radius: 14px;
+    }
+    .hs { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
+    .hrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+    /* YIL ÇİPLERİ */
+    .chips { display: flex; gap: 6px; overflow-x: auto; margin-top: 14px; }
+    .chip {
+      flex: 0 0 auto; font-size: 12px; font-weight: 500; padding: 6px 14px; border-radius: 14px;
+      border: 1px solid var(--border); background: var(--bg); color: var(--text-dim); cursor: pointer;
+    }
+    .chip.on { background: rgba(56,189,248,.15); border-color: var(--accent); color: var(--accent); }
+
+    /* BÖLÜM BAŞLIKLARI */
+    .sh { display: flex; justify-content: space-between; align-items: center; margin: 22px 2px 10px; font-size: 17px; font-weight: 500; min-height: 32px; }
+    .shr { display: flex; align-items: center; gap: 10px; }
+    .lnk { background: none; border: none; color: var(--accent); font-size: 13px; cursor: pointer; }
+
+    /* KARTLAR */
+    .card2 {
+      display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px; margin-bottom: 8px; cursor: pointer; color: var(--text);
+    }
+    .card2.selc { box-shadow: 0 0 0 1.5px var(--accent); }
+    .ico { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ico svg { width: 22px; height: 22px; }
+    .nm { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+    .sb { font-size: 12px; color: var(--text-dim); margin-top: 2px; line-height: 1.5; }
+    .rt { font-size: 14px; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .se { font-size: 12px; color: var(--text-dim); font-weight: 400; margin-top: 2px; }
+    .addc {
+      display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+      border: 1.5px dashed var(--border); border-radius: 12px; padding: 14px; color: var(--text-dim);
+      font-size: 14px; background: transparent; cursor: pointer;
+    }
+    .addc svg { width: 18px; height: 18px; }
+    .chev { width: 18px; height: 18px; color: var(--text-dim); flex-shrink: 0; }
+
+    /* TOPLAM ÇUBUĞU VE İŞLEMLER */
+    .tot {
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      background: #141d2b; border: 1px solid var(--accent); border-radius: 10px;
+      padding: 10px 14px; margin-bottom: 10px; font-size: 13px;
+    }
+    .tot b { font-weight: 500; font-size: 16px; color: var(--red); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .ic { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; cursor: pointer; }
+    .ir { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .il { min-width: 0; }
+    .itx .arr { width: 14px; height: 14px; color: var(--text-dim); transition: transform .2s; flex-shrink: 0; }
+    .itx.open .arr { transform: rotate(180deg); }
+    .itx.open .ic { border-bottom-left-radius: 0; border-bottom-right-radius: 0; margin-bottom: 0; }
+    .acc { display: none; background: #131d31; border: 1px solid var(--border); border-top: none; border-radius: 0 0 10px 10px; padding: 10px 14px; margin-bottom: 8px; font-size: 13px; line-height: 1.5; word-break: break-word; }
+    .itx.open .acc { display: block; animation: fadeIn .2s ease; }
+    .acc .k { font-size: 11px; color: var(--text-dim); margin-bottom: 2px; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    .empty { text-align: center; padding: 26px; color: var(--text-dim); font-size: 14px; }
+    .errbox {
+      background: rgba(244,63,94,.12); border: 1px solid var(--red); border-radius: 10px;
+      padding: 12px 14px; margin-top: 16px; font-size: 13px; line-height: 1.5;
+    }
+    .errbox button { margin-top: 8px; background: transparent; border: 1px solid var(--red); color: var(--text); border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+
+    /* ALT SAYFA FORMU (uygulamadaki .modal ile aynı) */
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.75); align-items: flex-end; z-index: 999; }
+    .modal.open { display: flex; }
+    .modal-content {
+      background: var(--card-bg); width: 100%; border-radius: 20px 20px 0 0; padding: 20px;
+      padding-bottom: max(25px, env(safe-area-inset-bottom)); border-top: 1px solid var(--border);
+      max-height: 90vh; overflow-y: auto; overscroll-behavior: contain;
+    }
+    .mtt { font-size: 17px; font-weight: 500; margin-bottom: 14px; }
+    .fg { margin-bottom: 12px; }
+    .fg label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
+    .fi {
+      width: 100%; background: var(--bg); border: 1px solid var(--border); color: #fff;
+      padding: 11px 12px; border-radius: 8px; font-size: 15px; outline: none; display: block;
+      -webkit-appearance: none; appearance: none; min-height: 44px;
+    }
+    .fi:focus { border-color: var(--accent); }
+    .err { font-size: 12px; color: var(--red); min-height: 18px; margin-top: 2px; }
+    .ma { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .btn-submit { width: 100%; background: var(--accent); color: #0f172a; font-weight: 700; padding: 13px; border-radius: 10px; border: none; font-size: 15px; cursor: pointer; }
+    .btn-submit:disabled { opacity: .6; }
+    .btn-cancel { width: 100%; background: #334155; color: var(--text); font-weight: 600; padding: 12px; border-radius: 10px; border: 1px solid var(--border); font-size: 15px; cursor: pointer; }
+
+    /* ORTADA SEÇİM PENCERESİ (uygulamadaki gizlilik penceresiyle aynı) */
+    .cmodal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); align-items: center; justify-content: center; z-index: 9999; }
+    .cmodal.open { display: flex; }
+    .cbox { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 20px; width: 90%; max-width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+    .cbox h3 { font-size: 16px; font-weight: 500; margin-bottom: 8px; }
+    .cbox p { font-size: 13px; color: var(--text-dim); margin-bottom: 16px; line-height: 1.4; }
+    .copts { display: flex; flex-direction: column; gap: 8px; }
+    .copt { background: rgba(255,255,255,.08); color: #fff; border: 1px solid var(--border); padding: 11px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; }
+    .copt.cur { background: var(--green); color: #000; border-color: var(--green); }
+    .cclose { background: transparent; border: none; color: var(--text-dim); font-size: 12px; margin-top: 4px; cursor: pointer; padding: 6px; }
+
+    .toast {
+      position: fixed; left: 50%; bottom: max(30px, env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px);
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 10px 16px;
+      font-size: 13px; z-index: 10000; opacity: 0; pointer-events: none; transition: all .25s ease; max-width: 90%; text-align: center;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    @media (prefers-reduced-motion: reduce) { .toast, .itx .arr { transition: none; } .itx.open .acc { animation: none; } }
+  </style>
+</head>
+<body>
+  <div class="status-bar-shield"></div>
+
+  <div id="app">
+    <div class="ph">
+      <button class="hb" id="pback" aria-label="Bütçeye dön"></button>
+      <div class="pt" id="ptitle">Projeler</div>
+      <button class="hb" id="padd" aria-label="Proje ekle"></button>
+    </div>
+    <div id="pbody"></div>
+  </div>
+
+  <!-- FORM (alt sayfa) -->
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mt">
+    <div class="modal-content" id="mc"></div>
+  </div>
+
+  <!-- SEÇİM (ortada pencere) -->
+  <div class="cmodal" id="cmodal" role="dialog" aria-modal="true" aria-labelledby="ct">
+    <div class="cbox" id="cbox"></div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    const PROJE_VERSION = "1.0.0";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
+    const BACK_URL = "2.html";
+
+    // ---------- Yardımcılar ----------
+    const LS = {
+      get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+      set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+    };
+    function f(n) { return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+    function parseAmt(s) {
+      s = String(s).replace(/[€₺\s]/g, "");
+      if (!s) return NaN;
+      if (s.includes(",") && s.includes(".")) {
+        if (s.lastIndexOf(",") > s.lastIndexOf(".")) s = s.replace(/\./g, "").replace(",", ".");
+        else s = s.replace(/,/g, "");
+      } else if (s.includes(",")) s = s.replace(",", ".");
+      return /^\d+(\.\d+)?$/.test(s) ? parseFloat(s) : NaN;
+    }
+    function ts(s) { const p = String(s || "").split("."); return p.length === 3 ? new Date(+p[2], +p[1] - 1, +p[0]).getTime() : 0; }
+    function yr(s) { const p = String(s || "").split("."); return p.length === 3 ? +p[2] : 0; }
+    function todayISO() { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().split("T")[0]; }
+    function sum(l) { let s = 0; l.forEach(x => { s += x.amount; }); return s; }
+
+    // ---------- İkonlar (satır içi SVG, ek kütüphane gerekmez) ----------
+    const P = {
+      back: '<path d="M5 12h14M5 12l6 6M5 12l6-6"/>',
+      plus: '<path d="M12 5v14M5 12h14"/>',
+      up: '<path d="M6 15l6-6 6 6"/>',
+      down: '<path d="M6 9l6 6 6-6"/>',
+      right: '<path d="M9 6l6 6-6 6"/>',
+      min: '<path d="M5 9h4V5M3 3l6 6M5 15h4v4M3 21l6-6M19 9h-4V5M15 9l6-6M19 15h-4v4M15 15l6 6"/>',
+      shield: '<path d="M11.46 20.846a12 12 0 0 1-7.96-14.846a12 12 0 0 0 8.5-3a12 12 0 0 0 8.5 3a12 12 0 0 1-.09 7.06"/><path d="M15 19l2 2l4-4"/>',
+      tool: '<path d="M7 10h3v-3l-3.5-3.5a6 6 0 0 1 8 8l6 6a2 2 0 0 1-3 3l-6-6a6 6 0 0 1-8-8l3.5 3.5"/>',
+      cert: '<path d="M15 15m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0"/><path d="M13 17.5v4.5l2-1.5l2 1.5v-4.5"/><path d="M10 19h-5a2 2 0 0 1-2-2v-10c0-1.1.9-2 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-1 1.73"/><path d="M6 9h12M6 12h3M6 15h2"/>',
+      tax: '<path d="M5 21v-16a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-3-2l-2 2l-2-2l-2 2l-2-2l-3 2"/><path d="M14.5 8.5l-5 5"/><path d="M9.5 8.5h.01"/><path d="M14.5 13.5h.01"/>',
+      bank: '<path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3l7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v3"/><path d="M12 14v3"/><path d="M16 14v3"/>',
+      tag: '<path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0-2 0"/><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592-5.592a2.41 2.41 0 0 0 0-3.408l-7.71-7.71a2 2 0 0 0-1.414-.586h-5.172a3 3 0 0 0-3 3z"/>',
+      car: '<path d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0"/><path d="M15 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0"/><path d="M5 17h-2v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0h-6m-6-6h15m-6 0v-5"/>',
+      folder: '<path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-14a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2"/>'
+    };
+    function ic(n) {
+      return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (P[n] || P.tag) + '</svg>';
+    }
+
+    // ---------- Kategori görünümü (renk + ikon) ----------
+    const CAT_RULES = [
+      { re: /versich|sigorta/i, col: "#38bdf8", ic: "shield" },
+      { re: /wartung|bak[ıi]m|servis/i, col: "#f59e0b", ic: "tool" },
+      { re: /t[uü]v|muayene/i, col: "#a855f7", ic: "cert" },
+      { re: /steuer|vergi/i, col: "#10b981", ic: "tax" },
+      { re: /taksit|kredit|finanz|kredi/i, col: "#f43f5e", ic: "bank" }
+    ];
+    const EXTRA = ["#2563eb", "#14b8a6", "#eab308", "#ec4899"];
+    function catLook(c) {
+      for (const r of CAT_RULES) if (r.re.test(c)) return r;
+      let h = 0; for (let i = 0; i < c.length; i++) h += c.charCodeAt(i);
+      return { col: EXTRA[h % EXTRA.length], ic: "tag" };
+    }
+    const PCOL = ["#38bdf8", "#f59e0b", "#a855f7", "#10b981", "#f43f5e", "#14b8a6"];
+
+    // ---------- Durum ----------
+    const NOW_Y = new Date().getFullYear();
+    let PROJECTS = [];
+    try { PROJECTS = JSON.parse(LS.get("proje_cache", "[]")) || []; } catch (e) { PROJECTS = []; }
+    let backendOk = false, loading = true, lastError = "";
+    let view = "list", pid = null, yf = "all", cf = null, op = null;
+
+    // Kalıcı varsayılanlar (2.html güncellenince silinmesin diye "proje_" önekli)
+    let chartDefault = LS.get("proje_chart_default", "L");   // R = tek satır, M = orta, L = büyük
+    if (["R", "M", "L"].indexOf(chartDefault) < 0) chartDefault = "L";
+    let catDefault = LS.get("proje_cat_default", "open");     // open | closed
+    if (catDefault !== "open" && catDefault !== "closed") catDefault = "open";
+    let cm = chartDefault;
+    let catOpen = catDefault === "open";
+
+    const body = document.getElementById("pbody");
+
+    // ---------- Grafik ----------
+    function donut(segs, total, size) {
+      const r = 80, C = 2 * Math.PI * r;
+      let off = 0;
+      let h = '<svg viewBox="0 0 200 200" width="' + size + '" height="' + size + '" aria-hidden="true" style="display:block"><g transform="rotate(-90 100 100)" fill="none" stroke-width="30"><circle cx="100" cy="100" r="80" stroke="#334155"/>';
+      if (total > 0) {
+        const gap = segs.length > 1 ? 3 : 0;
+        segs.forEach(s => {
+          const len = s.val / total * C, dl = Math.max(0, len - gap);
+          const dim = (cf && view === "det" && cf !== s.k) ? 0.3 : 1;
+          h += '<circle cx="100" cy="100" r="80" stroke="' + s.col + '" stroke-dasharray="' + dl + ' ' + (C - dl) + '" stroke-dashoffset="' + (-off) + '" opacity="' + dim + '"/>';
+          off += len;
+        });
+      }
+      return h + "</g></svg>";
+    }
+    function legend(segs) {
+      return '<div class="lgd">' + segs.map(s => '<span><i style="background:' + s.col + '"></i>' + esc(s.label) + "</span>").join("") + "</div>";
+    }
+    function hero(segs, total, label, sub, pill) {
+      const nx = cm === "L" ? ["min", "Grafiği küçült"] : (cm === "M" ? ["up", "Grafiği tek satıra kapat"] : ["down", "Grafiği büyüt"]);
+      const hint = nx[1] + ". Basılı tutunca varsayılan görünümü seçersin.";
+      const btn = '<button class="hbt" data-act="cm" data-lp="chart" aria-label="' + hint + '" title="' + hint + '">' + ic(nx[0]) + "</button>";
+      let h = '<div class="hero">';
+      if (cm === "R") {
+        return h + '<div class="hrow"><div style="min-width:0"><div class="lbl">' + label + ' • toplam harcama</div><div class="tv">€' + f(total) + "</div></div>" + btn + "</div></div>";
+      }
+      h += '<div class="hr1"><div style="min-width:0"><div class="lbl">' + sub + '</div><div class="sub0">' + label + "</div></div>" + btn + "</div>";
+      if (cm === "M") {
+        h += '<div class="hs"><div style="flex-shrink:0">' + donut(segs, total, 96) + '</div><div style="min-width:0"><div class="lbl">Toplam harcama</div><div class="tv">€' + f(total) + "</div>" + (pill ? '<div style="margin-top:8px"><span class="pillx">' + pill + "</span></div>" : "") + "</div></div>" + legend(segs);
+      } else {
+        h += '<div class="dw">' + donut(segs, total, 200) + '<div class="dc"><div class="lbl">Toplam harcama</div><div class="tv big">€' + f(total) + "</div></div></div>" + legend(segs) + (pill ? '<div style="text-align:center;margin-top:12px"><span class="pillx">' + pill + "</span></div>" : "");
+      }
+      return h + "</div>";
+    }
+
+    // ---------- Ekranlar ----------
+    function projCol(p) { const i = PROJECTS.indexOf(p); return PCOL[(i < 0 ? 0 : i) % PCOL.length]; }
+
+    function vList() {
+      let segs = [], tot = 0, yTot = 0, h = "";
+      PROJECTS.forEach(p => {
+        const s = sum(p.items); tot += s;
+        p.items.forEach(x => { if (yr(x.date) === NOW_Y) yTot += x.amount; });
+        if (s > 0) segs.push({ k: p.id, label: p.name, val: s, col: projCol(p) });
+      });
+      if (lastError) {
+        h += '<div class="errbox">' + esc(lastError) + '<br><button data-act="retry">Tekrar dene</button></div>';
+      }
+      if (loading && !PROJECTS.length) { return h + '<div class="empty">Yükleniyor...</div>'; }
+      h += hero(segs, tot, "Tüm projeler", PROJECTS.length + " proje", "Bu yıl (" + NOW_Y + "): €" + f(yTot));
+      h += '<div class="sh"><span>Projeler</span></div>';
+      if (!PROJECTS.length && !lastError) h += '<div class="empty">Henüz proje yok.</div>';
+      PROJECTS.forEach(p => {
+        const s = sum(p.items), col = projCol(p);
+        const last = p.items.slice().sort((a, b) => ts(b.date) - ts(a.date))[0];
+        h += '<button class="card2" data-act="open:' + esc(p.id) + '"><span class="ico" style="background:' + col + '26;color:' + col + '">' + ic(/araba|oto|car|auto/i.test(p.name) ? "car" : "folder") + '</span><div style="flex:1;min-width:0"><div class="nm">' + esc(p.name) + '</div><div class="sb">' + p.items.length + ' işlem</div></div><div class="rt">€' + f(s) + '<div class="se">' + (last && last.date ? "Son: " + last.date : "Henüz işlem yok") + '</div></div><span class="chev">' + ic("right") + "</span></button>";
+      });
+      h += '<button class="addc" data-act="newp">' + ic("plus") + "Yeni proje</button>";
+      return h;
+    }
+
+    function vDet() {
+      const p = PROJECTS.find(x => x.id === pid);
+      if (!p) return '<div class="empty">Proje bulunamadı.</div>';
+      const ys = [];
+      p.items.forEach(x => { const y = yr(x.date); if (y && ys.indexOf(y) < 0) ys.push(y); });
+      ys.sort((a, b) => b - a);
+      if (yf !== "all" && ys.indexOf(+yf) < 0) yf = "all";
+      const base = p.items.filter(x => yf === "all" || yr(x.date) === +yf);
+      const g = {}, ks = [];
+      base.forEach(x => { const k = x.category || "Diğer"; if (!g[k]) { g[k] = { k: k, v: 0, n: 0 }; ks.push(k); } g[k].v += x.amount; g[k].n++; });
+      const cs = ks.map(k => g[k]).sort((a, b) => b.v - a.v);
+      if (cf && !g[cf]) cf = null;
+      const total = sum(base);
+      const segs = cs.map(c => ({ k: c.k, label: c.k, val: c.v, col: catLook(c.k).col }));
+      const pill = cf ? esc(cf) + ": €" + f(g[cf].v) : base.length + " işlem";
+      let h = hero(segs, total, esc(p.name), yf === "all" ? "Tüm zamanlar" : yf, pill);
+
+      h += '<div class="chips" role="group" aria-label="Yıl filtresi"><button class="chip' + (yf === "all" ? " on" : "") + '" data-act="yr:all" aria-pressed="' + (yf === "all") + '">Tümü</button>';
+      ys.forEach(y => { const on = String(yf) === String(y); h += '<button class="chip' + (on ? " on" : "") + '" data-act="yr:' + y + '" aria-pressed="' + on + '">' + y + "</button>"; });
+      h += "</div>";
+
+      const tHint = (catOpen ? "Kategorileri gizle" : "Kategorileri göster") + ". Basılı tutunca varsayılanı seçersin.";
+      h += '<div class="sh"><span>Kategoriler</span><span class="shr">' + (cf ? '<button class="lnk" data-act="cat:">Filtreyi temizle</button>' : "") + '<button class="hbt" data-act="cato" data-lp="cat" aria-expanded="' + catOpen + '" aria-label="' + tHint + '" title="' + tHint + '">' + ic(catOpen ? "up" : "down") + "</button></span></div>";
+      if (catOpen) {
+        if (!cs.length) h += '<div class="empty">Henüz işlem yok.</div>';
+        cs.forEach(c => {
+          const lk = catLook(c.k);
+          h += '<button class="card2' + (cf === c.k ? " selc" : "") + '" data-act="cat:' + esc(c.k) + '" aria-pressed="' + (cf === c.k) + '"><span class="ico" style="background:' + lk.col + '26;color:' + lk.col + '">' + ic(lk.ic) + '</span><div style="flex:1;min-width:0"><div class="nm">' + esc(c.k) + '</div><div class="sb">' + c.n + ' işlem</div></div><div class="rt">€' + f(c.v) + '<div class="se">%' + Math.round(c.v / total * 100) + "</div></div></button>";
+        });
+      }
+
+      const list = base.filter(x => !cf || (x.category || "Diğer") === cf).sort((a, b) => ts(b.date) - ts(a.date) || b.rowIndex - a.rowIndex);
+      h += '<div class="sh"><span>İşlemler</span></div>';
+      if (base.length) {
+        h += '<div class="tot"><span>' + (cf ? esc(cf) : "Tüm kategoriler") + " • " + (yf === "all" ? "tüm zamanlar" : yf) + " • " + list.length + ' işlem</span><b>-€' + f(sum(list)) + "</b></div>";
+      }
+      if (!list.length) h += '<div class="empty">İşlem bulunamadı.</div>';
+      list.forEach(x => {
+        const key = "r" + x.rowIndex, open = op === key;
+        h += '<div class="itx' + (open ? " open" : "") + '"><div class="ic" data-act="tx:' + key + '" role="button" tabindex="0" aria-expanded="' + open + '"><div class="ir"><div class="il"><div class="nm"><span class="arr">' + ic("down") + "</span>" + esc(x.name) + '</div><div class="sb">' + (x.date || "Tarihsiz") + " • " + esc(x.category || "Diğer") + '</div></div><div class="rt" style="color:var(--red)">-€' + f(x.amount) + '</div></div></div><div class="acc"><div class="k">Not</div>' + (x.note ? esc(x.note) : '<span style="color:var(--text-dim)">Not eklenmemiş</span>') + "</div></div>";
+      });
+      return h;
+    }
+
+    function render(keep) {
+      const y = window.pageYOffset || 0;
+      const det = view === "det";
+      const p = det ? PROJECTS.find(x => x.id === pid) : null;
+      document.getElementById("ptitle").textContent = det && p ? p.name : "Projeler";
+      const back = document.getElementById("pback"), add = document.getElementById("padd");
+      back.innerHTML = ic("back");
+      add.innerHTML = ic("plus");
+      back.setAttribute("aria-label", det ? "Projelere dön" : "Bütçeye dön");
+      add.setAttribute("aria-label", det ? "İşlem ekle" : "Proje ekle");
+      add.disabled = !backendOk;
+      body.innerHTML = det ? vDet() : vList();
+      window.scrollTo(0, keep ? y : 0);
+    }
+
+    // ---------- Veri ----------
+    async function loadData(silent) {
+      try {
+        const res = await fetch(API_URL + "?action=getProjectsData&t=" + Date.now());
+        const data = await res.json();
+        if (!data || !Array.isArray(data.projects)) {
+          const er = new Error(data && data.error ? data.error : "NOAPI"); er.api = true; throw er;
+        }
+        PROJECTS = data.projects;
+        backendOk = true; lastError = "";
+        LS.set("proje_cache", JSON.stringify(PROJECTS));
+        if (view === "det" && !PROJECTS.find(x => x.id === pid)) { view = "list"; pid = null; }
+      } catch (e) {
+        backendOk = false;
+        if (e && e.api) {
+          lastError = e.message === "NOAPI"
+            ? "Proje verisi alınamadı. Apps Script güncellemesini yapıp yeni sürüm olarak dağıttığından emin ol."
+            : e.message;
+        } else {
+          lastError = "Bağlantı hatası. Kayıtlı son veriler gösteriliyor.";
+        }
+        if (silent && PROJECTS.length) lastError = "";
+      } finally {
+        loading = false;
+        render(true);
+      }
+    }
+    async function postApi(payload) {
+      const r = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+      let j = {};
+      try { j = JSON.parse(await r.text()); } catch (e) {}
+      if (j.status === "error") throw new Error(j.message || "İşlem başarısız.");
+      if (j.status !== "success") throw new Error("Sunucu yanıtı alınamadı.");
+      return j;
+    }
+
+    // ---------- Bildirim ----------
+    let toastT = null;
+    function toast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg; t.classList.add("show");
+      clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2600);
+    }
+
+    // ---------- Form (alt sayfa) ----------
+    let FORM = null, busy = false;
+    function openForm(cfg) {
+      FORM = cfg;
+      let h = '<h3 id="mt" class="mtt">' + cfg.title + "</h3>";
+      cfg.fields.forEach(fl => {
+        h += '<div class="fg"><label for="f_' + fl.id + '">' + fl.label + "</label>";
+        if (fl.type === "date") h += '<input id="f_' + fl.id + '" class="fi" type="date" value="' + fl.val + '">';
+        else if (fl.type === "combo") h += '<input id="f_' + fl.id + '" class="fi" type="text" list="dl_' + fl.id + '" placeholder="' + (fl.ph || "") + '" autocomplete="off"><datalist id="dl_' + fl.id + '">' + fl.opts.map(o => '<option value="' + esc(o) + '">').join("") + "</datalist>";
+        else h += '<input id="f_' + fl.id + '" class="fi" type="text"' + (fl.type === "amt" ? ' inputmode="decimal"' : "") + ' placeholder="' + (fl.ph || "") + '" autocomplete="off">';
+        h += "</div>";
+      });
+      h += '<div id="me" class="err" role="alert"></div><div class="ma"><button class="btn-submit" id="m-ok">Kaydet</button><button class="btn-cancel" id="m-x">Kapat</button></div>';
+      document.getElementById("mc").innerHTML = h;
+      document.getElementById("modal").classList.add("open");
+      document.body.classList.add("modal-open");
+      document.getElementById("m-x").onclick = closeForm;
+      document.getElementById("m-ok").onclick = submitForm;
+      document.querySelectorAll("#mc .fi").forEach(el => {
+        el.addEventListener("input", () => { document.getElementById("me").textContent = ""; });
+        el.addEventListener("keydown", e => { if (e.key === "Enter") submitForm(); });
+      });
+      const first = document.querySelector("#mc .fi"); if (first && cfg.fields[0].type !== "date") first.focus();
+    }
+    function closeForm() {
+      document.getElementById("modal").classList.remove("open");
+      document.body.classList.remove("modal-open");
+      FORM = null;
+    }
+    async function submitForm() {
+      if (!FORM || busy) return;
+      const v = {}; FORM.fields.forEach(fl => { v[fl.id] = document.getElementById("f_" + fl.id).value; });
+      const err = FORM.validate(v);
+      if (err) { document.getElementById("me").textContent = err; return; }
+      busy = true;
+      const btn = document.getElementById("m-ok"); btn.disabled = true; btn.textContent = "Kaydediliyor...";
+      try {
+        await postApi(FORM.payload(v));
+        closeForm();
+        toast("Kaydedildi");
+        await loadData(true);
+      } catch (e) {
+        const me = document.getElementById("me");
+        if (me) me.textContent = e.message || "Kaydedilemedi.";
+        btn.disabled = false; btn.textContent = "Kaydet";
+      } finally { busy = false; }
+    }
+    function openAddProject() {
+      if (!backendOk) { toast("Önce bağlantı kurulmalı"); return; }
+      openForm({
+        title: "Yeni Proje",
+        fields: [{ id: "n", label: "Proje adı", type: "text", ph: "örn: Araba, Bisiklet" }],
+        validate(v) {
+          const n = v.n.trim();
+          if (!n) return "Proje adı girin.";
+          if (PROJECTS.some(p => p.name.toLowerCase() === n.toLowerCase())) return "Bu isimde bir proje zaten var.";
+          return "";
+        },
+        payload(v) { return { action: "addProject", payload: { name: v.n.trim() } }; }
+      });
+    }
+    function openAddTx() {
+      if (!backendOk) { toast("Önce bağlantı kurulmalı"); return; }
+      const p = PROJECTS.find(x => x.id === pid); if (!p) return;
+      const cats = [];
+      p.items.forEach(x => { const c = x.category; if (c && cats.indexOf(c) < 0) cats.push(c); });
+      ["Wartung", "Versicherung", "TUV", "Steuer", "Taksit"].forEach(c => { if (cats.indexOf(c) < 0) cats.push(c); });
+      openForm({
+        title: "İşlem Ekle • " + esc(p.name),
+        fields: [
+          { id: "d", label: "Tarih", type: "date", val: todayISO() },
+          { id: "a", label: "Tutar (€)", type: "amt", ph: "örn: 120,00 €" },
+          { id: "n", label: "Nereye harcandı", type: "text", ph: "örn: ATU, Allianz" },
+          { id: "c", label: "Kategori", type: "combo", opts: cats, ph: "örn: Wartung" },
+          { id: "t", label: "Not (isteğe bağlı)", type: "text", ph: "örn: 111150 km - Yağ değişimi" }
+        ],
+        validate(v) {
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(v.d)) return "Geçerli bir tarih seçin.";
+          if (!(parseAmt(v.a) > 0)) return "Geçerli bir tutar girin.";
+          if (!v.n.trim()) return "Nereye harcandığını yazın.";
+          return "";
+        },
+        payload(v) {
+          return { action: "addProjectItem", payload: { projectId: p.id, date: v.d, amount: parseAmt(v.a), name: v.n.trim(), category: v.c.trim() || "Diğer", note: v.t.trim() } };
+        }
+      });
+    }
+
+    // ---------- Seçim penceresi (basılı tutunca) ----------
+    function openChoice(cfg) {
+      let h = '<h3 id="ct">' + cfg.title + "</h3><p>" + cfg.desc + '</p><div class="copts">';
+      cfg.options.forEach((o, i) => { h += '<button class="copt' + (o.cur ? " cur" : "") + '" data-i="' + i + '">' + (o.cur ? "✓ " : "") + o.label + "</button>"; });
+      h += '</div><button class="cclose" id="cc-x">Vazgeç</button>';
+      const box = document.getElementById("cbox");
+      box.innerHTML = h;
+      document.getElementById("cmodal").classList.add("open");
+      box.querySelectorAll(".copt").forEach(b => { b.onclick = () => { cfg.options[+b.getAttribute("data-i")].pick(); closeChoice(); }; });
+      document.getElementById("cc-x").onclick = closeChoice;
+    }
+    function closeChoice() { document.getElementById("cmodal").classList.remove("open"); }
+    document.getElementById("cmodal").addEventListener("click", e => { if (e.target.id === "cmodal") closeChoice(); });
+
+    function openLP(kind) {
+      if (kind === "chart") {
+        const set = v => () => { chartDefault = v; LS.set("proje_chart_default", v); cm = v; render(true); toast("Varsayılan grafik görünümü kaydedildi"); };
+        openChoice({
+          title: "Grafik varsayılanı",
+          desc: "Projeler sayfaları bu görünümle açılsın.",
+          options: [
+            { label: "Tek satır", cur: chartDefault === "R", pick: set("R") },
+            { label: "Orta", cur: chartDefault === "M", pick: set("M") },
+            { label: "Büyük", cur: chartDefault === "L", pick: set("L") }
+          ]
+        });
+      } else if (kind === "cat") {
+        const set = v => () => { catDefault = v; LS.set("proje_cat_default", v); catOpen = v === "open"; render(true); toast("Varsayılan kategori görünümü kaydedildi"); };
+        openChoice({
+          title: "Kategoriler varsayılanı",
+          desc: "Proje detayı kategoriler nasıl başlasın?",
+          options: [
+            { label: "Açık başlasın", cur: catDefault === "open", pick: set("open") },
+            { label: "Kapalı başlasın", cur: catDefault === "closed", pick: set("closed") }
+          ]
+        });
+      }
+    }
+
+    // ---------- Olaylar ----------
+    let lpTimer = null, lpFired = false, lpX = 0, lpY = 0;
+    const app = document.getElementById("app");
+    app.addEventListener("pointerdown", e => {
+      lpFired = false;
+      const t = e.target.closest("[data-lp]"); if (!t) return;
+      lpX = e.clientX; lpY = e.clientY;
+      clearTimeout(lpTimer);
+      lpTimer = setTimeout(() => { lpFired = true; if (navigator.vibrate) navigator.vibrate(40); openLP(t.getAttribute("data-lp")); }, 500);
+    });
+    app.addEventListener("pointermove", e => { if (lpTimer && Math.hypot(e.clientX - lpX, e.clientY - lpY) > 10) { clearTimeout(lpTimer); lpTimer = null; } });
+    ["pointerup", "pointercancel"].forEach(t => app.addEventListener(t, () => { clearTimeout(lpTimer); lpTimer = null; }));
+    app.addEventListener("contextmenu", e => { const t = e.target.closest("[data-lp]"); if (t) { e.preventDefault(); openLP(t.getAttribute("data-lp")); } });
+
+    app.addEventListener("click", e => {
+      if (lpFired) { lpFired = false; return; }
+      const t = e.target.closest("[data-act]"); if (!t) return;
+      const a = t.getAttribute("data-act"), i = a.indexOf(":");
+      const k = i < 0 ? a : a.slice(0, i), v = i < 0 ? "" : a.slice(i + 1);
+      if (k === "cm") { cm = cm === "L" ? "M" : (cm === "M" ? "R" : "L"); render(true); }
+      else if (k === "cato") { catOpen = !catOpen; render(true); }
+      else if (k === "open") { pid = v; view = "det"; yf = "all"; cf = null; op = null; cm = chartDefault; catOpen = catDefault === "open"; history.pushState({ det: 1 }, ""); render(); }
+      else if (k === "newp") openAddProject();
+      else if (k === "yr") { yf = v; op = null; render(true); }
+      else if (k === "cat") { cf = (v === "" || cf === v) ? null : v; op = null; render(true); }
+      else if (k === "tx") { op = (op === v) ? null : v; render(true); }
+      else if (k === "retry") { lastError = ""; loading = true; render(true); loadData(); }
+    });
+    app.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { const t = e.target.closest("div[data-act]"); if (t) { e.preventDefault(); t.click(); } }
+    });
+
+    document.getElementById("pback").onclick = () => {
+      if (view === "det") { history.back(); }
+      else { window.location.href = BACK_URL; }
+    };
+    document.getElementById("padd").onclick = () => { if (view === "det") openAddTx(); else openAddProject(); };
+
+    window.addEventListener("popstate", () => {
+      if (view === "det") { view = "list"; pid = null; yf = "all"; cf = null; op = null; cm = chartDefault; render(); }
+    });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") { if (document.getElementById("cmodal").classList.contains("open")) closeChoice(); else if (FORM) closeForm(); }
+    });
+    document.getElementById("modal").addEventListener("click", e => { if (e.target.id === "modal") closeForm(); });
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && !FORM) loadData(true); });
+
+    // ---------- Sürüm kontrolü (2.html'deki gibi; kullanıcı ayarlarını silmez) ----------
+    async function checkForUpdates() {
+      try {
+        const r = await fetch(window.location.href, { cache: "no-store" });
+        const html = await r.text();
+        const m = html.match(/PROJE_VERSION\s*=\s*["']([^"']+)["']/);
+        if (m && m[1] && m[1] !== PROJE_VERSION) window.location.reload(true);
+      } catch (e) {}
+    }
+
+    render();
+    loadData();
+    checkForUpdates();
+  </script>
+</body>
+</html>
