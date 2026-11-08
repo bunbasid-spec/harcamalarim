@@ -1251,7 +1251,7 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.8.1
+    Sürüm 3.8.2
   </div>
   <button id="btnProjectsAction" class="fab-mini-action" onclick="openProjects()">
     📁 Projeler
@@ -1549,7 +1549,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.8.1";
+    const CURRENT_VERSION = "3.8.2";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1881,7 +1881,10 @@
       const sat = parseFloat(cs.paddingTop) || 0;
       const sab = parseFloat(cs.paddingBottom) || 0;
       probe.remove();
-      document.getElementById('projeFrame').src = 'proje.html?embed=1&sat=' + sat + '&sab=' + sab + '&t=' + Date.now();
+      // Başlık satırının ekrandaki yeri: Projeler sayfası üst boşluğunu buna hizalar
+      const hdr = document.querySelector('#appContent .header');
+      const hy = hdr ? Math.round((hdr.getBoundingClientRect().top + window.pageYOffset) * 100) / 100 : sat;
+      document.getElementById('projeFrame').src = 'proje.html?embed=1&sat=' + sat + '&sab=' + sab + '&hy=' + hy + '&t=' + Date.now();
       document.getElementById('projeFrameWrap').style.display = 'block';
       document.body.style.overflow = 'hidden';
     }
