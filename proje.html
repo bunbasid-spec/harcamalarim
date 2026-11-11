@@ -213,7 +213,7 @@
     .copt { background: rgba(255,255,255,.08); color: #fff; border: 1px solid var(--border); padding: 10px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; }
     .copt.cur { background: var(--green); color: #000; border-color: var(--green); }
     .copt.danger { background: var(--red); border-color: var(--red); color: #fff; }
-    .cclose { background: transparent; border: none; color: var(--text-dim); font-size: 12px; margin-top: 4px; cursor: pointer; padding: 6px; }
+    .cclose { width: 100%; background: #334155; color: var(--text); border: 1px solid #475569; padding: 10px; border-radius: 8px; font-weight: 700; font-size: 13px; margin-top: 8px; cursor: pointer; }
 
     .toast {
       position: fixed; left: 50%; bottom: max(30px, var(--sab)); transform: translateX(-50%) translateY(20px);
@@ -249,7 +249,7 @@
   <div class="toast" id="toast" role="status"></div>
 
   <script>
-    const PROJE_VERSION = "1.2.0";
+    const PROJE_VERSION = "1.2.1";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
     const BACK_URL = "2.html";
 
