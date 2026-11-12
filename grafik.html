@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-title" content="Harcama Takip">
+
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <link rel="apple-touch-icon" href="./icon.png">
+  <link rel="icon" type="image/png" href="./icon.png">
+
+  <title>Grafikler</title>
+  <style>
+    :root {
+      --sat: env(safe-area-inset-top, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #38bdf8;
+      --primary-blue: #2563eb;
+      --text: #f8fafc;
+      --text-dim: #94a3b8;
+      --border: #334155;
+      --green: #10b981;
+      --red: #f43f5e;
+      --orange: #f59e0b;
+      --purple: #a855f7;
+    }
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    ::-webkit-scrollbar { display: none; }
+    * { -ms-overflow-style: none; scrollbar-width: none; }
+
+    html { background-color: var(--bg); margin: 0; padding: 0; }
+    html.embed, html.embed body { overscroll-behavior: none; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding-top: var(--sat);
+      padding-left: 16px;
+      padding-right: 16px;
+      padding-bottom: 24px;
+      margin: 0;
+      min-height: 100vh;
+    }
+    button { font-family: inherit; color: inherit; }
+
+    /* ÜST BAŞLIK */
+    .ph { display: flex; align-items: center; gap: 12px; padding-top: 6px; }
+    .pt { flex: 1; font-size: 20px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hb {
+      width: 38px; height: 38px; flex-shrink: 0;
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text);
+    }
+    .hb svg { width: 20px; height: 20px; }
+    .hb:active { opacity: .8; }
+    .hb.spin svg { animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ÇİPLER */
+    .chips { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .chip {
+      font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 14px;
+      border: 1px solid var(--border); background: var(--bg); color: var(--text-dim); cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .chip.on { background: rgba(56,189,248,.15); border-color: var(--accent); color: var(--accent); }
+    .chip i.d { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .note { font-size: 11px; color: var(--text-dim); margin-top: 8px; line-height: 1.5; }
+
+    /* KARTLAR */
+    .hero { background: var(--card-bg); border-radius: 12px; padding: 14px 16px; margin-top: 14px; }
+    .hr1 { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .lbl { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+    .sub0 { font-size: 14px; font-weight: 600; margin-top: 2px; }
+    .big { font-size: 24px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; }
+    .avgp { font-size: 11px; font-weight: 600; color: var(--text-dim); border: 1px dashed #64748b; border-radius: 10px; padding: 3px 10px; white-space: nowrap; }
+    .pillx { display: inline-flex; align-items: center; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 14px; white-space: nowrap; }
+    .sh { margin: 22px 2px 8px; font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+    .rowc { margin-top: 14px; }
+    .rr { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; font-weight: 600; }
+    .rr span:last-child { font-weight: 700; font-size: 15px; white-space: nowrap; }
+    .rs { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+    .bar { height: 6px; border-radius: 3px; background: #334155; margin-top: 6px; overflow: hidden; display: flex; }
+    .bar > div { height: 100%; transition: width .35s ease; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+    .sep { height: 1px; background: var(--border); margin: 16px 0 2px; }
+    svg g[data-m] { cursor: pointer; outline: none; }
+    svg g[data-m]:focus-visible rect.fz { stroke: #38bdf8; stroke-width: 2; }
+    .empty { text-align: center; padding: 30px; color: var(--text-dim); font-size: 14px; }
+    .errbox { background: rgba(244,63,94,.12); border: 1px solid var(--red); border-radius: 10px; padding: 12px 14px; margin-top: 16px; font-size: 13px; line-height: 1.5; }
+    .errbox button { margin-top: 8px; background: transparent; border: 1px solid var(--red); color: var(--text); border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+    .toast {
+      position: fixed; left: 50%; bottom: max(30px, var(--sab)); transform: translateX(-50%) translateY(20px);
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 10px 16px;
+      font-size: 13px; font-weight: 600; z-index: 10000; opacity: 0; pointer-events: none; transition: all .25s ease; max-width: 90%; text-align: center;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    @media (prefers-reduced-motion: reduce) { .bar > div, .toast { transition: none; } .hb.spin svg { animation: none; } }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="ph">
+      <button class="hb" id="gback" aria-label="Bütçeye dön"></button>
+      <div class="pt">Grafikler</div>
+      <button class="hb" id="gref" aria-label="Verileri yenile"></button>
+    </div>
+    <div id="gbody"></div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    const GRAFIK_VERSION = "1.0.0";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
+    const BACK_URL = "2.html";
+
+    // 2.html bu sayfayı tam ekran bir katman (iframe) içinde açar; böylece iOS uygulamadan çıkmış saymaz.
+    const QS = new URLSearchParams(window.location.search);
+    const EMBED = QS.get("embed") === "1" && window.parent !== window;
+    if (EMBED) {
+      document.documentElement.classList.add("embed");
+      let top = NaN;
+      const hy = parseFloat(QS.get("hy"));
+      if (isFinite(hy)) { try { top = Math.max(0, hy - window.frameElement.getBoundingClientRect().top); } catch (e) {} }
+      if (!isFinite(top)) { const s = parseFloat(QS.get("sat")); if (isFinite(s)) top = s; }
+      if (isFinite(top)) document.documentElement.style.setProperty("--sat", top + "px");
+      const sab = parseFloat(QS.get("sab"));
+      if (isFinite(sab)) document.documentElement.style.setProperty("--sab", sab + "px");
+    }
+    function goBackToApp() {
+      if (EMBED) window.parent.postMessage({ type: "grafik-close" }, window.location.origin);
+      else window.location.href = BACK_URL;
+    }
+
+    // ---------- Yardımcılar ----------
+    const LS = {
+      get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+      set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+    };
+    function f(n) { return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function fi(n) { return Math.round(n).toLocaleString("de-DE"); }
+    function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+    function pct1(n) { return Math.abs(n).toFixed(1).replace(".", ","); }
+
+    const ICON = {
+      back: '<path d="M5 12h14M5 12l6 6M5 12l6-6"/>',
+      refresh: '<path d="M20 11a8.1 8.1 0 0 0-15.5-2m-.5-4v4h4"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/>'
+    };
+    function ic(n) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[n] + "</svg>"; }
+
+    // ---------- Durum ----------
+    const CAT = { kart: { n: "Kart", c: "#38bdf8" }, diger: { n: "Diğer", c: "#f59e0b" }, tr: { n: "TR (€)", c: "#a855f7" } };
+    const KEYS = ["kart", "diger", "tr"];
+    let MONTHS = [];
+    try { MONTHS = JSON.parse(LS.get("grafik_cache", "[]")) || []; } catch (e) { MONTHS = []; }
+    let loading = true, lastError = "";
+    let range = LS.get("grafik_range", "all");   // 3 | 6 | 12 | all
+    let selSheet = null, iso = null, seq = 0;
+
+    function val(m) { return iso ? m[iso] : m.kart + m.diger + m.tr; }
+    function tot(m) { return m.kart + m.diger + m.tr; }
+    function rangeOptions() {
+      const o = [];
+      [3, 6, 12].forEach(v => { if (MONTHS.length > v) o.push(String(v)); });
+      o.push("all");
+      return o;
+    }
+    function visibleMonths() {
+      const o = rangeOptions();
+      if (o.indexOf(range) < 0) range = "all";
+      return range === "all" ? MONTHS.slice() : MONTHS.slice(-parseInt(range, 10));
+    }
+
+    // ---------- Grafik ----------
+    function labelFor(m, i, n) {
+      let t = m.short + (m.current ? "*" : "");
+      if (n > 6 && (i === 0 || m.month === 0)) t += " ’" + String(m.year).slice(-2);
+      return t;
+    }
+    function chartSvg(vis, sel) {
+      const n = vis.length, W = 338, base = 168, top = 26, slot = W / n, bw = Math.min(46, slot * 0.62);
+      const done = vis.filter(m => !m.current);
+      const avg = done.length ? done.reduce((s, m) => s + val(m), 0) / done.length : 0;
+      let mx = Math.max.apply(null, vis.map(val).concat([avg])) * 1.15;
+      if (!(mx > 0)) mx = 1;
+      const Y = v => base - (v / mx) * (base - top);
+      const step = Math.ceil(n / 8);
+      let s = '<defs><pattern id="hatch' + seq + '" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="3" height="7" fill="rgba(15,23,42,.6)"/></pattern></defs>';
+      if (avg > 0) {
+        s += '<line x1="0" x2="' + W + '" y1="' + Y(avg) + '" y2="' + Y(avg) + '" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 4"/><text x="0" y="' + (Y(avg) - 6) + '" font-size="11" fill="#94a3b8">ORT. €' + fi(avg) + "</text>";
+      }
+      vis.forEach((m, i) => {
+        const on = m.sheet === sel.sheet;
+        const x = i * slot + (slot - bw) / 2, cid = "c" + seq + "_" + i;
+        const parts = iso ? [[iso, m[iso]]] : KEYS.map(k => [k, m[k]]);
+        let yy = base, segs = "";
+        parts.forEach(p => { const h = Math.max(0, p[1]) / mx * (base - top); yy -= h; segs += '<rect x="' + x + '" y="' + yy + '" width="' + bw + '" height="' + h + '" fill="' + CAT[p[0]].c + '"/>'; });
+        const yt = Math.min(yy, base - 2), hh = base - yt;
+        s += '<g data-m="' + esc(m.sheet) + '" tabindex="0" role="button" aria-label="' + esc(m.full) + (m.current ? " (devam ediyor)" : "") + " toplam €" + fi(val(m)) + '" opacity="' + (on ? 1 : 0.42) + '">' +
+          '<clipPath id="' + cid + '"><rect x="' + x + '" y="' + yt + '" width="' + bw + '" height="' + hh + '" rx="9"/></clipPath>' +
+          '<g clip-path="url(#' + cid + ')">' + segs + (m.current ? '<rect x="' + x + '" y="' + yt + '" width="' + bw + '" height="' + hh + '" fill="url(#hatch' + seq + ')"/>' : "") + "</g>" +
+          (m.current ? '<rect x="' + x + '" y="' + yt + '" width="' + bw + '" height="' + hh + '" rx="9" fill="none" stroke="#f8fafc" stroke-width="1" stroke-dasharray="3 3" opacity=".7"/>' : "") +
+          '<rect class="fz" x="' + (i * slot) + '" y="' + (top - 12) + '" width="' + slot + '" height="' + (base - top + 38) + '" fill="transparent" rx="8"/></g>';
+        if (on) s += '<text x="' + (x + bw / 2) + '" y="' + (yt - 7) + '" font-size="12" font-weight="700" text-anchor="middle" fill="#f8fafc">€' + fi(val(m)) + "</text>";
+        if (i % step === 0 || i === n - 1 || on) {
+          s += '<text x="' + (x + bw / 2) + '" y="' + (base + 18) + '" font-size="12" text-anchor="middle" fill="' + (on ? "#f8fafc" : "#94a3b8") + '" font-weight="' + (on ? 700 : 500) + '">' + esc(labelFor(m, i, n)) + "</text>";
+        }
+      });
+      return { svg: '<svg viewBox="0 0 338 196" width="100%" style="display:block;margin-top:10px" role="group" aria-label="Aylık harcama sütunları">' + s + "</svg>", avg: avg };
+    }
+
+    // ---------- Seçili ay kartı ----------
+    function detailHtml(m, vis) {
+      const t = tot(m);
+      const done = vis.filter(x => !x.current);
+      let chip = "";
+      if (m.current) {
+        if (done.length) {
+          const avg = done.reduce((s, x) => s + tot(x), 0) / done.length;
+          if (avg > 0) {
+            const d = (t - avg) / avg * 100, low = d <= 0;
+            chip = '<span class="pillx" style="background:' + (low ? "rgba(16,185,129,.18)" : "rgba(244,63,94,.18)") + ";color:" + (low ? "#10b981" : "#f43f5e") + '">Ort.’ın %' + pct1(d) + (low ? " altında" : " üstünde") + "</span>";
+          }
+        }
+      } else {
+        const idx = MONTHS.findIndex(x => x.sheet === m.sheet);
+        const p = idx > 0 ? MONTHS[idx - 1] : null;
+        if (p && tot(p) > 0) {
+          const d = (t - tot(p)) / tot(p) * 100, low = d <= 0;
+          chip = '<span class="pillx" style="background:' + (low ? "rgba(16,185,129,.18)" : "rgba(244,63,94,.18)") + ";color:" + (low ? "#10b981" : "#f43f5e") + '">' + (low ? "↓" : "↑") + " %" + pct1(d) + " geçen aya göre</span>";
+        }
+      }
+      let h = '<div class="hero"><div class="hr1"><div><div class="lbl">' + esc(m.full) + (m.current ? " • devam ediyor" : "") + '</div><div class="big">€' + f(t) + "</div>" +
+        (m.current ? '<div class="rs">Planlanan toplam (ödenen + bekleyen)</div>' : "") + "</div>" + chip + "</div>";
+      if (m.current && m.pend != null) {
+        const pp = t > 0 ? Math.min(100, m.paid / t * 100) : 0;
+        h += '<div class="rowc"><div class="rr"><span><i class="dot" style="background:#10b981"></i>Ödenen</span><span>€' + f(m.paid) + '</span></div><div class="bar"><div style="width:' + pp + '%;background:#10b981"></div><div style="width:' + (100 - pp) + '%;background:#f59e0b;opacity:.55"></div></div><div class="rs">Bekleyen €' + f(m.pend) + " • ay sonuna kadar değişebilir</div></div><div class=\"sep\"></div>";
+      }
+      KEYS.forEach(k => {
+        const v = m[k], sh = t > 0 ? v / t * 100 : 0;
+        h += '<div class="rowc"><div class="rr"><span><i class="dot" style="background:' + CAT[k].c + '"></i>' + CAT[k].n + "</span><span>€" + f(v) + " • %" + Math.round(sh) + '</span></div><div class="bar"><div style="width:' + sh + "%;background:" + CAT[k].c + '"></div></div>';
+        if (k === "kart" && m.limit > 0) {
+          const over = v > m.limit;
+          h += '<div class="rs"' + (over ? ' style="color:var(--red)"' : "") + ">Kart limiti: €" + f(v) + " / €" + f(m.limit) + " • " + (over ? "limit €" + f(v - m.limit) + " aşıldı" : "%" + Math.round(v / m.limit * 100) + " kullanıldı") + "</div>";
+        }
+        h += "</div>";
+      });
+      return h + "</div>";
+    }
+
+    // ---------- Ekran ----------
+    const body = document.getElementById("gbody");
+    function render(keep) {
+      const y = window.pageYOffset || 0;
+      document.getElementById("gback").innerHTML = ic("back");
+      const rb = document.getElementById("gref");
+      rb.innerHTML = ic("refresh");
+      rb.classList.toggle("spin", loading);
+      let h = "";
+      if (lastError) h += '<div class="errbox">' + esc(lastError) + '<br><button data-act="retry">Tekrar dene</button></div>';
+      if (!MONTHS.length) {
+        h += loading ? '<div class="empty">Yükleniyor...</div>' : (lastError ? "" : '<div class="empty">Grafik için henüz ay verisi yok.</div>');
+        body.innerHTML = h; return;
+      }
+      const vis = visibleMonths();
+      let sel = MONTHS.find(m => m.sheet === selSheet);
+      if (!sel || vis.indexOf(sel) < 0) { sel = vis[vis.length - 1]; selSheet = sel.sheet; }
+      seq++;
+      const c = chartSvg(vis, sel);
+      const opts = rangeOptions();
+      if (opts.length > 1) {
+        h += '<div class="chips" style="margin-top:16px" role="group" aria-label="Dönem">';
+        opts.forEach(o => {
+          const lab = o === "all" ? "Tümü • " + MONTHS.length + " ay" : o + " ay";
+          h += '<button class="chip' + (range === o ? " on" : "") + '" data-r="' + o + '" aria-pressed="' + (range === o) + '">' + lab + "</button>";
+        });
+        h += "</div>";
+        if (MONTHS.length <= 12) h += '<div class="note">Daha uzun dönem seçenekleri, yeterli geçmiş ay olunca kendiliğinden eklenir.</div>';
+      } else {
+        h += '<div class="note" style="margin-top:14px">Daha uzun dönem seçenekleri, yeterli geçmiş ay olunca kendiliğinden eklenir.</div>';
+      }
+      h += '<div class="hero"><div class="hr1"><div><div class="lbl">Aylık harcama • €</div><div class="sub0">' + (iso ? CAT[iso].n + " harcaması" : "Kart + Diğer + TR") + "</div></div>" + (c.avg ? '<span class="avgp">Ort. €' + fi(c.avg) + "</span>" : "") + "</div>" + c.svg;
+      h += '<div class="chips" style="margin-top:10px" role="group" aria-label="Kategoriye odaklan">';
+      KEYS.forEach(k => { h += '<button class="chip' + (iso === k ? " on" : "") + '" data-i="' + k + '" aria-pressed="' + (iso === k) + '"><i class="d" style="background:' + CAT[k].c + '"></i>' + CAT[k].n + "</button>"; });
+      h += '</div><div class="note">' + (iso ? "Yalnızca " + CAT[iso].n + " gösteriliyor. Tekrar dokununca tümü döner." : "Bir kategoriye dokununca yalnızca onu gösterir. Diğer (kira vb.) sabit olduğu için Kart ve TR’nin değişimi böyle daha net görünür.") + "</div>";
+      if (vis.some(m => m.current)) h += '<div class="note">* Mevcut ay devam ediyor; ortalama yalnızca tamamlanan aylarla hesaplanır.</div>';
+      h += "</div>";
+      h += '<div class="sh">Ay dağılımı</div>' + detailHtml(sel, vis);
+      body.innerHTML = h;
+      window.scrollTo(0, keep ? y : 0);
+    }
+
+    // ---------- Veri ----------
+    async function loadData(silent) {
+      loading = true; if (!silent || !MONTHS.length) render(true); else document.getElementById("gref").classList.add("spin");
+      try {
+        const res = await fetch(API_URL + "?action=getMonthlyChartData&t=" + Date.now());
+        const data = await res.json();
+        if (!data || !Array.isArray(data.months)) {
+          const er = new Error(data && data.error ? data.error : "NOAPI"); er.api = true; throw er;
+        }
+        MONTHS = data.months;
+        lastError = "";
+        LS.set("grafik_cache", JSON.stringify(MONTHS));
+        return true;
+      } catch (e) {
+        if (e && e.api) {
+          lastError = e.message === "NOAPI"
+            ? "Grafik verisi alınamadı. Apps Script güncellemesini yapıp yeni sürüm olarak dağıttığından emin ol."
+            : e.message;
+        } else {
+          lastError = MONTHS.length ? "Bağlantı hatası. Kayıtlı son veriler gösteriliyor." : "Bağlantı hatası. Lütfen tekrar dene.";
+        }
+        if (silent && MONTHS.length && !(e && e.api)) lastError = "";
+        return false;
+      } finally {
+        loading = false;
+        render(true);
+      }
+    }
+
+    let toastT = null;
+    function toast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg; t.classList.add("show");
+      clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2200);
+    }
+
+    // ---------- Olaylar ----------
+    body.addEventListener("click", e => {
+      const r = e.target.closest("[data-r]"), i = e.target.closest("[data-i]"), m = e.target.closest("[data-m]"), a = e.target.closest("[data-act]");
+      if (r) { range = r.getAttribute("data-r"); LS.set("grafik_range", range); render(true); }
+      else if (i) { const k = i.getAttribute("data-i"); iso = (iso === k) ? null : k; render(true); }
+      else if (m) { selSheet = m.getAttribute("data-m"); render(true); }
+      else if (a && a.getAttribute("data-act") === "retry") loadData();
+    });
+    body.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { const m = e.target.closest("g[data-m]"); if (m) { e.preventDefault(); selSheet = m.getAttribute("data-m"); render(true); } }
+    });
+    document.getElementById("gback").onclick = goBackToApp;
+    document.getElementById("gref").onclick = async () => { if (loading) return; const ok = await loadData(true); toast(ok ? "Veriler güncellendi" : "Güncellenemedi"); };
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) loadData(true); });
+
+    // ---------- Sürüm kontrolü (2.html'deki gibi; ayarları silmez) ----------
+    async function checkForUpdates() {
+      try {
+        const r = await fetch(window.location.href, { cache: "no-store" });
+        const html = await r.text();
+        const m = html.match(/GRAFIK_VERSION\s*=\s*["']([^"']+)["']/);
+        if (m && m[1] && m[1] !== GRAFIK_VERSION) window.location.reload(true);
+      } catch (e) {}
+    }
+
+    render();
+    loadData();
+    checkForUpdates();
+  </script>
+</body>
+</html>

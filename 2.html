@@ -562,7 +562,7 @@
       animation: popUp 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     #badgeVersionAction {
-      bottom: 405px;
+      bottom: 455px;
       background: #1e293b;
       color: var(--text-dim);
       border: 1px solid var(--border);
@@ -573,9 +573,14 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     }
     #btnProjectsAction {
-      bottom: 355px;
+      bottom: 405px;
       background: var(--primary-blue);
       color: #fff;
+    }
+    #btnChartsAction {
+      bottom: 355px;
+      background: #14b8a6;
+      color: #04201c;
     }
     #btnPastMonthReportAction {
       bottom: 305px;
@@ -1251,10 +1256,13 @@
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 3.8.2
+    Sürüm 3.9.0
   </div>
   <button id="btnProjectsAction" class="fab-mini-action" onclick="openProjects()">
     📁 Projeler
+  </button>
+  <button id="btnChartsAction" class="fab-mini-action" onclick="openCharts()">
+    📈 Grafikler
   </button>
   <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
     📊 Geçmiş Ay Raporu
@@ -1549,7 +1557,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.8.2";
+    const CURRENT_VERSION = "3.9.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1651,8 +1659,8 @@
         const html = await response.text();
         const match = html.match(/CURRENT_VERSION\s*=\s*["']([^"']+)["']/);
         if (match && match[1] && match[1] !== CURRENT_VERSION) {
-          // proje.html ayarları ("proje_" önekli) silinmesin
-          Object.keys(localStorage).forEach(k => { if (!k.startsWith('proje_')) localStorage.removeItem(k); });
+          // proje.html ve grafik.html ayarları ("proje_", "grafik_" önekli) silinmesin
+          Object.keys(localStorage).forEach(k => { if (!k.startsWith('proje_') && !k.startsWith('grafik_')) localStorage.removeItem(k); });
           window.location.reload(true);
         }
       } catch (e) {}
@@ -1847,6 +1855,7 @@
     function showFabAction() {
       document.getElementById('badgeVersionAction').style.display = 'flex';
       document.getElementById('btnProjectsAction').style.display = 'flex';
+      document.getElementById('btnChartsAction').style.display = 'flex';
       document.getElementById('btnPastMonthReportAction').style.display = 'flex';
       document.getElementById('btnControlAction').style.display = 'flex';
       document.getElementById('btnToggleSearchAction').style.display = 'flex';
@@ -1864,6 +1873,7 @@
     function hideFabAction() {
       document.getElementById('badgeVersionAction').style.display = 'none';
       document.getElementById('btnProjectsAction').style.display = 'none';
+      document.getElementById('btnChartsAction').style.display = 'none';
       document.getElementById('btnPastMonthReportAction').style.display = 'none';
       document.getElementById('btnControlAction').style.display = 'none';
       document.getElementById('btnToggleSearchAction').style.display = 'none';
@@ -1872,7 +1882,11 @@
     }
 
     // Projeler sayfası, uygulamadan çıkmadan tam ekran katmanda açılır (iOS uygulama içi tarayıcıya atmasın diye)
-    function openProjects() {
+    function openProjects() { openFrame('proje.html'); }
+
+    function openCharts() { openFrame('grafik.html'); }
+
+    function openFrame(page) {
       hideFabAction();
       const probe = document.createElement('div');
       probe.style.cssText = 'position:fixed;top:0;left:0;visibility:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
@@ -1884,7 +1898,7 @@
       // Başlık satırının ekrandaki yeri: Projeler sayfası üst boşluğunu buna hizalar
       const hdr = document.querySelector('#appContent .header');
       const hy = hdr ? Math.round((hdr.getBoundingClientRect().top + window.pageYOffset) * 100) / 100 : sat;
-      document.getElementById('projeFrame').src = 'proje.html?embed=1&sat=' + sat + '&sab=' + sab + '&hy=' + hy + '&t=' + Date.now();
+      document.getElementById('projeFrame').src = page + '?embed=1&sat=' + sat + '&sab=' + sab + '&hy=' + hy + '&t=' + Date.now();
       document.getElementById('projeFrameWrap').style.display = 'block';
       document.body.style.overflow = 'hidden';
     }
@@ -1896,7 +1910,7 @@
     }
 
     window.addEventListener('message', function (e) {
-      if (e.origin === window.location.origin && e.data && e.data.type === 'proje-close') closeProjects();
+      if (e.origin === window.location.origin && e.data && (e.data.type === 'proje-close' || e.data.type === 'grafik-close')) closeProjects();
     });
 
     function toggleSearchFromFab() {
