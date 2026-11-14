@@ -102,6 +102,16 @@
     .sep { height: 1px; background: var(--border); margin: 16px 0 2px; }
     svg g[data-m] { cursor: pointer; outline: none; }
     svg g[data-m]:focus-visible rect.fz { stroke: #38bdf8; stroke-width: 2; }
+    .tot { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #141d2b; border: 1px solid var(--accent); border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; font-size: 12px; font-weight: 600; }
+    .tot b { font-weight: 700; font-size: 15px; color: var(--red); white-space: nowrap; }
+    .ic { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; display: block; }
+    .ir { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .il { min-width: 0; }
+    .nm { font-weight: 600; font-size: 14px; word-break: break-word; }
+    .sb { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+    .rt { font-weight: 700; font-size: 15px; text-align: right; white-space: nowrap; }
+    .se { font-size: 11px; color: var(--text-dim); font-weight: 500; margin-top: 2px; }
+    .bp { display: inline-block; background: rgba(245,158,11,.2); color: var(--orange); font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-right: 4px; }
     .empty { text-align: center; padding: 30px; color: var(--text-dim); font-size: 14px; }
     .errbox { background: rgba(244,63,94,.12); border: 1px solid var(--red); border-radius: 10px; padding: 12px 14px; margin-top: 16px; font-size: 13px; line-height: 1.5; }
     .errbox button { margin-top: 8px; background: transparent; border: 1px solid var(--red); color: var(--text); border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
@@ -127,7 +137,7 @@
   <div class="toast" id="toast" role="status"></div>
 
   <script>
-    const GRAFIK_VERSION = "1.0.0";
+    const GRAFIK_VERSION = "1.1.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
     const BACK_URL = "2.html";
 
@@ -190,7 +200,7 @@
 
     // ---------- Grafik ----------
     function labelFor(m, i, n) {
-      let t = m.short + (m.current ? "*" : "");
+      let t = m.short;
       if (n > 6 && (i === 0 || m.month === 0)) t += " ’" + String(m.year).slice(-2);
       return t;
     }
@@ -226,33 +236,17 @@
       return { svg: '<svg viewBox="0 0 338 196" width="100%" style="display:block;margin-top:10px" role="group" aria-label="Aylık harcama sütunları">' + s + "</svg>", avg: avg };
     }
 
-    // ---------- Seçili ay kartı ----------
-    function detailHtml(m, vis) {
+    // ---------- Seçili ay kartı (mevcut ay dahil tüm aylarda aynı görünüm) ----------
+    function detailHtml(m) {
       const t = tot(m);
-      const done = vis.filter(x => !x.current);
       let chip = "";
-      if (m.current) {
-        if (done.length) {
-          const avg = done.reduce((s, x) => s + tot(x), 0) / done.length;
-          if (avg > 0) {
-            const d = (t - avg) / avg * 100, low = d <= 0;
-            chip = '<span class="pillx" style="background:' + (low ? "rgba(16,185,129,.18)" : "rgba(244,63,94,.18)") + ";color:" + (low ? "#10b981" : "#f43f5e") + '">Ort.’ın %' + pct1(d) + (low ? " altında" : " üstünde") + "</span>";
-          }
-        }
-      } else {
-        const idx = MONTHS.findIndex(x => x.sheet === m.sheet);
-        const p = idx > 0 ? MONTHS[idx - 1] : null;
-        if (p && tot(p) > 0) {
-          const d = (t - tot(p)) / tot(p) * 100, low = d <= 0;
-          chip = '<span class="pillx" style="background:' + (low ? "rgba(16,185,129,.18)" : "rgba(244,63,94,.18)") + ";color:" + (low ? "#10b981" : "#f43f5e") + '">' + (low ? "↓" : "↑") + " %" + pct1(d) + " geçen aya göre</span>";
-        }
+      const idx = MONTHS.findIndex(x => x.sheet === m.sheet);
+      const prev = idx > 0 ? MONTHS[idx - 1] : null;
+      if (prev && tot(prev) > 0) {
+        const d = (t - tot(prev)) / tot(prev) * 100, low = d <= 0;
+        chip = '<span class="pillx" style="background:' + (low ? "rgba(16,185,129,.18)" : "rgba(244,63,94,.18)") + ";color:" + (low ? "#10b981" : "#f43f5e") + '">' + (low ? "↓" : "↑") + " %" + pct1(d) + " geçen aya göre</span>";
       }
-      let h = '<div class="hero"><div class="hr1"><div><div class="lbl">' + esc(m.full) + (m.current ? " • devam ediyor" : "") + '</div><div class="big">€' + f(t) + "</div>" +
-        (m.current ? '<div class="rs">Planlanan toplam (ödenen + bekleyen)</div>' : "") + "</div>" + chip + "</div>";
-      if (m.current && m.pend != null) {
-        const pp = t > 0 ? Math.min(100, m.paid / t * 100) : 0;
-        h += '<div class="rowc"><div class="rr"><span><i class="dot" style="background:#10b981"></i>Ödenen</span><span>€' + f(m.paid) + '</span></div><div class="bar"><div style="width:' + pp + '%;background:#10b981"></div><div style="width:' + (100 - pp) + '%;background:#f59e0b;opacity:.55"></div></div><div class="rs">Bekleyen €' + f(m.pend) + " • ay sonuna kadar değişebilir</div></div><div class=\"sep\"></div>";
-      }
+      let h = '<div class="hero"><div class="hr1"><div><div class="lbl">' + esc(m.full) + '</div><div class="big">€' + f(t) + "</div></div>" + chip + "</div>";
       KEYS.forEach(k => {
         const v = m[k], sh = t > 0 ? v / t * 100 : 0;
         h += '<div class="rowc"><div class="rr"><span><i class="dot" style="background:' + CAT[k].c + '"></i>' + CAT[k].n + "</span><span>€" + f(v) + " • %" + Math.round(sh) + '</span></div><div class="bar"><div style="width:' + sh + "%;background:" + CAT[k].c + '"></div></div>';
@@ -263,6 +257,84 @@
         h += "</div>";
       });
       return h + "</div>";
+    }
+
+    // ---------- İşlemler (yalnızca grafikte Kart / Diğer / TR seçiliyken) ----------
+    const ITEMS = {};   // ay sayfası -> {state: loading|ok|err, at, data}
+    const SHORT = { kart: "Kart", diger: "Diğer", tr: "TR" };
+    function parseAmt(s) {
+      s = String(s == null ? "" : s).replace(/[€₺\s]/g, "");
+      if (!s) return NaN;
+      if (s.includes(",") && s.includes(".")) {
+        if (s.lastIndexOf(",") > s.lastIndexOf(".")) s = s.replace(/\./g, "").replace(",", ".");
+        else s = s.replace(/,/g, "");
+      } else if (s.includes(",")) s = s.replace(",", ".");
+      return /^-?\d+(\.\d+)?$/.test(s) ? parseFloat(s) : NaN;
+    }
+    function dts(s) { const p = String(s || "").split("."); return p.length === 3 ? new Date(+p[2], +p[1] - 1, +p[0]).getTime() : 0; }
+    function pendTs(name) {   // bekleyen kalemde "(28.10)" gibi tarih ipucu
+      const m = String(name || "").match(/\((\d{1,2})\.(\d{1,2})\)/);
+      return m ? (+m[2]) * 100 + (+m[1]) : 99999;
+    }
+    function itemsFresh(e, m) { return e && e.state === "ok" && (Date.now() - e.at) < (m.current ? 60000 : 600000); }
+    function ensureItems(m) {
+      const e = ITEMS[m.sheet];
+      if (e && (e.state === "loading" || e.state === "err" || itemsFresh(e, m))) return;
+      ITEMS[m.sheet] = { state: "loading", at: 0, data: e ? e.data : null };
+      fetch(API_URL + "?action=getDashboardData&sheet=" + encodeURIComponent(m.sheet) + "&t=" + Date.now())
+        .then(r => r.json())
+        .then(d => {
+          if (!d || !Array.isArray(d.cardItems)) throw new Error("bad");
+          ITEMS[m.sheet] = { state: "ok", at: Date.now(), data: d };
+        })
+        .catch(() => { ITEMS[m.sheet] = { state: "err", at: Date.now(), data: ITEMS[m.sheet] ? ITEMS[m.sheet].data : null }; })
+        .then(() => render(true));
+    }
+    function buildItems(d, cat) {
+      const clean = s => String(s == null ? "" : s).trim();
+      let rows = [];
+      if (cat === "kart") {
+        rows = (d.cardItems || []).map(x => ({ date: clean(x.date), name: clean(x.merchant), sub: clean(x.card), eur: parseAmt(x.amount) || 0, rowIndex: x.rowIndex }));
+      } else if (cat === "diger") {
+        rows = (d.manualItems || []).map(x => ({ date: clean(x.date), name: clean(x.merchant), sub: clean(x.card), eur: parseAmt(x.amount) || 0, rowIndex: x.rowIndex }));
+      } else {
+        const tr = d.trItems || [];
+        let sT = 0, sE = 0;
+        tr.forEach(x => { const t = parseAmt(x.amount), e = parseAmt(x.eurAmount); if (t > 0 && e > 0) { sT += t; sE += e; } });
+        const rate = (sT > 0 && sE > 0) ? sE / sT : 1 / 38;
+        rows = tr.map(x => {
+          const t = parseAmt(x.amount) || 0, e = parseAmt(x.eurAmount);
+          const est = !(e > 0) && t > 0;
+          return { date: clean(x.date), name: clean(x.merchant), sub: clean(x.rate) ? "Kur: " + clean(x.rate) : "", eur: est ? t * rate : (e || 0), est: est, tl: t, rowIndex: x.rowIndex };
+        });
+      }
+      rows = rows.filter(r => r.name || r.eur > 0);
+      rows.forEach(r => { r.pend = !r.date; });
+      rows.sort((a, b) => {
+        if (a.pend && b.pend) return pendTs(a.name) - pendTs(b.name);
+        if (a.pend !== b.pend) return a.pend ? -1 : 1;
+        return dts(b.date) - dts(a.date) || (b.rowIndex || 0) - (a.rowIndex || 0);
+      });
+      return rows;
+    }
+    function itemsHtml(m) {
+      ensureItems(m);
+      const e = ITEMS[m.sheet];
+      let h = '<div class="sh">İşlemler</div>';
+      if (!e || !e.data) {
+        if (e && e.state === "err") return h + '<div class="errbox">İşlemler alınamadı.<br><button data-act="retryItems">Tekrar dene</button></div>';
+        return h + '<div class="empty">Yükleniyor...</div>';
+      }
+      const rows = buildItems(e.data, iso);
+      if (!rows.length) return h + '<div class="empty">' + esc(m.full) + " ayında " + SHORT[iso] + " işlemi yok.</div>";
+      let total = 0; rows.forEach(r => { total += r.eur; });
+      h += '<div class="tot"><span>' + SHORT[iso] + " • " + esc(m.full) + " • " + rows.length + ' işlem</span><b>-€' + f(total) + "</b></div>";
+      rows.forEach(r => {
+        const left = (r.pend ? '<span class="bp">⏳ Bekliyor</span>' : esc(r.date)) + (r.sub ? " • " + esc(r.sub) : "");
+        const main = (r.est ? "~" : "") + "-€" + f(r.eur);
+        h += '<div class="ic"><div class="ir"><div class="il"><div class="nm">' + esc(r.name || "Açıklamasız") + '</div><div class="sb">' + left + '</div></div><div class="rt" style="color:var(--red)">' + main + (iso === "tr" && r.tl > 0 ? '<div class="se">₺' + f(r.tl) + "</div>" : "") + "</div></div></div>";
+      });
+      return h;
     }
 
     // ---------- Ekran ----------
@@ -292,17 +364,13 @@
           h += '<button class="chip' + (range === o ? " on" : "") + '" data-r="' + o + '" aria-pressed="' + (range === o) + '">' + lab + "</button>";
         });
         h += "</div>";
-        if (MONTHS.length <= 12) h += '<div class="note">Daha uzun dönem seçenekleri, yeterli geçmiş ay olunca kendiliğinden eklenir.</div>';
-      } else {
-        h += '<div class="note" style="margin-top:14px">Daha uzun dönem seçenekleri, yeterli geçmiş ay olunca kendiliğinden eklenir.</div>';
       }
       h += '<div class="hero"><div class="hr1"><div><div class="lbl">Aylık harcama • €</div><div class="sub0">' + (iso ? CAT[iso].n + " harcaması" : "Kart + Diğer + TR") + "</div></div>" + (c.avg ? '<span class="avgp">Ort. €' + fi(c.avg) + "</span>" : "") + "</div>" + c.svg;
       h += '<div class="chips" style="margin-top:10px" role="group" aria-label="Kategoriye odaklan">';
       KEYS.forEach(k => { h += '<button class="chip' + (iso === k ? " on" : "") + '" data-i="' + k + '" aria-pressed="' + (iso === k) + '"><i class="d" style="background:' + CAT[k].c + '"></i>' + CAT[k].n + "</button>"; });
-      h += '</div><div class="note">' + (iso ? "Yalnızca " + CAT[iso].n + " gösteriliyor. Tekrar dokununca tümü döner." : "Bir kategoriye dokununca yalnızca onu gösterir. Diğer (kira vb.) sabit olduğu için Kart ve TR’nin değişimi böyle daha net görünür.") + "</div>";
-      if (vis.some(m => m.current)) h += '<div class="note">* Mevcut ay devam ediyor; ortalama yalnızca tamamlanan aylarla hesaplanır.</div>';
-      h += "</div>";
-      h += '<div class="sh">Ay dağılımı</div>' + detailHtml(sel, vis);
+      h += "</div></div>";
+      h += '<div class="sh">Ay dağılımı</div>' + detailHtml(sel);
+      if (iso) h += itemsHtml(sel);
       body.innerHTML = h;
       window.scrollTo(0, keep ? y : 0);
     }
@@ -350,12 +418,13 @@
       else if (i) { const k = i.getAttribute("data-i"); iso = (iso === k) ? null : k; render(true); }
       else if (m) { selSheet = m.getAttribute("data-m"); render(true); }
       else if (a && a.getAttribute("data-act") === "retry") loadData();
+      else if (a && a.getAttribute("data-act") === "retryItems") { delete ITEMS[selSheet]; render(true); }
     });
     body.addEventListener("keydown", e => {
       if (e.key === "Enter" || e.key === " ") { const m = e.target.closest("g[data-m]"); if (m) { e.preventDefault(); selSheet = m.getAttribute("data-m"); render(true); } }
     });
     document.getElementById("gback").onclick = goBackToApp;
-    document.getElementById("gref").onclick = async () => { if (loading) return; const ok = await loadData(true); toast(ok ? "Veriler güncellendi" : "Güncellenemedi"); };
+    document.getElementById("gref").onclick = async () => { if (loading) return; Object.keys(ITEMS).forEach(k => { delete ITEMS[k]; }); const ok = await loadData(true); toast(ok ? "Veriler güncellendi" : "Güncellenemedi"); };
     document.addEventListener("visibilitychange", () => { if (!document.hidden) loadData(true); });
 
     // ---------- Sürüm kontrolü (2.html'deki gibi; ayarları silmez) ----------
