@@ -569,7 +569,7 @@
       display: grid;
       grid-template-columns: repeat(5, 1fr);
       align-items: center;
-      padding: 4px 6px max(2px, calc(env(safe-area-inset-bottom, 0px) - 30px)) 6px;
+      padding: 6px 6px max(4px, calc(env(safe-area-inset-bottom, 0px) - 20px)) 6px;
       z-index: 80;
     }
     .bnav-item {
@@ -611,14 +611,18 @@
       position: relative;
     }
     .bnav-add-btn {
-      width: 42px;
-      height: 42px;
+      width: 40px;
+      height: 40px;
       margin-top: 0;
       border-radius: 50%;
       background: var(--accent);
       color: #0f172a;
       border: none;
-      box-shadow: none;
+      box-shadow: none !important;
+      filter: none !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      outline: none;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -628,7 +632,8 @@
     }
     .bnav-add-btn.debts-mode {
       background: var(--orange);
-      box-shadow: none;
+      box-shadow: none !important;
+      filter: none !important;
     }
     .bnav-add-btn:active {
       transform: scale(0.92);
