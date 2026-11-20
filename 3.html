@@ -527,7 +527,38 @@
     .item-left .name { font-weight: 600; font-size: 14px; }
     .item-left .sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
     .item-right { font-weight: 700; font-size: 15px; text-align: right; }
-    /* ALT MENÜ (FLOATING PILL NAVIGATION BAR) */
+    .item-right .sub-eur { font-size: 11px; color: var(--text-dim); font-weight: 500; margin-top: 2px; }
+
+    .accordion-body {
+      display: none;
+      background: #131d31;
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      padding: 12px 14px;
+      z-index: 2;
+    }
+    .accordion-body.open {
+      display: block;
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .acc-row {
+      display: grid;
+      grid-template-columns: 105px 1fr auto;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      padding: 5px 0;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+    }
+    .acc-row:last-child { border-bottom: none; }
+    .acc-date { color: var(--text-dim); white-space: nowrap; }
+    .acc-note { color: var(--text); text-align: left; }
+    .acc-amount { font-weight: 600; text-align: right; white-space: nowrap; }
+
+    /* ALT MENÜ (BOTTOM NAVIGATION BAR) */
     .bottom-nav {
       position: fixed;
       bottom: 0;
@@ -535,30 +566,26 @@
       right: 0;
       background-color: var(--bg);
       border-top: 1px solid var(--border);
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
       align-items: center;
-      justify-content: space-around;
-      gap: 4px;
-      padding: 8px 10px max(8px, calc(env(safe-area-inset-bottom, 0px) - 10px)) 10px;
+      padding: 6px 6px max(6px, calc(env(safe-area-inset-bottom, 0px) - 10px)) 6px;
       z-index: 80;
     }
     .bnav-item {
       background: transparent;
-      border: 1px solid transparent;
+      border: none;
       color: var(--text-dim);
-      height: 38px;
-      padding: 0 11px;
-      border-radius: 999px;
-      display: inline-flex;
-      flex-direction: row;
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0;
+      gap: 2px;
+      padding: 2px 0;
       cursor: pointer;
-      font-size: 12px;
-      font-weight: 700;
-      white-space: nowrap;
-      transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+      font-size: 10px;
+      font-weight: 600;
+      transition: color 0.15s ease, transform 0.1s ease;
     }
     .bnav-item:active {
       transform: scale(0.94);
@@ -566,39 +593,15 @@
     .bnav-item svg {
       width: 20px;
       height: 20px;
-      flex-shrink: 0;
-    }
-    .bnav-item span {
-      display: inline-block;
-      max-width: 0;
-      opacity: 0;
-      overflow: hidden;
-      transition: max-width 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease, margin-left 0.25s ease;
-      margin-left: 0;
-    }
-    .bnav-item.active {
-      padding: 0 14px;
-    }
-    .bnav-item.active span {
-      max-width: 80px;
-      opacity: 1;
-      margin-left: 6px;
     }
     .bnav-item.active#navBudget {
-      background: var(--accent);
-      color: #0f172a;
+      color: var(--accent);
     }
     .bnav-item.active#navDebts {
-      background: var(--orange);
-      color: #0f172a;
-    }
-    .bnav-item.active#navProjects {
-      background: var(--primary-blue);
-      color: #ffffff;
+      color: var(--orange);
     }
     .bnav-item.active#navReports {
-      background: var(--green);
-      color: #0f172a;
+      color: var(--green);
     }
 
     .bnav-add-wrap {
@@ -606,16 +609,15 @@
       align-items: center;
       justify-content: center;
       position: relative;
-      flex-shrink: 0;
     }
     .bnav-add-btn {
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
       margin-top: 0;
       border-radius: 50%;
-      background: rgba(56, 189, 248, 0.16);
-      color: var(--accent);
-      border: 1px solid rgba(56, 189, 248, 0.45);
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
       box-shadow: none !important;
       filter: none !important;
       backdrop-filter: none !important;
@@ -625,13 +627,11 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+      transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s ease;
       touch-action: none;
     }
     .bnav-add-btn.debts-mode {
-      background: rgba(245, 158, 11, 0.16);
-      color: var(--orange);
-      border-color: rgba(245, 158, 11, 0.45);
+      background: var(--orange);
       box-shadow: none !important;
       filter: none !important;
     }
@@ -639,10 +639,10 @@
       transform: scale(0.92);
     }
     .bnav-add-btn span {
-      font-size: 24px;
+      font-size: 28px;
       font-weight: 500;
       line-height: 1;
-      margin-top: -1px;
+      margin-top: -2px;
       pointer-events: none;
     }
 
@@ -2062,15 +2062,19 @@
 
     function openReportsHubModal() {
       hideFabAction();
-      setActiveBottomNav('navReports');
       openModalWithScrollLock('modalReportsHub');
     }
 
-    function setActiveBottomNav(navId) {
-      document.querySelectorAll('.bottom-nav .bnav-item').forEach(btn => btn.classList.remove('active'));
-      if (navId) {
-        const el = document.getElementById(navId);
-        if (el) el.classList.add('active');
+    // Üst bardaki sağ/sol oklarla aylar veya borç filtreleri arasında geçiş
+    function stepSheet(dir) {
+      const select = document.getElementById('sheetSelect');
+      if (!select || select.options.length <= 1) return;
+      // select içindeki liste genellikle en yeniden en eskiye sıralıdır:
+      // Sağ ok (dir = 1) kronolojik ileri (daha güncel/gelecek aya), Sol ok (dir = -1) kronolojik geri (geçmiş aya) gider.
+      const nextIdx = select.selectedIndex - dir;
+      if (nextIdx >= 0 && nextIdx < select.options.length) {
+        select.selectedIndex = nextIdx;
+        onFilterChange();
       }
     }
 
@@ -2088,10 +2092,7 @@
     }
 
     // Projeler sayfası, uygulamadan çıkmadan tam ekran katmanda açılır (iOS uygulama içi tarayıcıya atmasın diye)
-    function openProjects() {
-      setActiveBottomNav('navProjects');
-      openFrame('proje.html');
-    }
+    function openProjects() { openFrame('proje.html'); }
 
     function openCharts() { openFrame('grafik.html'); }
 
@@ -2116,9 +2117,6 @@
       document.getElementById('projeFrameWrap').style.display = 'none';
       document.getElementById('projeFrame').src = 'about:blank';
       document.body.style.overflow = '';
-      if (currentModule === 'budget') setActiveBottomNav('navBudget');
-      else if (currentModule === 'debts') setActiveBottomNav('navDebts');
-      else setActiveBottomNav(null);
     }
 
     window.addEventListener('message', function (e) {
@@ -4682,10 +4680,11 @@
       const isDebts = (mod === 'debts');
       const isTimeline = (mod === 'timeline');
 
+      const navBudget = document.getElementById('navBudget');
+      const navDebts = document.getElementById('navDebts');
       const mainFab = document.getElementById('mainFab');
-      if (isBudget) setActiveBottomNav('navBudget');
-      else if (isDebts) setActiveBottomNav('navDebts');
-      else setActiveBottomNav(null);
+      if (navBudget) navBudget.classList.toggle('active', isBudget);
+      if (navDebts) navDebts.classList.toggle('active', isDebts);
       if (mainFab) mainFab.classList.toggle('debts-mode', isDebts);
 
       const btnTime = document.getElementById('btnTimelineView');
@@ -6250,12 +6249,6 @@
       document.getElementById(id).style.display = 'none';
       document.body.classList.remove('modal-open');
       editingBudgetRowIndex = null;
-
-      if (id === 'modalReportsHub') {
-        if (currentModule === 'budget') setActiveBottomNav('navBudget');
-        else if (currentModule === 'debts') setActiveBottomNav('navDebts');
-        else setActiveBottomNav(null);
-      }
 
       if (id === 'modalBudget') {
         document.getElementById('mAmount').value = '';
