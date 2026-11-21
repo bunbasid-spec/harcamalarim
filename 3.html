@@ -558,7 +558,7 @@
     .acc-note { color: var(--text); text-align: left; }
     .acc-amount { font-weight: 600; text-align: right; white-space: nowrap; }
 
-    /* ALT MENÜ (BOTTOM NAVIGATION BAR) */
+    /* SABİT ALT MENÜ (10PX YUKARI ALINMIŞ KLASİK DÜZEN - HAP TASARIMSIZ) */
     .bottom-nav {
       position: fixed;
       bottom: 0;
@@ -567,9 +567,9 @@
       background-color: var(--bg);
       border-top: 1px solid var(--border);
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: 1fr 1fr 64px 1fr 1fr;
       align-items: center;
-      padding: 6px 6px max(6px, calc(env(safe-area-inset-bottom, 0px) - 10px)) 6px;
+      padding: 8px 6px max(8px, calc(env(safe-area-inset-bottom, 0px) - 10px)) 6px;
       z-index: 80;
     }
     .bnav-item {
@@ -580,8 +580,8 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 2px;
-      padding: 2px 0;
+      gap: 3px;
+      padding: 4px 0;
       cursor: pointer;
       font-size: 10px;
       font-weight: 600;
@@ -591,18 +591,13 @@
       transform: scale(0.94);
     }
     .bnav-item svg {
-      width: 20px;
-      height: 20px;
+      width: 21px;
+      height: 21px;
     }
-    .bnav-item.active#navBudget {
-      color: var(--accent);
-    }
-    .bnav-item.active#navDebts {
-      color: var(--orange);
-    }
-    .bnav-item.active#navReports {
-      color: var(--green);
-    }
+    .bnav-item.active#navBudget { color: var(--accent); }
+    .bnav-item.active#navDebts { color: var(--orange); }
+    .bnav-item.active#navProjects { color: var(--primary-blue); }
+    .bnav-item.active#navReports { color: var(--green); }
 
     .bnav-add-wrap {
       display: flex;
@@ -611,13 +606,13 @@
       position: relative;
     }
     .bnav-add-btn {
-      width: 40px;
-      height: 40px;
-      margin-top: 0;
+      width: 48px;
+      height: 48px;
+      margin-top: -12px;
       border-radius: 50%;
-      background: var(--accent);
-      color: #0f172a;
-      border: none;
+      background: rgba(56, 189, 248, 0.16);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.45);
       box-shadow: none !important;
       filter: none !important;
       backdrop-filter: none !important;
@@ -627,11 +622,13 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s ease;
+      transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
       touch-action: none;
     }
     .bnav-add-btn.debts-mode {
-      background: var(--orange);
+      background: rgba(245, 158, 11, 0.16);
+      color: var(--orange);
+      border-color: rgba(245, 158, 11, 0.45);
       box-shadow: none !important;
       filter: none !important;
     }
@@ -639,8 +636,8 @@
       transform: scale(0.92);
     }
     .bnav-add-btn span {
-      font-size: 28px;
-      font-weight: 500;
+      font-size: 30px;
+      font-weight: 400;
       line-height: 1;
       margin-top: -2px;
       pointer-events: none;
@@ -716,8 +713,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
       flex-shrink: 0;
+    }
+    .report-menu-icon svg {
+      width: 21px;
+      height: 21px;
     }
     
     .modal { 
@@ -1385,7 +1385,7 @@
 
   <!-- ORTADAKİ + BUTONUNA BASILI TUTUNCA ÇIKAN KAYITLARI AKTAR & SÜRÜM ROZETİ -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 4.0.0
+    Sürüm 4.0.2
   </div>
   <button id="btnLastMonthAction" class="fab-mini-action" onclick="openLastMonthTemplateModal()">
     📋 Kayıtları Aktar
@@ -1445,7 +1445,13 @@
       <h3 style="font-size: 16px; margin-bottom: 14px;">Raporlar ve Kontroller</h3>
 
       <button type="button" class="report-menu-card" onclick="closeModal('modalReportsHub'); openControlModal();">
-        <div class="report-menu-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--green);">📋</div>
+        <div class="report-menu-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--green);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+            <path d="m9 14 2 2 4-4"/>
+          </svg>
+        </div>
         <div>
           <div style="font-weight: 700; font-size: 14px;">Ay İçi Kontrol</div>
           <div style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">Ödenenler, kalanlar ve Telegram listesi</div>
@@ -1453,7 +1459,14 @@
       </button>
 
       <button type="button" class="report-menu-card" onclick="closeModal('modalReportsHub'); openPastMonthReportModal();">
-        <div class="report-menu-icon" style="background: rgba(148, 163, 184, 0.15); color: var(--text);">📊</div>
+        <div class="report-menu-icon" style="background: rgba(56, 189, 248, 0.15); color: var(--accent);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v18h18"/>
+            <path d="M18 17V9"/>
+            <path d="M13 17V5"/>
+            <path d="M8 17v-3"/>
+          </svg>
+        </div>
         <div>
           <div style="font-weight: 700; font-size: 14px;">Geçmiş Ay Raporu</div>
           <div style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">Önceki ayların özet ve ajanda dökümü</div>
@@ -1461,7 +1474,12 @@
       </button>
 
       <button type="button" class="report-menu-card" onclick="closeModal('modalReportsHub'); openLiquidityModal();">
-        <div class="report-menu-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--orange);">🔮</div>
+        <div class="report-menu-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--orange);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 17l6-6 4 4 8-8"/>
+            <path d="M17 7h4v4"/>
+          </svg>
+        </div>
         <div>
           <div style="font-weight: 700; font-size: 14px;">Likidite Planlaması</div>
           <div style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">Gelir-gider dengesi ve nakit akış planı</div>
@@ -1529,8 +1547,11 @@
             Ay İçi Kontrol
           </h3>
           <button type="button" onclick="openTelegramReportChooser()" aria-label="Telegram Rapor Gönder" title="Telegram'a Liste Gönder"
-                  style="height:28px; padding:0 8px; background:rgba(56, 189, 248, 0.15); border:1px solid rgba(56, 189, 248, 0.4); border-radius:7px; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;">
-            <span>✈️</span>
+                  style="height:28px; width:28px; padding:0; background:rgba(56, 189, 248, 0.15); border:1px solid rgba(56, 189, 248, 0.4); border-radius:7px; color:var(--accent); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 2L11 13"/>
+              <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
+            </svg>
           </button>
         </div>
         <div class="mini-view-switcher three-way">
@@ -1751,7 +1772,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "4.0.0";
+    const CURRENT_VERSION = "4.0.2";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -2062,15 +2083,23 @@
 
     function openReportsHubModal() {
       hideFabAction();
+      setActiveBottomNav('navReports');
       openModalWithScrollLock('modalReportsHub');
     }
 
-    // Üst bardaki sağ/sol oklarla aylar veya borç filtreleri arasında geçiş
+    function setActiveBottomNav(navId) {
+      document.querySelectorAll('.bottom-nav .bnav-item').forEach(btn => btn.classList.remove('active'));
+      if (navId) {
+        const el = document.getElementById(navId);
+        if (el) el.classList.add('active');
+      }
+    }
+
     function stepSheet(dir) {
       const select = document.getElementById('sheetSelect');
       if (!select || select.options.length <= 1) return;
-      // select içindeki liste genellikle en yeniden en eskiye sıralıdır:
-      // Sağ ok (dir = 1) kronolojik ileri (daha güncel/gelecek aya), Sol ok (dir = -1) kronolojik geri (geçmiş aya) gider.
+      // dir = -1 (sol ok: kronolojik olarak geri / geçmiş aya doğru -> index artar)
+      // dir = +1 (sağ ok: kronolojik olarak ileri / gelecek aya doğru -> index azalır)
       const nextIdx = select.selectedIndex - dir;
       if (nextIdx >= 0 && nextIdx < select.options.length) {
         select.selectedIndex = nextIdx;
@@ -2092,7 +2121,10 @@
     }
 
     // Projeler sayfası, uygulamadan çıkmadan tam ekran katmanda açılır (iOS uygulama içi tarayıcıya atmasın diye)
-    function openProjects() { openFrame('proje.html'); }
+    function openProjects() {
+      setActiveBottomNav('navProjects');
+      openFrame('proje.html');
+    }
 
     function openCharts() { openFrame('grafik.html'); }
 
@@ -2117,6 +2149,9 @@
       document.getElementById('projeFrameWrap').style.display = 'none';
       document.getElementById('projeFrame').src = 'about:blank';
       document.body.style.overflow = '';
+      if (currentModule === 'budget') setActiveBottomNav('navBudget');
+      else if (currentModule === 'debts') setActiveBottomNav('navDebts');
+      else setActiveBottomNav(null);
     }
 
     window.addEventListener('message', function (e) {
@@ -4680,11 +4715,10 @@
       const isDebts = (mod === 'debts');
       const isTimeline = (mod === 'timeline');
 
-      const navBudget = document.getElementById('navBudget');
-      const navDebts = document.getElementById('navDebts');
       const mainFab = document.getElementById('mainFab');
-      if (navBudget) navBudget.classList.toggle('active', isBudget);
-      if (navDebts) navDebts.classList.toggle('active', isDebts);
+      if (isBudget) setActiveBottomNav('navBudget');
+      else if (isDebts) setActiveBottomNav('navDebts');
+      else setActiveBottomNav(null);
       if (mainFab) mainFab.classList.toggle('debts-mode', isDebts);
 
       const btnTime = document.getElementById('btnTimelineView');
@@ -6249,6 +6283,12 @@
       document.getElementById(id).style.display = 'none';
       document.body.classList.remove('modal-open');
       editingBudgetRowIndex = null;
+
+      if (id === 'modalReportsHub') {
+        if (currentModule === 'budget') setActiveBottomNav('navBudget');
+        else if (currentModule === 'debts') setActiveBottomNav('navDebts');
+        else setActiveBottomNav(null);
+      }
 
       if (id === 'modalBudget') {
         document.getElementById('mAmount').value = '';
