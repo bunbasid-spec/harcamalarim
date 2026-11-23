@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#0f172a">
+  <title>Grafikler</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    body { padding-bottom: calc(28px + var(--sab)); }
+    .ph { display: flex; align-items: center; gap: 12px; padding-top: 6px; }
+    .pt { flex: 1; font-size: 20px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hb {
+      width: 38px; height: 38px; flex-shrink: 0;
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text);
+    }
+    .hb svg { width: 20px; height: 20px; }
+    .hb.spin svg { animation: spin .8s linear infinite; }
+
+    .chips { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .chip {
+      font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 14px;
+      border: 1px solid var(--border); background: var(--bg); color: var(--text-dim); cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .chip.on { background: rgba(56,189,248,.15); border-color: var(--accent); color: var(--accent); }
+    .chip i.d { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+    .hero { background: var(--card-bg); border-radius: 12px; padding: 14px 16px; margin-top: 14px; }
+    .hr1 { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .lbl { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+    .sub0 { font-size: 14px; font-weight: 600; margin-top: 2px; }
+    .big { font-size: 24px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; }
+    .avgp { font-size: 11px; font-weight: 600; color: var(--text-dim); border: 1px dashed #64748b; border-radius: 10px; padding: 3px 10px; white-space: nowrap; }
+    .pillx { display: inline-flex; align-items: center; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 14px; white-space: nowrap; }
+    .sh { margin: 22px 2px 8px; font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+    .rowc { margin-top: 14px; }
+    .rr { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; font-weight: 600; }
+    .rr span:last-child { font-weight: 700; font-size: 15px; white-space: nowrap; }
+    .rs { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+    .bar { height: 6px; border-radius: 3px; background: #334155; margin-top: 6px; overflow: hidden; display: flex; }
+    .bar > div { height: 100%; transition: width .35s ease; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+    svg g[data-m] { cursor: pointer; outline: none; }
+    .tot { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #141d2b; border: 1px solid var(--accent); border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; font-size: 12px; font-weight: 600; }
+    .tot b { font-weight: 700; font-size: 15px; color: var(--red); white-space: nowrap; }
+    .ic { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; display: block; }
+    .ir { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .il { min-width: 0; }
+    .nm { font-weight: 600; font-size: 14px; word-break: break-word; }
+    .sb { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+    .rt { font-weight: 700; font-size: 15px; text-align: right; white-space: nowrap; }
+    .se { font-size: 11px; color: var(--text-dim); font-weight: 500; margin-top: 2px; }
+    .bp { display: inline-block; background: rgba(245,158,11,.2); color: var(--orange); font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-right: 4px; }
+    .empty { text-align: center; padding: 30px; color: var(--text-dim); font-size: 14px; }
+    .errbox { background: rgba(244,63,94,.12); border: 1px solid var(--red); border-radius: 10px; padding: 12px 14px; margin-top: 16px; font-size: 13px; line-height: 1.5; }
+    .errbox button { margin-top: 8px; background: transparent; border: 1px solid var(--red); color: var(--text); border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="ph">
+      <button class="hb" id="gback" aria-label="Bütçeye dön"></button>
+      <div class="pt">Grafikler</div>
+      <button class="hb" id="gref" aria-label="Verileri yenile"></button>
+    </div>
+    <div id="gbody"></div>
+  </div>
+
+  <script src="core.js"></script>
+  <script>
+    const GRAFIK_VERSION = "2.0.0";
+    AppFrame.initEmbedInsets();
+
+    function goBackToApp() { AppFrame.close("grafik-close", "2.html"); }
+
+    const f = n => AppFormat.number(n);
+    const fi = n => AppFormat.int(n);
+    const esc = s => AppFormat.escapeHtml(s);
+    const parseAmt = s => { const v = AppFormat.parseAmount(s); return (s !== "" && s != null) ? v : NaN; };
+    function pct1(n) { return Math.abs(n).toFixed(1).replace(".", ","); }
+
+    const ICON = {
+      back: '<path d="M5 12h14M5 12l6 6M5 12l6-6"/>',
+      refresh: '<path d="M20 11a8.1 8.1 0 0 0-15.5-2m-.5-4v4h4"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/>'
+    };
+    function ic(n) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[n] + "</svg>"; }
+
+    const CAT = { kart: { n: "Kart", c: "#38bdf8" }, diger: { n: "Diğer", c: "#f59e0b" }, tr: { n: "TR (€)", c: "#a855f7" } };
+    const KEYS = ["kart", "diger", "tr"];
+    let MONTHS = AppStorage.getJSON("grafik_cache", []);
+    let loading = true, lastError = "";
+    let range = AppStorage.get("grafik_range", "all");
+    let selSheet = null, iso = null, seq = 0;
+
+    function val(m) { return iso ? m[iso] : m.kart + m.diger + m.tr; }
+    function tot(m) { return m.kart + m.diger + m.tr; }
+    function rangeOptions() {
+      const o = [];
+      [3, 6, 12].forEach(v => { if (MONTHS.length > v) o.push(String(v)); });
+      o.push("all");
+      return o;
+    }
+    function visibleMonths() {
+      const o = rangeOptions();
+      if (o.indexOf(range) < 0) range = "all";
+      return range === "all" ? MONTHS.slice() : MONTHS.slice(-parseInt(range, 10));
+    }
+
+    function labelFor(m, i, n) {
+      let t = m.short;
+      if (n > 6 && (i === 0 || m.month === 0)) t += " ’" + String(m.year).slice(-2);
+      return t;
+    }
+    function chartSvg(vis, sel) {
+      const n = vis.length, W = 338, base = 168, top = 26, slot = W / n, bw = Math.min(46, slot * 0.62);
+      const done = vis.filter(m => !m.current);
+      const avg = done.length ? done.reduce((s, m) => s + val(m), 0) / done.length : 0;
+      let mx = Math.max.apply(null, vis.map(val).concat([avg])) * 1.15;
+      if (!(mx > 0)) mx = 1;
+      const Y = v => base - (v / mx) * (base - top);
+      const step = Math.ceil(n / 8);
+      let s = '<defs><pattern id="hatch' + seq + '" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="3" height="7" fill="rgba(15,23,42,.6)"/></pattern></defs>';
+      if (avg > 0) s += '<line x1="0" x2="' + W + '" y1="' + Y(avg) + '" y2="' + Y(avg) + '" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 4"/><text x="0" y="' + (Y(avg) - 6) + '" font-size="11" fill="#94a3b8">ORT. €' + fi(avg) + "</text>";
+      vis.forEach((m, i) => {
+        const on = m.sheet === sel.sheet;
+        const x = i * slot + (slot - bw) / 2, cid = "c" + seq + "_" + i;
+        const parts = iso ? [[iso, m[iso]]] : KEYS.map(k => [k, m[k]]);
+        let yy = base, segs = "";
+        parts.forEach(p => { const h = Math.max(0, p[1]) / mx * (base - top); yy -= h; segs += '<rect x="' + x + '" y="' + yy + '" width="' + bw + '" height="' + h + '" fill="' + CAT[p[0]].c + '"/>'; });
+        const yt = Math.min(yy, base - 2), hh = base - yt;
+        s += '<g data-m="' + esc(m.sheet) + '" opacity="' + (on ? 1 : 0.42) + '">' +
+          '<clipPath id="' + cid + '"><rect x="' + x + '" y="' + yt + '" width="' + bw + '" height="' + hh + '" rx="9"/></clipPath>' +
+          '<g clip-path="url(#' + cid + ')">' + segs + (m.current ? '<rect x="' + x + '" y="' + yt + '" width="' + bw + '" height="' + hh + '" fill="url(#hatch' + seq + ')"/>' : "") + "</g>" +
+          '<rect x="' + (i * slot) + '" y="' + (top - 12) + '" width="' + slot + '" height="' + (base - top + 38) + '" fill="transparent"/></g>';
+        if (on) s += '<text x="' + (x + bw / 2) + '" y="' + (yt - 7) + '" font-size="12" font-weight="700" text-anchor="middle" fill="#f8fafc">€' + fi(val(m)) + "</text>";
+        if (i % step === 0 || i === n - 1 || on) s += '<text x="' + (x + bw / 2) + '" y="' + (base + 18) + '" font-size="12" text-anchor="middle" fill="' + (on ? "#f8fafc" : "#94a3b8") + '" font-weight="' + (on ? 700 : 500) + '">' + esc(labelFor(m, i, n)) + "</text>";
+      });
+      return { svg: '<svg viewBox="0 0 338 196" width="100%" style="display:block;margin-top:10px">' + s + "</svg>", avg };
+    }
+
+    function detailHtml(m) {
+      const t = tot(m);
+      let chip = "";
+      const idx = MONTHS.findIndex(x => x.sheet === m.sheet);
+      const prev = idx > 0 ? MONTHS[idx - 1] : null;
+      if (prev && tot(prev) > 0) {
+        const d = (t - tot(prev)) / tot(prev) * 100, low = d <= 0;
+        chip = '<span class="pillx" style="background:' + (low ? "rgba(16,185,129,.18)" : "rgba(244,63,94,.18)") + ";color:" + (low ? "#10b981" : "#f43f5e") + '">' + (low ? "↓" : "↑") + " %" + pct1(d) + " geçen aya göre</span>";
+      }
+      let h = '<div class="hero"><div class="hr1"><div><div class="lbl">' + esc(m.full) + '</div><div class="big">€' + f(t) + "</div></div>" + chip + "</div>";
+      KEYS.forEach(k => {
+        const v = m[k], sh = t > 0 ? v / t * 100 : 0;
+        h += '<div class="rowc"><div class="rr"><span><i class="dot" style="background:' + CAT[k].c + '"></i>' + CAT[k].n + "</span><span>€" + f(v) + " • %" + Math.round(sh) + '</span></div><div class="bar"><div style="width:' + sh + "%;background:" + CAT[k].c + '"></div></div></div>';
+      });
+      return h + "</div>";
+    }
+
+    const body = document.getElementById("gbody");
+    function render(keep) {
+      const y = window.pageYOffset || 0;
+      document.getElementById("gback").innerHTML = ic("back");
+      const rb = document.getElementById("gref");
+      rb.innerHTML = ic("refresh");
+      rb.classList.toggle("spin", loading);
+      let h = "";
+      if (lastError) h += '<div class="errbox">' + esc(lastError) + '<br><button data-act="retry">Tekrar dene</button></div>';
+      if (!MONTHS.length) { body.innerHTML = h + (loading ? '<div class="empty">Yükleniyor...</div>' : '<div class="empty">Veri yok.</div>'); return; }
+      const vis = visibleMonths();
+      let sel = MONTHS.find(m => m.sheet === selSheet);
+      if (!sel || vis.indexOf(sel) < 0) { sel = vis[vis.length - 1]; selSheet = sel.sheet; }
+      seq++;
+      const c = chartSvg(vis, sel);
+      const opts = rangeOptions();
+      if (opts.length > 1) {
+        h += '<div class="chips" style="margin-top:16px">';
+        opts.forEach(o => { h += '<button class="chip' + (range === o ? " on" : "") + '" data-r="' + o + '">' + (o === "all" ? "Tümü • " + MONTHS.length + " ay" : o + " ay") + "</button>"; });
+        h += "</div>";
+      }
+      h += '<div class="hero"><div class="hr1"><div><div class="lbl">Aylık harcama • €</div><div class="sub0">' + (iso ? CAT[iso].n + " harcaması" : "Kart + Diğer + TR") + "</div></div>" + (c.avg ? '<span class="avgp">Ort. €' + fi(c.avg) + "</span>" : "") + "</div>" + c.svg;
+      h += '<div class="chips" style="margin-top:10px">';
+      KEYS.forEach(k => { h += '<button class="chip' + (iso === k ? " on" : "") + '" data-i="' + k + '"><i class="d" style="background:' + CAT[k].c + '"></i>' + CAT[k].n + "</button>"; });
+      h += "</div></div>";
+      h += '<div class="sh">Ay dağılımı</div>' + detailHtml(sel);
+      body.innerHTML = h;
+      window.scrollTo(0, keep ? y : 0);
+    }
+
+    async function loadData(silent) {
+      loading = true; if (!silent || !MONTHS.length) render(true);
+      try {
+        const data = await AppAPI.get("getMonthlyChartData", { t: Date.now() });
+        if (!data || !Array.isArray(data.months)) throw new Error("NOAPI");
+        MONTHS = data.months; lastError = "";
+        AppStorage.setJSON("grafik_cache", MONTHS);
+      } catch (e) {
+        lastError = MONTHS.length ? "Bağlantı hatası. Kayıtlı son veriler gösteriliyor." : "Veri alınamadı.";
+      } finally { loading = false; render(true); }
+    }
+
+    body.addEventListener("click", e => {
+      const r = e.target.closest("[data-r]"), i = e.target.closest("[data-i]"), m = e.target.closest("[data-m]"), a = e.target.closest("[data-act]");
+      if (r) { range = r.getAttribute("data-r"); AppStorage.set("grafik_range", range); render(true); }
+      else if (i) { const k = i.getAttribute("data-i"); iso = (iso === k) ? null : k; render(true); }
+      else if (m) { selSheet = m.getAttribute("data-m"); render(true); }
+      else if (a && a.getAttribute("data-act") === "retry") loadData();
+    });
+    document.getElementById("gback").onclick = goBackToApp;
+    document.getElementById("gref").onclick = () => loadData(true);
+
+    render();
+    loadData();
+  </script>
+</body>
+</html>
