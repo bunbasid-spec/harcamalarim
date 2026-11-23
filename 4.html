@@ -1255,8 +1255,9 @@
       wrap.style.display = 'block';
       document.body.style.overflow = 'hidden';
 
-      const isSrcdocPreview = (window.location.protocol === 'about:' || window.location.href.startsWith('about:srcdoc'));
-      if (isSrcdocPreview) {
+      // Canvas önizleme ortamı (about: veya blob:) veya dosya bulunamaması durumu
+      const isIsolatedPreview = (window.location.protocol === 'about:' || window.location.protocol === 'blob:' || window.location.href.startsWith('about:srcdoc'));
+      if (isIsolatedPreview) {
         frame.removeAttribute('src');
         frame.srcdoc = getFallbackModuleHTML(page);
       } else {
