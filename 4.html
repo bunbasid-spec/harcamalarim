@@ -441,6 +441,7 @@
     .liq-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; font-size: 13px; border-bottom: 1px dashed rgba(255, 255, 255, 0.06); }
     .liq-row:last-child { border-bottom: none; }
     .liq-row.total-row { font-weight: 700; font-size: 14px; border-top: 1px solid var(--border); margin-top: 6px; padding-top: 8px; }
+    .liq-acc-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
 
     .mini-view-switcher { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 3px; gap: 3px; height: 36px; }
     .mini-view-switcher.two-way { width: 140px; }
@@ -1000,6 +1001,11 @@
 
     let isSearchActiveBudget = false;
     let searchQueryBudget = "";
+
+    let isLiqSummaryTRYView = false;
+    let pastReportIncomeTotal = 0;
+    let pastReportNetBalance = 0;
+    let liqNetBufferValue = 0;
 
     let currentLiquidityView = 'summary';
     let currentControlView = 'summary';
@@ -1764,29 +1770,185 @@
         renderGenericCalendarView(container, data, 'past', selectedFiltersPast, false, "Gerçekleşen ödeme akışı:");
         return;
       }
+      const targetCardLimit = parseAmountToNum(data.cardLimit || 0);
       const actualCardSpent = parseAmountToNum(data.cardTotal || 0);
-      const totalManual = (data.manualItems || []).reduce((s, i) => s + parseAmountToNum(i.amount), 0);
-      const totalTrEUR = (data.trItems || []).reduce((s, i) => s + parseAmountToNum(i.eurAmount || 0), 0);
-      const totalIncome = (data.incomeItems || []).reduce((s, i) => s + parseAmountToNum(i.amount), 0);
-      const totalPaid = actualCardSpent + totalManual + totalTrEUR;
-      const net = totalIncome - totalPaid;
 
-      container.innerHTML = `
-        <div class="liq-section-title">📊 Dönem Özeti</div>
-        <div class="liq-card" style="border-left: 4px solid ${net >= 0 ? 'var(--green)' : 'var(--red)'};">
-          <div class="liq-row"><span>Kart Harcaması</span><b>${_AppFormat.currency(actualCardSpent)}</b></div>
-          <div class="liq-row"><span>Diğer Giderler</span><b>${_AppFormat.currency(totalManual)}</b></div>
-          <div class="liq-row"><span>TR Ödemeleri</span><b>${_AppFormat.currency(totalTrEUR)}</b></div>
-          <div class="liq-row"><span>Toplam Gelir</span><b style="color:var(--green);">${_AppFormat.currency(totalIncome)}</b></div>
-          <div class="liq-row total-row" style="color:${net >= 0 ? 'var(--green)' : 'var(--red)'};"><span>Net Kalan</span><span>${net >= 0 ? '+' : ''}${_AppFormat.currency(net)}</span></div>
+      let sumSparkasse = 0, sumN26 = 0, sumNakit = 0, sumC24 = 0, sumOtherManual = 0, totalManual = 0;
+      (data.manualItems || []).forEach(item => {
+        let amt = parseAmountToNum(item.amount);
+        let acc = (item.card || '').toLowerCase().trim();
+        totalManual += amt;
+        if (acc.includes('sparkasse')) sumSparkasse += amt;
+        else if (acc.includes('n26')) sumN26 += amt;
+        else if (acc.includes('nakit') || acc.includes('bar')) sumNakit += amt;
+        else if (acc.includes('c24')) sumC24 += amt;
+        else sumOtherManual += amt;
+      });
+
+      let sumWorldEko = 0, sumEnpara = 0, sumFree = 0, sumOtherTR = 0, totalTrTRY = 0, totalTrEUR = 0;
+      (data.trItems || []).forEach(item => {
+        let amtTRY = parseAmountToNum(item.amount);
+        let amtEUR = parseAmountToNum(item.eurAmount || 0);
+        let name = (item.merchant || '').toLowerCase().trim();
+        totalTrTRY += amtTRY;
+        totalTrEUR += amtEUR;
+        if (name.includes('world') || name.includes('eko')) sumWorldEko += amtTRY;
+        else if (name.includes('enpara')) sumEnpara += amtTRY;
+        else if (name.includes('free') || name.includes('bonus')) sumFree += amtTRY;
+        else sumOtherTR += amtTRY;
+      });
+
+      let totalIncome = 0;
+      let incomeItemsList = data.incomeItems || [];
+      incomeItemsList.forEach(item => { totalIncome += parseAmountToNum(item.amount); });
+      pastReportIncomeTotal = totalIncome;
+
+      const totalPaidExpenses = actualCardSpent + totalManual + totalTrEUR;
+      const netFinalBalance = totalIncome - totalPaidExpenses;
+      pastReportNetBalance = netFinalBalance;
+
+      let html = `
+        <div class="liq-section-title">💳 Kart Harcama</div>
+        <div class="liq-card" style="border-left: 4px solid var(--accent);">
+          <div class="liq-row">
+            <span style="font-weight:700; color:var(--accent);">Kart Harcama Limiti (€${_AppFormat.number(targetCardLimit)})</span>
+            <span style="font-weight:700; color:#fff;">${_AppFormat.currency(actualCardSpent)}</span>
+          </div>
+        </div>
+
+        <div class="liq-section-title">🏦 Diğer Giderler</div>
+        <div class="liq-card" style="border-left: 4px solid var(--orange);">
+      `;
+      if (sumSparkasse > 0) html += `<div class="liq-row"><span>🏦 Sparkasse</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(sumSparkasse)}</span></div>`;
+      if (sumN26 > 0) html += `<div class="liq-row"><span>🏦 N26</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(sumN26)}</span></div>`;
+      if (sumC24 > 0) html += `<div class="liq-row"><span>🏦 C24</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(sumC24)}</span></div>`;
+      if (sumNakit > 0) html += `<div class="liq-row"><span>💵 Nakit</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(sumNakit)}</span></div>`;
+      if (sumOtherManual > 0) html += `<div class="liq-row"><span>Diğer</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(sumOtherManual)}</span></div>`;
+
+      html += `
+          <div class="liq-row total-row" style="color:var(--orange);">
+            <span style="display:flex; align-items:center; gap:4px;">Toplam Diğer Giderler <span style="cursor:pointer; font-weight:bold; font-size:13px;" onclick="navigateToPastMonth('manual')">↗</span></span>
+            <span>${_AppFormat.currency(totalManual)}</span>
+          </div>
+        </div>
+
+        <div class="liq-section-title">🇹🇷 TR Ödemeler</div>
+        <div class="liq-card" style="border-left: 4px solid var(--purple);">
+      `;
+      let hasAnyTR = false;
+      if (sumWorldEko > 0) { hasAnyTR = true; html += `<div class="liq-row"><span>💳 World Eko</span><span style="font-weight:600; color:#fff;">₺${_AppFormat.number(sumWorldEko)}</span></div>`; }
+      if (sumEnpara > 0) { hasAnyTR = true; html += `<div class="liq-row"><span>💳 Enpara</span><span style="font-weight:600; color:#fff;">₺${_AppFormat.number(sumEnpara)}</span></div>`; }
+      if (sumFree > 0) { hasAnyTR = true; html += `<div class="liq-row"><span>💳 Free</span><span style="font-weight:600; color:#fff;">₺${_AppFormat.number(sumFree)}</span></div>`; }
+      if (sumOtherTR > 0) { hasAnyTR = true; html += `<div class="liq-row"><span>💳 Diğer</span><span style="font-weight:600; color:#fff;">₺${_AppFormat.number(sumOtherTR)}</span></div>`; }
+
+      if (!hasAnyTR) {
+        html += `<div style="font-size:12px; color:var(--text-dim); padding:4px 0;">Bu ay için kayıtlı TR ödemesi bulunamadı.</div>`;
+      } else {
+        html += `
+          <div class="liq-row total-row" style="color:var(--purple);">
+            <span style="display:flex; align-items:center; gap:4px;">Toplam TR Ödemeleri <span style="cursor:pointer; font-weight:bold; font-size:13px;" onclick="navigateToPastMonth('tr')">↗</span></span>
+            <span style="text-align:right;">₺${_AppFormat.number(totalTrTRY)}<div style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-top:2px;">~${_AppFormat.currency(totalTrEUR)}</div></span>
+          </div>
+        `;
+      }
+      html += `</div>`;
+
+      html += `
+        <div class="liq-section-title">💰 Gelirler</div>
+        <div class="liq-card" id="pastIncomeCard" style="border-left: 4px solid var(--green);">
+          <div class="liq-acc-header" onclick="togglePastIncomeDetails()">
+            <div>
+              <div style="font-size:11px; color:var(--text-dim); font-weight:600;">Toplam Gelir</div>
+              <div id="pastIncomeDisplay" class="masked" style="font-weight:700; font-size:16px; margin-top:2px; color:var(--green);">••••••</div>
+            </div>
+            <div id="pastIncomeArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Detay ▼</div>
+          </div>
+          <div id="pastIncomeBody" style="display:none; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
+      `;
+      if (incomeItemsList.length === 0) {
+        html += `<div style="font-size:12px; color:var(--text-dim); padding:4px 0;">Kayıtlı gelir kalemi bulunamadı.</div>`;
+      } else {
+        incomeItemsList.forEach(inc => {
+          html += `<div class="liq-row"><span>${_AppFormat.escapeHtml(inc.merchant || 'Açıklamasız')}</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(parseAmountToNum(inc.amount))}</span></div>`;
+        });
+        html += `<div class="liq-row total-row" style="color:var(--green);"><span style="display:flex; align-items:center; gap:4px;">Toplam Gelir <span style="cursor:pointer; font-weight:bold; font-size:13px;" onclick="navigateToPastMonth('income')">↗</span></span><span>${_AppFormat.currency(totalIncome)}</span></div>`;
+      }
+      html += `</div></div>`;
+
+      const isNetPos = netFinalBalance >= 0;
+      const netThemeColor = isNetPos ? 'var(--green)' : 'var(--red)';
+      html += `
+        <div class="liq-section-title">📊 Toplam Likidite Raporu</div>
+        <div class="liq-card" id="pastLiqBalCard" style="border-left: 4px solid var(--accent);">
+          <div class="liq-acc-header" onclick="togglePastLiqBalanceDetails()">
+            <div>
+              <div style="font-size:11px; color:var(--text-dim); font-weight:600;">Net Kalan</div>
+              <div id="pastLiqNetDisplay" class="masked" style="font-weight:700; font-size:16px; margin-top:2px;">••••••</div>
+            </div>
+            <div id="pastLiqBalArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Detay ▼</div>
+          </div>
+          <div id="pastLiqBalBody" style="display:none; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
+            <div class="liq-row"><span>Toplam Yapılan Harcama</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(totalPaidExpenses)}</span></div>
+            <div class="liq-row"><span>Toplam Gelir</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(totalIncome)}</span></div>
+            <div class="liq-row total-row" style="color: ${netThemeColor};">
+              <span style="display:flex; align-items:center; gap:4px;">Net Kalan <span style="cursor:pointer; font-weight:bold; font-size:13px;" onclick="navigateToPastMonth('card')">↗</span></span>
+              <span>${isNetPos ? '+' : ''}${_AppFormat.currency(netFinalBalance)}</span>
+            </div>
+          </div>
         </div>
       `;
+
+      container.innerHTML = html;
+      container.scrollTop = 0;
+      togglePastLiqBalanceDetails();
+    }
+
+    function navigateToPastMonth(tabName) {
+      const pastSelect = document.getElementById('pastReportSheetSelect');
+      const targetMonth = pastSelect ? pastSelect.value : null;
+      if (!targetMonth) return;
+      closeModal('modalPastMonthReport');
+      const mainSelect = document.getElementById('sheetSelect');
+      if (mainSelect) mainSelect.value = targetMonth;
+      switchBudgetTab(tabName);
+      onFilterChange();
+    }
+
+    function togglePastIncomeDetails() {
+      const body = document.getElementById('pastIncomeBody');
+      const arrow = document.getElementById('pastIncomeArrow');
+      const display = document.getElementById('pastIncomeDisplay');
+      if (body.style.display === 'none') {
+        body.style.display = 'block'; arrow.innerText = 'Gizle ▲'; display.classList.remove('masked');
+        display.innerText = _AppFormat.currency(pastReportIncomeTotal);
+      } else {
+        body.style.display = 'none'; arrow.innerText = 'Detay ▼'; display.classList.add('masked'); display.innerText = '••••••';
+      }
+    }
+
+    function togglePastLiqBalanceDetails() {
+      const body = document.getElementById('pastLiqBalBody');
+      const arrow = document.getElementById('pastLiqBalArrow');
+      const display = document.getElementById('pastLiqNetDisplay');
+      const card = document.getElementById('pastLiqBalCard');
+      if (!body) return;
+      if (body.style.display === 'none' || body.style.display === '') {
+        body.style.display = 'block'; arrow.innerText = 'Gizle ▲'; display.classList.remove('masked');
+        const isPos = pastReportNetBalance >= 0;
+        display.innerText = `${isPos ? '+' : ''}${_AppFormat.currency(pastReportNetBalance)}`;
+        display.style.color = isPos ? 'var(--green)' : 'var(--red)';
+        card.style.borderLeftColor = isPos ? 'var(--green)' : 'var(--red)';
+      } else {
+        body.style.display = 'none'; arrow.innerText = 'Detay ▼'; display.classList.add('masked');
+        display.innerText = '••••••'; display.style.color = ''; card.style.borderLeftColor = 'var(--accent)';
+      }
     }
 
     function openLiquidityModal() {
       hideFabAction();
       currentLiquidityView = 'summary';
       selectedFiltersLiq.clear();
+      isLiqSummaryTRYView = false;
       document.getElementById('btnLiqViewSummary').classList.add('active');
       document.getElementById('btnLiqViewCalendar').classList.remove('active');
       document.getElementById('btnLiqViewPlan').classList.remove('active');
@@ -1796,10 +1958,84 @@
 
     function switchLiquidityView(view) {
       currentLiquidityView = view;
+      isLiqSummaryTRYView = false;
       document.getElementById('btnLiqViewSummary').classList.toggle('active', view === 'summary');
       document.getElementById('btnLiqViewCalendar').classList.toggle('active', view === 'calendar');
       document.getElementById('btnLiqViewPlan').classList.toggle('active', view === 'plan');
       renderLiquidityContent();
+    }
+
+    function recalcSummaryTotal() {
+      const checkboxes = document.querySelectorAll('.chk-summary:checked');
+      let totalEur = 0, totalTry = 0, hasEurItem = false, hasTryItem = false;
+      checkboxes.forEach(c => {
+        let eurVal = parseFloat(c.getAttribute('data-eur') || 0);
+        let tryVal = parseFloat(c.getAttribute('data-try') || 0);
+        totalEur += eurVal;
+        if (tryVal > 0) { hasTryItem = true; totalTry += tryVal; }
+        else if (eurVal > 0) hasEurItem = true;
+      });
+      const lbl = document.getElementById('lblSummaryLiveTotal');
+      if (!lbl) return;
+      const onlyTrySelected = hasTryItem && !hasEurItem;
+      if (!onlyTrySelected) isLiqSummaryTRYView = false;
+      if (onlyTrySelected && isLiqSummaryTRYView) {
+        lbl.innerText = "₺" + _AppFormat.number(totalTry);
+        lbl.style.color = "var(--accent)";
+      } else {
+        lbl.innerText = _AppFormat.currency(totalEur);
+        lbl.style.color = "var(--orange)";
+      }
+    }
+
+    function toggleSummaryCurrency() {
+      const checkboxes = document.querySelectorAll('.chk-summary:checked');
+      let hasEurItem = false, hasTryItem = false;
+      checkboxes.forEach(c => {
+        if (parseFloat(c.getAttribute('data-try') || 0) > 0) hasTryItem = true;
+        else if (parseFloat(c.getAttribute('data-eur') || 0) > 0) hasEurItem = true;
+      });
+      if (hasTryItem && !hasEurItem) {
+        isLiqSummaryTRYView = !isLiqSummaryTRYView;
+        recalcSummaryTotal();
+      }
+    }
+
+    function toggleAllSummaryCheckboxes() {
+      const checkboxes = document.querySelectorAll('.chk-summary');
+      const allChecked = Array.from(checkboxes).every(c => c.checked);
+      checkboxes.forEach(c => c.checked = !allChecked);
+      recalcSummaryTotal();
+    }
+
+    function toggleLiqIncomeDetails() {
+      const body = document.getElementById('liqIncomeBody');
+      const arrow = document.getElementById('liqIncomeArrow');
+      const display = document.getElementById('liqIncomeDisplay');
+      let totalIncome = (currentData.incomeItems || []).reduce((s, item) => s + parseAmountToNum(item.amount), 0);
+      if (body.style.display === 'none') {
+        body.style.display = 'block'; arrow.innerText = 'Gizle ▲'; display.classList.remove('masked');
+        display.innerText = _AppFormat.currency(totalIncome);
+      } else {
+        body.style.display = 'none'; arrow.innerText = 'Detay ▼'; display.classList.add('masked'); display.innerText = '••••••';
+      }
+    }
+
+    function toggleLiqBalanceDetails() {
+      const body = document.getElementById('liqBalBody');
+      const arrow = document.getElementById('liqBalArrow');
+      const display = document.getElementById('liqNetDisplay');
+      const card = document.getElementById('liqBalCard');
+      if (!body) return;
+      if (body.style.display === 'none' || body.style.display === '') {
+        body.style.display = 'block'; arrow.innerText = 'Gizle ▲'; display.classList.remove('masked');
+        display.innerText = `${liqNetBufferValue >= 0 ? '+' : ''}${_AppFormat.currency(liqNetBufferValue)}`;
+        display.style.color = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
+        card.style.borderLeftColor = (liqNetBufferValue >= 0) ? 'var(--green)' : 'var(--red)';
+      } else {
+        body.style.display = 'none'; arrow.innerText = 'Detay ▼'; display.classList.add('masked');
+        display.innerText = '••••••'; display.style.color = ''; card.style.borderLeftColor = 'var(--accent)';
+      }
     }
 
     function renderLiquidityContent() {
@@ -1809,19 +2045,160 @@
         renderGenericCalendarView(container, currentData, 'liq', selectedFiltersLiq, false, "Planlanan ödeme akışı:");
         return;
       }
+
+      const targetCardLimit = parseAmountToNum(currentData.cardLimit || 0);
       const actualCardSpent = parseAmountToNum(currentData.cardTotal || 0);
-      const totalManual = (currentData.manualItems || []).reduce((s, i) => s + parseAmountToNum(i.amount), 0);
-      const totalTrEUR = (currentData.trItems || []).reduce((s, i) => s + parseAmountToNum(i.eurAmount || 0), 0);
-      const totalIncome = (currentData.incomeItems || []).reduce((s, i) => s + parseAmountToNum(i.amount), 0);
-      const net = totalIncome - (actualCardSpent + totalManual + totalTrEUR);
-      container.innerHTML = `
-        <div class="liq-section-title">📊 Likidite Dengesi</div>
-        <div class="liq-card" style="border-left: 4px solid ${net >= 0 ? 'var(--green)' : 'var(--red)'};">
-          <div class="liq-row"><span>Toplam Gelir</span><b style="color:var(--green);">${_AppFormat.currency(totalIncome)}</b></div>
-          <div class="liq-row"><span>Toplam Gider</span><b>${_AppFormat.currency(actualCardSpent + totalManual + totalTrEUR)}</b></div>
-          <div class="liq-row total-row" style="color:${net >= 0 ? 'var(--green)' : 'var(--red)'};"><span>Net Kalan</span><span>${net >= 0 ? '+' : ''}${_AppFormat.currency(net)}</span></div>
+
+      let sumSparkasse = 0, sumN26 = 0, sumNakit = 0, sumC24 = 0, sumOtherManual = 0, totalManual = 0;
+      (currentData.manualItems || []).forEach(item => {
+        let amt = parseAmountToNum(item.amount);
+        let acc = (item.card || '').toLowerCase().trim();
+        totalManual += amt;
+        if (acc.includes('sparkasse')) sumSparkasse += amt;
+        else if (acc.includes('n26')) sumN26 += amt;
+        else if (acc.includes('nakit') || acc.includes('bar')) sumNakit += amt;
+        else if (acc.includes('c24')) sumC24 += amt;
+        else sumOtherManual += amt;
+      });
+
+      const sumMainTwo = sumSparkasse + sumN26;
+      const hasSecondary = (sumNakit > 0 || sumC24 > 0 || sumOtherManual > 0);
+
+      let sumWorldEko = 0, sumEnpara = 0, sumFree = 0, sumOtherTR = 0, totalTrTRY = 0, totalTrEUR = 0, trRateEUR = 0;
+      (currentData.trItems || []).forEach(item => {
+        let amtTRY = parseAmountToNum(item.amount);
+        let amtEUR = parseAmountToNum(item.eurAmount || 0);
+        let name = (item.merchant || '').toLowerCase().trim();
+        totalTrTRY += amtTRY;
+        totalTrEUR += amtEUR;
+        if (name.includes('world') || name.includes('eko')) sumWorldEko += amtTRY;
+        else if (name.includes('enpara')) sumEnpara += amtTRY;
+        else if (name.includes('free') || name.includes('bonus')) sumFree += amtTRY;
+        else sumOtherTR += amtTRY;
+      });
+      if (totalTrTRY > 0 && totalTrEUR > 0) trRateEUR = totalTrEUR / totalTrTRY;
+
+      let totalIncome = 0;
+      let incomeItemsList = currentData.incomeItems || [];
+      incomeItemsList.forEach(item => { totalIncome += parseAmountToNum(item.amount); });
+
+      const totalPaidExpenses = actualCardSpent + totalManual + totalTrEUR;
+      const netBuffer = totalIncome - totalPaidExpenses;
+      liqNetBufferValue = netBuffer;
+
+      if (currentLiquidityView === 'summary') {
+        let html = `
+          <div class="liq-section-title">💳 Kart Harcama</div>
+          <div class="liq-card" style="border-left: 4px solid var(--accent);">
+            <div class="liq-row">
+              <span style="font-weight:700; color:var(--accent);">Kart Harcama Limiti (€${_AppFormat.number(targetCardLimit)})</span>
+              <span style="font-weight:700; color:#fff;">${_AppFormat.currency(actualCardSpent)}</span>
+            </div>
+          </div>
+
+          <div class="liq-section-title">🏦 Diğer Giderler</div>
+          <div class="liq-card" style="border-left: 4px solid var(--orange);">
+            <div class="liq-row"><span>🏦 Sparkasse</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(sumSparkasse)}</span></div>
+            <div class="liq-row"><span>🏦 N26</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(sumN26)}</span></div>
+        `;
+        if (hasSecondary) {
+          html += `<div class="liq-row total-row" style="color:var(--orange);"><span>Toplam</span><span>${_AppFormat.currency(sumMainTwo)}</span></div>`;
+          if (sumNakit > 0) html += `<div class="liq-row"><span>💵 Nakit</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(sumNakit)}</span></div>`;
+          if (sumC24 > 0) html += `<div class="liq-row"><span>🏦 C24</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(sumC24)}</span></div>`;
+          if (sumOtherManual > 0) html += `<div class="liq-row"><span>Diğer</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(sumOtherManual)}</span></div>`;
+          html += `<div class="liq-row total-row" style="color:var(--orange);"><span>Toplam Diğer Giderler</span><span>${_AppFormat.currency(totalManual)}</span></div>`;
+        } else {
+          html += `<div class="liq-row total-row" style="color:var(--orange);"><span>Toplam Diğer Giderler</span><span>${_AppFormat.currency(totalManual)}</span></div>`;
+        }
+        html += `</div>`;
+
+        html += `<div class="liq-section-title">🇹🇷 TR Ödemeler</div><div class="liq-card" style="border-left: 4px solid var(--purple);">`;
+        let hasAnyTR = false;
+        if (sumWorldEko > 0) { hasAnyTR = true; html += `<div class="liq-row"><span>💳 World Eko</span><span style="font-weight:600; color:#fff;">₺${_AppFormat.number(sumWorldEko)}</span></div>`; }
+        if (sumEnpara > 0) { hasAnyTR = true; html += `<div class="liq-row"><span>💳 Enpara</span><span style="font-weight:600; color:#fff;">₺${_AppFormat.number(sumEnpara)}</span></div>`; }
+        if (sumFree > 0) { hasAnyTR = true; html += `<div class="liq-row"><span>💳 Free</span><span style="font-weight:600; color:#fff;">₺${_AppFormat.number(sumFree)}</span></div>`; }
+        if (sumOtherTR > 0) { hasAnyTR = true; html += `<div class="liq-row"><span>💳 Diğer</span><span style="font-weight:600; color:#fff;">₺${_AppFormat.number(sumOtherTR)}</span></div>`; }
+        if (!hasAnyTR) {
+          html += `<div style="font-size:12px; color:var(--text-dim); padding:4px 0;">Bu ay için kayıtlı TR ödemesi bulunamadı.</div>`;
+        } else {
+          html += `<div class="liq-row total-row" style="color:var(--purple);"><span>Toplam TR Ödemeleri</span><span style="text-align:right;">₺${_AppFormat.number(totalTrTRY)}<div style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-top:2px;">~${_AppFormat.currency(totalTrEUR)}</div></span></div>`;
+        }
+        html += `</div>`;
+
+        html += `
+          <div class="liq-section-title">💰 Gelirler</div>
+          <div class="liq-card" style="border-left: 4px solid var(--green);">
+            <div class="liq-acc-header" onclick="toggleLiqIncomeDetails()">
+              <div>
+                <div style="font-size:11px; color:var(--text-dim); font-weight:600;">Toplam Gelir</div>
+                <div id="liqIncomeDisplay" class="masked" style="font-weight:700; font-size:16px; margin-top:2px; color:var(--green);">••••••</div>
+              </div>
+              <div id="liqIncomeArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Detay ▼</div>
+            </div>
+            <div id="liqIncomeBody" style="display:none; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
+        `;
+        if (incomeItemsList.length === 0) html += `<div style="font-size:12px; color:var(--text-dim); padding:4px 0;">Kayıtlı gelir kalemi bulunamadı.</div>`;
+        else {
+          incomeItemsList.forEach(inc => { html += `<div class="liq-row"><span>${_AppFormat.escapeHtml(inc.merchant || 'Açıklamasız')}</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(parseAmountToNum(inc.amount))}</span></div>`; });
+          html += `<div class="liq-row total-row" style="color:var(--green);"><span>Toplam Gelir</span><span>${_AppFormat.currency(totalIncome)}</span></div>`;
+        }
+        html += `</div></div>`;
+
+        const isNetPos = netBuffer >= 0;
+        const netThemeColor = isNetPos ? 'var(--green)' : 'var(--red)';
+        html += `
+          <div class="liq-section-title">📊 Toplam Likidite Raporu</div>
+          <div class="liq-card" id="liqBalCard" style="border-left: 4px solid var(--accent);">
+            <div class="liq-acc-header" onclick="toggleLiqBalanceDetails()">
+              <div>
+                <div style="font-size:11px; color:var(--text-dim); font-weight:600;">Net Kalan</div>
+                <div id="liqNetDisplay" class="masked" style="font-weight:700; font-size:16px; margin-top:2px;">••••••</div>
+              </div>
+              <div id="liqBalArrow" style="font-size:12px; color:var(--accent); font-weight:bold;">Detay ▼</div>
+            </div>
+            <div id="liqBalBody" style="display:none; margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.08);">
+              <div class="liq-row"><span>Toplam Yapılan Harcama</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(totalPaidExpenses)}</span></div>
+              <div class="liq-row"><span>Toplam Gelir</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(totalIncome)}</span></div>
+              <div class="liq-row total-row" style="color: ${netThemeColor};"><span>Net Kalan</span><span>${isNetPos ? '+' : ''}${_AppFormat.currency(netBuffer)}</span></div>
+            </div>
+          </div>
+        `;
+        container.innerHTML = html;
+        container.scrollTop = 0;
+        toggleLiqBalanceDetails();
+        return;
+      }
+
+      // PLAN SEKME GÖRÜNÜMÜ
+      let html = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding: 2px 2px 8px 2px; border-bottom: 1px solid var(--border);">
+          <div style="font-weight:700; font-size:14px;">Toplam Tutar: <span id="lblSummaryLiveTotal" style="color:var(--orange); font-size:15px;" onclick="toggleSummaryCurrency()">€0,00</span></div>
+          <button type="button" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;" onclick="toggleAllSummaryCheckboxes()">Tümünü Seç / Kaldır</button>
         </div>
+        <div id="summaryItemsList">
+          <label class="template-item">
+            <div style="display:flex; align-items:center;"><input type="checkbox" class="chk-summary" data-eur="${targetCardLimit}" data-try="0" onchange="recalcSummaryTotal()" checked><div><div style="font-weight:600; font-size:13px;"><span class="template-tag tag-card">KART</span> N26</div><div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Kart Harcama Limiti</div></div></div>
+            <div style="font-weight:700; font-size:14px; color:#fff;">${_AppFormat.currency(targetCardLimit)}</div>
+          </label>
+          <label class="template-item">
+            <div style="display:flex; align-items:center;"><input type="checkbox" class="chk-summary" data-eur="${sumSparkasse}" data-try="0" onchange="recalcSummaryTotal()" checked><div><div style="font-weight:600; font-size:13px;"><span class="template-tag tag-manual">HESAP</span> Sparkasse</div><div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Diğer Giderler</div></div></div>
+            <div style="font-weight:700; font-size:14px; color:#fff;">${_AppFormat.currency(sumSparkasse)}</div>
+          </label>
+          <label class="template-item">
+            <div style="display:flex; align-items:center;"><input type="checkbox" class="chk-summary" data-eur="${sumN26}" data-try="0" onchange="recalcSummaryTotal()" checked><div><div style="font-weight:600; font-size:13px;"><span class="template-tag tag-manual">HESAP</span> N26</div><div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Diğer Giderler</div></div></div>
+            <div style="font-weight:700; font-size:14px; color:#fff;">${_AppFormat.currency(sumN26)}</div>
+          </label>
       `;
+      if (sumC24 > 0) html += `<label class="template-item"><div style="display:flex; align-items:center;"><input type="checkbox" class="chk-summary" data-eur="${sumC24}" data-try="0" onchange="recalcSummaryTotal()" checked><div><div style="font-weight:600; font-size:13px;"><span class="template-tag tag-manual">HESAP</span> C24</div><div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Diğer Giderler</div></div></div><div style="font-weight:700; font-size:14px; color:#fff;">${_AppFormat.currency(sumC24)}</div></label>`;
+      if (sumNakit > 0) html += `<label class="template-item"><div style="display:flex; align-items:center;"><input type="checkbox" class="chk-summary" data-eur="${sumNakit}" data-try="0" onchange="recalcSummaryTotal()" checked><div><div style="font-weight:600; font-size:13px;"><span class="template-tag tag-manual">HESAP</span> Nakit</div><div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Diğer Giderler</div></div></div><div style="font-weight:700; font-size:14px; color:#fff;">${_AppFormat.currency(sumNakit)}</div></label>`;
+      if (sumOtherManual > 0) html += `<label class="template-item"><div style="display:flex; align-items:center;"><input type="checkbox" class="chk-summary" data-eur="${sumOtherManual}" data-try="0" onchange="recalcSummaryTotal()" checked><div><div style="font-weight:600; font-size:13px;"><span class="template-tag tag-manual">HESAP</span> Diğer</div><div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Diğer Giderler</div></div></div><div style="font-weight:700; font-size:14px; color:#fff;">${_AppFormat.currency(sumOtherManual)}</div></label>`;
+      if (sumWorldEko > 0) { let trEur = sumWorldEko * trRateEUR; html += `<label class="template-item"><div style="display:flex; align-items:center;"><input type="checkbox" class="chk-summary" data-eur="${trEur}" data-try="${sumWorldEko}" onchange="recalcSummaryTotal()" checked><div><div style="font-weight:600; font-size:13px;"><span class="template-tag tag-tr">TR KART</span> World Eko</div><div style="font-size:11px; color:var(--text-dim); margin-top:2px;">₺${_AppFormat.number(sumWorldEko)}</div></div></div><div style="font-weight:700; font-size:14px; color:#fff;">${_AppFormat.currency(trEur)}</div></label>`; }
+      if (sumEnpara > 0) { let trEur = sumEnpara * trRateEUR; html += `<label class="template-item"><div style="display:flex; align-items:center;"><input type="checkbox" class="chk-summary" data-eur="${trEur}" data-try="${sumEnpara}" onchange="recalcSummaryTotal()" checked><div><div style="font-weight:600; font-size:13px;"><span class="template-tag tag-tr">TR KART</span> Enpara</div><div style="font-size:11px; color:var(--text-dim); margin-top:2px;">₺${_AppFormat.number(sumEnpara)}</div></div></div><div style="font-weight:700; font-size:14px; color:#fff;">${_AppFormat.currency(trEur)}</div></label>`; }
+      if (sumFree > 0) { let trEur = sumFree * trRateEUR; html += `<label class="template-item"><div style="display:flex; align-items:center;"><input type="checkbox" class="chk-summary" data-eur="${trEur}" data-try="${sumFree}" onchange="recalcSummaryTotal()" checked><div><div style="font-weight:600; font-size:13px;"><span class="template-tag tag-tr">TR KART</span> Free</div><div style="font-size:11px; color:var(--text-dim); margin-top:2px;">₺${_AppFormat.number(sumFree)}</div></div></div><div style="font-weight:700; font-size:14px; color:#fff;">${_AppFormat.currency(trEur)}</div></label>`; }
+      if (sumOtherTR > 0) { let trEur = sumOtherTR * trRateEUR; html += `<label class="template-item"><div style="display:flex; align-items:center;"><input type="checkbox" class="chk-summary" data-eur="${trEur}" data-try="${sumOtherTR}" onchange="recalcSummaryTotal()" checked><div><div style="font-weight:600; font-size:13px;"><span class="template-tag tag-tr">TR KART</span> Diğer</div><div style="font-size:11px; color:var(--text-dim); margin-top:2px;">₺${_AppFormat.number(sumOtherTR)}</div></div></div><div style="font-weight:700; font-size:14px; color:#fff;">${_AppFormat.currency(trEur)}</div></label>`; }
+      html += `</div>`;
+      container.innerHTML = html;
+      recalcSummaryTotal();
     }
 
     let currentControlSubTab = 'kalan';
@@ -1844,6 +2221,51 @@
     }
     function setControlSubTab(tab) { currentControlSubTab = tab; renderControlContent(); }
 
+    function recalcControlTotal() {
+      const checkboxes = document.querySelectorAll('.chk-control:checked');
+      let liveTotal = 0, sumSparkasse = 0, sumN26 = 0, sumC24 = 0, sumNakit = 0, sumTrTRY = 0, sumTrEUR = 0;
+      checkboxes.forEach(c => {
+        let eurVal = parseFloat(c.getAttribute('data-eur') || 0);
+        let tryVal = parseFloat(c.getAttribute('data-try') || 0);
+        let accType = c.getAttribute('data-account') || '';
+        liveTotal += eurVal;
+        if (accType === 'sparkasse') sumSparkasse += eurVal;
+        else if (accType === 'n26') sumN26 += eurVal;
+        else if (accType === 'c24') sumC24 += eurVal;
+        else if (accType === 'nakit') sumNakit += eurVal;
+        else if (accType === 'tr') { sumTrTRY += tryVal; sumTrEUR += eurVal; }
+      });
+      const isOdenen = (currentControlSubTab === 'odenen');
+      const sign = isOdenen ? '+' : '-';
+      const mainColor = isOdenen ? 'var(--green)' : 'var(--red)';
+      const lbl = document.getElementById('lblControlLiveTotal');
+      if (lbl) {
+        if (liveTotal > 0) { lbl.innerText = sign + _AppFormat.currency(liveTotal); lbl.style.color = mainColor; }
+        else { lbl.innerText = "€0,00"; lbl.style.color = "var(--green)"; }
+      }
+      const listArea = document.getElementById('ctrlAccountsSummaryLines');
+      if (!listArea) return;
+      const renderLine = (label, eur, tryVal = 0) => {
+        let tryPart = tryVal > 0 ? `<div style="font-size:12px; font-weight:normal; color:var(--text-dim);">(-₺${_AppFormat.number(tryVal)})</div>` : '';
+        return `<div style="display:flex; align-items:center; gap:6px; margin-top:4px;"><div style="font-weight:700; font-size:14px; min-width:40px;">${label}:</div><div style="font-weight:700; font-size:15px; color:${mainColor};">${sign}${_AppFormat.currency(eur)}</div>${tryPart}</div>`;
+      };
+      let linesHtml = '';
+      if (sumSparkasse > 0) linesHtml += renderLine('Sparkasse', sumSparkasse);
+      if (sumN26 > 0) linesHtml += renderLine('N26', sumN26);
+      if (sumC24 > 0) linesHtml += renderLine('C24', sumC24);
+      if (sumNakit > 0) linesHtml += renderLine('Nakit', sumNakit);
+      if (sumTrTRY > 0 || sumTrEUR > 0) linesHtml += renderLine('TR', sumTrEUR, sumTrTRY);
+      listArea.innerHTML = linesHtml;
+    }
+
+    function toggleAllControlCheckboxes() {
+      const checkboxes = document.querySelectorAll('.chk-control');
+      if (checkboxes.length === 0) return;
+      const allChecked = Array.from(checkboxes).every(c => c.checked);
+      checkboxes.forEach(c => c.checked = !allChecked);
+      recalcControlTotal();
+    }
+
     function renderControlContent() {
       const container = document.getElementById('controlReportContent');
       if (!currentData) return;
@@ -1857,22 +2279,68 @@
       const remCard = Math.max(0, targetCardLimit - spentCardTotal);
       const paidCard = spentCardTotal;
 
-      let pendingManual = [], paidManual = [], totalRemManual = 0, totalPaidManual = 0;
+      let remSparkasse = 0, remN26 = 0, remNakit = 0, remC24 = 0, remOtherManual = 0, totalRemManual = 0;
+      let paidSparkasse = 0, paidN26 = 0, paidNakit = 0, paidC24 = 0, paidOtherManual = 0, totalPaidManual = 0;
+      let pendingManualItems = [], paidManualItems = [];
+
       (currentData.manualItems || []).forEach(item => {
-        let amt = parseAmountToNum(item.amount), isPending = (!item.date || item.date.trim() === "");
-        if (isPending) { totalRemManual += amt; pendingManual.push(item); }
-        else { totalPaidManual += amt; if (amt > 0) paidManual.push(item); }
+        let amt = parseAmountToNum(item.amount);
+        let acc = (item.card || '').toLowerCase().trim();
+        let isPending = (!item.date || item.date.trim() === "");
+        if (isPending) {
+          totalRemManual += amt;
+          if (acc.includes('sparkasse')) remSparkasse += amt;
+          else if (acc.includes('n26')) remN26 += amt;
+          else if (acc.includes('nakit') || acc.includes('bar')) remNakit += amt;
+          else if (acc.includes('c24')) remC24 += amt;
+          else remOtherManual += amt;
+          pendingManualItems.push(item);
+        } else {
+          totalPaidManual += amt;
+          if (acc.includes('sparkasse')) paidSparkasse += amt;
+          else if (acc.includes('n26')) paidN26 += amt;
+          else if (acc.includes('nakit') || acc.includes('bar')) paidNakit += amt;
+          else if (acc.includes('c24')) paidC24 += amt;
+          else paidOtherManual += amt;
+          if (amt > 0) paidManualItems.push(item);
+        }
       });
 
-      let pendingTr = [], paidTr = [], totalRemTrEUR = 0, totalPaidTrEUR = 0;
+      let remWorldEkoTRY = 0, remEnparaTRY = 0, remFreeTRY = 0, remOtherTRY = 0, totalRemTrTRY = 0, totalRemTrEUR = 0;
+      let paidWorldEkoTRY = 0, paidEnparaTRY = 0, paidFreeTRY = 0, paidOtherTRY = 0, totalPaidTrTRY = 0, totalPaidTrEUR = 0;
+      let totalTrTRYAll = 0, totalTrEURAll = 0, trRateEUR = 0;
+      let pendingTrItems = [], paidTrItems = [];
+
       (currentData.trItems || []).forEach(item => {
-        let amtTRY = parseAmountToNum(item.amount), amtEUR = parseAmountToNum(item.eurAmount || 0), isPending = (!item.date || item.date.trim() === "");
-        if (isPending) { totalRemTrEUR += amtEUR; pendingTr.push(item); }
-        else { totalPaidTrEUR += amtEUR; if (amtTRY > 0) paidTr.push(item); }
-      });
+        let amtTRY = parseAmountToNum(item.amount);
+        let amtEUR = parseAmountToNum(item.eurAmount || 0);
+        let name = (item.merchant || '').toLowerCase().trim();
+        let isPending = (!item.date || item.date.trim() === "");
+        totalTrTRYAll += amtTRY; totalTrEURAll += amtEUR;
+        let isWorld = (name.includes('world') || name.includes('eko'));
+        let isEnpara = name.includes('enpara');
+        let isFree = (name.includes('free') || name.includes('bonus'));
 
-      let countKalan = pendingManual.length + pendingTr.length;
-      let countOdenen = paidManual.length + paidTr.length;
+        if (isPending) {
+          totalRemTrTRY += amtTRY; totalRemTrEUR += amtEUR;
+          if (isWorld) remWorldEkoTRY += amtTRY;
+          else if (isEnpara) remEnparaTRY += amtTRY;
+          else if (isFree) remFreeTRY += amtTRY;
+          else remOtherTRY += amtTRY;
+          pendingTrItems.push(item);
+        } else {
+          totalPaidTrTRY += amtTRY; totalPaidTrEUR += amtEUR;
+          if (isWorld) paidWorldEkoTRY += amtTRY;
+          else if (isEnpara) paidEnparaTRY += amtTRY;
+          else if (isFree) paidFreeTRY += amtTRY;
+          else paidOtherTRY += amtTRY;
+          if (amtTRY > 0) paidTrItems.push(item);
+        }
+      });
+      if (totalTrTRYAll > 0 && totalTrEURAll > 0) trRateEUR = totalTrEURAll / totalTrTRYAll;
+
+      let countKalan = pendingManualItems.length + pendingTrItems.length;
+      let countOdenen = paidManualItems.length + paidTrItems.length;
       let countAll = countOdenen + countKalan;
 
       const btnOdenen = document.getElementById('btnCtrlOdenen');
@@ -1893,57 +2361,147 @@
       let pctPaid = grandBudget > 0 ? Math.round((totalOdenen / grandBudget) * 100) : 0;
       let pctRem = grandBudget > 0 ? (100 - pctPaid) : 0;
 
-      if (isAll) {
-        container.innerHTML = `
-          <div class="liq-section-title">📊 Toplam Tutar</div>
-          <div class="liq-card" style="border-left: 4px solid var(--green); margin-bottom:8px;">
-            <div class="liq-row" style="border:none; padding:6px 0;">
-              <span style="font-weight:700; font-size:15px; color:var(--green);">Gerçekleşen Ödemeler</span>
-              <span style="font-weight:700; font-size:18px; color:var(--green);">+${_AppFormat.currency(totalOdenen)}</span>
+      if (currentControlView === 'summary') {
+        let html = '';
+        if (isAll) {
+          html += `
+            <div class="liq-section-title">💳 Kart Harcama (€${_AppFormat.number(targetCardLimit)})</div>
+            <div class="liq-card" style="border-left: 4px solid var(--accent);">
+              <div class="liq-row"><span>Kart Harcanan</span><span style="font-weight:600; color:var(--red);">-${_AppFormat.currency(paidCard)}</span></div>
+              <div class="liq-row"><span>Kart Kalan</span><span style="font-weight:600; color:var(--green);">${_AppFormat.currency(remCard)}</span></div>
             </div>
-          </div>
-          <div class="liq-card" style="border-left: 4px solid var(--red); margin-bottom:8px;">
-            <div class="liq-row" style="border:none; padding:6px 0;">
-              <span style="font-weight:700; font-size:15px; color:var(--red);">Bekleyen Ödemeler</span>
-              <span style="font-weight:700; font-size:18px; color:var(--red);">${totalKalan > 0 ? '-' : ''}${_AppFormat.currency(totalKalan)}</span>
+          `;
+          let allSparkasse = paidSparkasse + remSparkasse, allN26 = paidN26 + remN26, allNakit = paidNakit + remNakit, allC24 = paidC24 + remC24, allOtherManual = paidOtherManual + remOtherManual, allManualTotal = totalPaidManual + totalRemManual;
+          if (allManualTotal > 0) {
+            html += `<div class="liq-section-title">🏦 Diğer Giderler</div><div class="liq-card" style="border-left: 4px solid var(--orange);">`;
+            if (allSparkasse > 0) html += `<div class="liq-row"><span>🏦 Sparkasse</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(allSparkasse)}</span></div>`;
+            if (allN26 > 0) html += `<div class="liq-row"><span>🏦 N26</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(allN26)}</span></div>`;
+            if (allNakit > 0) html += `<div class="liq-row"><span>💵 Nakit</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(allNakit)}</span></div>`;
+            if (allC24 > 0) html += `<div class="liq-row"><span>🏦 C24</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(allC24)}</span></div>`;
+            if (allOtherManual > 0) html += `<div class="liq-row"><span>Diğer</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(allOtherManual)}</span></div>`;
+            html += `<div class="liq-row total-row" style="color:var(--orange);"><span>Toplam Diğer Giderler</span><span>${_AppFormat.currency(allManualTotal)}</span></div></div>`;
+          }
+          let allWorldTRY = paidWorldEkoTRY + remWorldEkoTRY, allEnparaTRY = paidEnparaTRY + remEnparaTRY, allFreeTRY = paidFreeTRY + remFreeTRY, allOtherTRY = paidOtherTRY + remOtherTRY, allTrTRY = totalPaidTrTRY + totalRemTrTRY, allTrEUR = totalPaidTrEUR + totalRemTrEUR;
+          if (allTrTRY > 0 || pendingTrItems.length > 0 || paidTrItems.length > 0) {
+            html += `<div class="liq-section-title">🇹🇷 TR Ödemeler</div><div class="liq-card" style="border-left: 4px solid var(--purple);">`;
+            if (allWorldTRY > 0) html += `<div class="liq-row"><span>💳 World Eko</span><span style="font-weight:600; color:#fff;">₺${_AppFormat.number(allWorldTRY)}</span></div>`;
+            if (allEnparaTRY > 0) html += `<div class="liq-row"><span>💳 Enpara</span><span style="font-weight:600; color:#fff;">₺${_AppFormat.number(allEnparaTRY)}</span></div>`;
+            if (allFreeTRY > 0) html += `<div class="liq-row"><span>💳 Free</span><span style="font-weight:600; color:#fff;">₺${_AppFormat.number(allFreeTRY)}</span></div>`;
+            if (allOtherTRY > 0) html += `<div class="liq-row"><span>💳 Diğer</span><span style="font-weight:600; color:#fff;">₺${_AppFormat.number(allOtherTRY)}</span></div>`;
+            html += `<div class="liq-row total-row" style="color:var(--purple);"><span>Toplam TR Ödemeleri</span><span style="text-align:right;">₺${_AppFormat.number(allTrTRY)}<div style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-top:2px;">~${_AppFormat.currency(allTrEUR)}</div></span></div></div>`;
+          }
+          html += `
+            <div class="liq-section-title">📊 Toplam Tutar</div>
+            <div class="liq-card" style="border-left: 4px solid var(--green); margin-bottom:8px;">
+              <div class="liq-row" style="border-bottom:none; padding:6px 0;"><span style="font-weight:700; font-size:15px; color:var(--green);">Gerçekleşen Ödemeler</span><span style="font-weight:700; font-size:18px; color:var(--green);">+${_AppFormat.currency(totalOdenen)}</span></div>
             </div>
-          </div>
-          <div class="liq-card" style="margin-top:10px;">
-            <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:8px;">
-              <span style="color:var(--green);">${_AppFormat.currency(totalOdenen)} (%${pctPaid})</span>
-              <span style="color:var(--red);">${_AppFormat.currency(totalKalan)} (%${pctRem})</span>
+            <div class="liq-card" style="border-left: 4px solid var(--red); margin-bottom:8px;">
+              <div class="liq-row" style="border-bottom:none; padding:6px 0;"><span style="font-weight:700; font-size:15px; color:var(--red);">Bekleyen Ödemeler</span><span style="font-weight:700; font-size:18px; color:var(--red);">${totalKalan > 0 ? '-' : ''}${_AppFormat.currency(totalKalan)}</span></div>
             </div>
-            <div style="width:100%; height:8px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; display:flex;">
-              <div style="width:${pctPaid}%; background:var(--green);"></div>
-              <div style="width:${pctRem}%; background:var(--red);"></div>
+            <div class="liq-card" style="margin-top:10px;">
+              <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:8px;"><span style="color:var(--green);">${_AppFormat.currency(totalOdenen)} (%${pctPaid})</span><span style="color:var(--red);">${_AppFormat.currency(totalKalan)} (%${pctRem})</span></div>
+              <div style="width:100%; height:8px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; display:flex;"><div style="width:${pctPaid}%; background:var(--green);"></div><div style="width:${pctRem}%; background:var(--red);"></div></div>
             </div>
+          `;
+          container.innerHTML = html;
+          return;
+        }
+
+        let activeCardVal = isOdenen ? paidCard : remCard;
+        let curManual = isOdenen ? totalPaidManual : totalRemManual;
+        let curSparkasse = isOdenen ? paidSparkasse : remSparkasse;
+        let curN26 = isOdenen ? paidN26 : remN26;
+        let curNakit = isOdenen ? paidNakit : remNakit;
+        let curC24 = isOdenen ? paidC24 : remC24;
+        let curOtherManual = isOdenen ? paidOtherManual : remOtherManual;
+        let curTrTRY = isOdenen ? totalPaidTrTRY : totalRemTrTRY;
+        let curTrEUR = isOdenen ? totalPaidTrEUR : totalRemTrEUR;
+        let curWorldTRY = isOdenen ? paidWorldEkoTRY : remWorldEkoTRY;
+        let curEnparaTRY = isOdenen ? paidEnparaTRY : remEnparaTRY;
+        let curFreeTRY = isOdenen ? paidFreeTRY : remFreeTRY;
+        let curOtherTRY = isOdenen ? paidOtherTRY : remOtherTRY;
+        let prefixTitle = isOdenen ? 'Ödenen' : 'Kalan';
+        let currentDisplayTotal = isOdenen ? totalOdenen : totalKalan;
+        let totalThemeColor = isOdenen ? 'var(--green)' : (totalKalan > 0 ? 'var(--red)' : 'var(--green)');
+        let totalSign = isOdenen ? '+' : (totalKalan > 0 ? '-' : '');
+
+        html += `
+          <div class="liq-section-title">💳 ${prefixTitle} Kart Harcama</div>
+          <div class="liq-card" style="border-left: 4px solid var(--accent);">
+            <div class="liq-row"><span style="font-weight:700; color:var(--accent); font-size:12px;">Kart Harcama Limiti (€${_AppFormat.number(targetCardLimit)})</span><span style="font-weight:700; color:var(--accent);">${_AppFormat.currency(activeCardVal)}</span></div>
           </div>
         `;
+        if (curManual > 0 || (!isOdenen && pendingManualItems.length > 0)) {
+          html += `<div class="liq-section-title">🏦 ${prefixTitle} Diğer Giderler</div><div class="liq-card" style="border-left: 4px solid var(--orange);">`;
+          if (curSparkasse > 0) html += `<div class="liq-row"><span>🏦 Sparkasse</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(curSparkasse)}</span></div>`;
+          if (curN26 > 0) html += `<div class="liq-row"><span>🏦 N26</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(curN26)}</span></div>`;
+          if (curNakit > 0) html += `<div class="liq-row"><span>💵 Nakit</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(curNakit)}</span></div>`;
+          if (curC24 > 0) html += `<div class="liq-row"><span>🏦 C24</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(curC24)}</span></div>`;
+          if (curOtherManual > 0) html += `<div class="liq-row"><span>Diğer</span><span style="font-weight:600; color:#fff;">${_AppFormat.currency(curOtherManual)}</span></div>`;
+          html += `<div class="liq-row total-row" style="color:var(--orange);"><span>${prefixTitle} Diğer Giderler</span><span>${_AppFormat.currency(curManual)}</span></div></div>`;
+        }
+        if (curTrTRY > 0 || (!isOdenen && pendingTrItems.length > 0)) {
+          html += `<div class="liq-section-title">🇹🇷 ${prefixTitle} TR Ödemeler</div><div class="liq-card" style="border-left: 4px solid var(--purple);">`;
+          if (curWorldTRY > 0) html += `<div class="liq-row"><span>💳 World Eko</span><span style="font-weight:600; color:#fff;">₺${_AppFormat.number(curWorldTRY)}</span></div>`;
+          if (curEnparaTRY > 0) html += `<div class="liq-row"><span>💳 Enpara</span><span style="font-weight:600; color:#fff;">₺${_AppFormat.number(curEnparaTRY)}</span></div>`;
+          if (curFreeTRY > 0) html += `<div class="liq-row"><span>💳 Free</span><span style="font-weight:600; color:#fff;">₺${_AppFormat.number(curFreeTRY)}</span></div>`;
+          if (curOtherTRY > 0) html += `<div class="liq-row"><span>💳 Diğer</span><span style="font-weight:600; color:#fff;">₺${_AppFormat.number(curOtherTRY)}</span></div>`;
+          html += `<div class="liq-row total-row" style="color:var(--purple);"><span>${prefixTitle} TR Ödemeleri</span><span style="text-align:right;">₺${_AppFormat.number(curTrTRY)}<div style="font-size:11px; font-weight:normal; color:var(--text-dim); margin-top:2px;">~${_AppFormat.currency(curTrEUR)}</div></span></div></div>`;
+        }
+        html += `
+          <div class="liq-section-title">📊 ${isOdenen ? 'Ödenen Toplam Tutar' : 'Kalan Toplam Tutar'}</div>
+          <div class="liq-card" style="border-left: 4px solid ${totalThemeColor}; margin-bottom:8px;">
+            <div class="liq-row" style="border-bottom:none; padding:6px 0;"><span style="font-weight:700; font-size:15px; color:${totalThemeColor};">${isOdenen ? 'Gerçekleşen Ödemeler' : 'Bekleyen Ödemeler'}</span><span style="font-weight:700; font-size:18px; color:${totalThemeColor};">${totalSign}${_AppFormat.currency(currentDisplayTotal)}</span></div>
+          </div>
+          <div class="liq-card" style="margin-top:10px;">
+            <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:8px;"><span style="color:var(--green);">${_AppFormat.currency(totalOdenen)} (%${pctPaid})</span><span style="color:var(--red);">${_AppFormat.currency(totalKalan)} (%${pctRem})</span></div>
+            <div style="width:100%; height:8px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; display:flex;"><div style="width:${pctPaid}%; background:var(--green);"></div><div style="width:${pctRem}%; background:var(--red);"></div></div>
+          </div>
+        `;
+        container.innerHTML = html;
         return;
       }
 
-      let activeVal = isOdenen ? totalOdenen : totalKalan;
-      let color = isOdenen ? 'var(--green)' : (totalKalan > 0 ? 'var(--red)' : 'var(--green)');
-      let label = isOdenen ? 'Gerçekleşen Ödemeler' : 'Bekleyen Ödemeler';
-      container.innerHTML = `
-        <div class="liq-section-title">📊 ${label}</div>
-        <div class="liq-card" style="border-left: 4px solid ${color};">
-          <div class="liq-row" style="border:none; padding:6px 0;">
-            <span style="font-weight:700; font-size:15px; color:${color};">${label}</span>
-            <span style="font-weight:700; font-size:18px; color:${color};">${_AppFormat.currency(activeVal)}</span>
+      // PLAN MODU (CHECKBOX LİSTESİ)
+      let targetManualList = isAll ? [...paidManualItems, ...pendingManualItems] : (isOdenen ? paidManualItems : pendingManualItems);
+      let targetTrList = isAll ? [...paidTrItems, ...pendingTrItems] : (isOdenen ? paidTrItems : pendingTrItems);
+      let targetCardAmt = isAll ? targetCardLimit : (isOdenen ? paidCard : remCard);
+
+      let planTitle = isAll ? 'Tüm İşlemler:' : (isOdenen ? 'Ödenen İşlemler:' : 'Bekleyen Ödemeler:');
+      let planTotalColor = isAll ? 'var(--orange)' : (isOdenen ? 'var(--green)' : 'var(--red)');
+
+      let html = `
+        <div style="margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:6px;"><div style="font-weight:700; font-size:14px;">${planTitle}</div><div id="lblControlLiveTotal" style="font-weight:700; font-size:15px; color:${planTotalColor};">€0,00</div></div>
+            <button type="button" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;" onclick="toggleAllControlCheckboxes()">Tümünü Seç / Kaldır</button>
           </div>
+          <div id="ctrlAccountsSummaryLines" style="margin-top:2px;"></div>
         </div>
-        <div class="liq-card" style="margin-top:10px;">
-          <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:8px;">
-            <span style="color:var(--green);">${_AppFormat.currency(totalOdenen)} (%${pctPaid})</span>
-            <span style="color:var(--red);">${_AppFormat.currency(totalKalan)} (%${pctRem})</span>
-          </div>
-          <div style="width:100%; height:8px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; display:flex;">
-            <div style="width:${pctPaid}%; background:var(--green);"></div>
-            <div style="width:${pctRem}%; background:var(--red);"></div>
-          </div>
-        </div>
+        <div id="controlItemsList">
       `;
+      if (targetCardAmt > 0) {
+        let cardSubDesc = isOdenen ? `Harcanan Miktar (Limit: €${_AppFormat.number(targetCardLimit)})` : `Kalan Limit (Limit: €${_AppFormat.number(targetCardLimit)})`;
+        html += `<label class="template-item"><div style="display:flex; align-items:center;"><input type="checkbox" class="chk-control" data-eur="${targetCardAmt}" data-try="0" data-account="n26" onchange="recalcControlTotal()" checked><div><div style="font-weight:600; font-size:13px;"><span class="template-tag tag-card">KART</span> N26</div><div style="font-size:11px; color:var(--text-dim); margin-top:2px;">${cardSubDesc}</div></div></div><div style="font-weight:700; font-size:14px; color:#fff;">${_AppFormat.currency(targetCardAmt)}</div></label>`;
+      }
+      targetManualList.forEach(item => {
+        let numAmt = parseAmountToNum(item.amount), rawAcc = (item.card || '').toLowerCase().trim(), accType = 'diger';
+        if (rawAcc.includes('sparkasse')) accType = 'sparkasse';
+        else if (rawAcc.includes('n26')) accType = 'n26';
+        else if (rawAcc.includes('c24')) accType = 'c24';
+        else if (rawAcc.includes('nakit') || rawAcc.includes('bar')) accType = 'nakit';
+        let subInfo = item.date ? `${item.date} • ${item.card || 'Hesap'}` : (item.card ? `⏳ Bekliyor • ${item.card}` : '⏳ Bekleyen Gider');
+        html += `<label class="template-item"><div style="display:flex; align-items:center;"><input type="checkbox" class="chk-control" data-eur="${numAmt}" data-try="0" data-account="${accType}" onchange="recalcControlTotal()" checked><div><div style="font-weight:600; font-size:13px;"><span class="template-tag tag-manual">HESAP</span> ${_AppFormat.escapeHtml(item.merchant || 'Açıklamasız')}</div><div style="font-size:11px; color:var(--text-dim); margin-top:2px;">${subInfo}</div></div></div><div style="font-weight:700; font-size:14px; color:#fff;">${_AppFormat.currency(numAmt)}</div></label>`;
+      });
+      targetTrList.forEach(item => {
+        let amtTRY = parseAmountToNum(item.amount), amtEUR = parseAmountToNum(item.eurAmount || 0);
+        if (amtEUR === 0 && amtTRY > 0 && trRateEUR > 0) amtEUR = amtTRY * trRateEUR;
+        let subInfo = item.date ? `${item.date} • ₺${_AppFormat.number(amtTRY)}` : `⏳ Bekliyor • ₺${_AppFormat.number(amtTRY)}`;
+        html += `<label class="template-item"><div style="display:flex; align-items:center;"><input type="checkbox" class="chk-control" data-eur="${amtEUR}" data-try="${amtTRY}" data-account="tr" onchange="recalcControlTotal()" checked><div><div style="font-weight:600; font-size:13px;"><span class="template-tag tag-tr">TR KART</span> ${_AppFormat.escapeHtml(item.merchant || 'TR Kart')}</div><div style="font-size:11px; color:var(--text-dim); margin-top:2px;">${subInfo}</div></div></div><div style="font-weight:700; font-size:14px; color:#fff;">${_AppFormat.currency(amtEUR)}</div></label>`;
+      });
+      html += `</div>`;
+      container.innerHTML = html;
+      recalcControlTotal();
     }
 
     const TR_DAY_NAMES = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
