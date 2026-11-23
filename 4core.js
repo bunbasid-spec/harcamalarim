@@ -1,5 +1,5 @@
 const APP_CONFIG = {
-  VERSION: "5.0.0",
+  VERSION: "4.0.0",
   API_URL: "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec",
   CURRENCY_SYMBOL: "€",
   LOCALE: "de-DE"
@@ -171,7 +171,7 @@ const AppFrame = {
     if (isFinite(sab)) document.documentElement.style.setProperty("--sab", sab + "px");
     return true;
   },
-  close(type = "frame-close", fallbackUrl = "2.html") {
+  close(type = "frame-close", fallbackUrl = "4.html") {
     if (this.isEmbed()) {
       window.parent.postMessage({ type }, window.location.origin);
     } else {
