@@ -15,8 +15,8 @@
   <link rel="apple-touch-icon" href="./icon.png">
   <link rel="icon" type="image/png" href="./icon.png">
 
-  <title>Harcama & Borç Takip</title>
-  <link rel="stylesheet" href="shared.css">
+  <title>Harcama & Borç Takip (Test)</title>
+  <link rel="stylesheet" href="4shared.css">
   <style>
     :root {
       --sat: env(safe-area-inset-top, 0px);
@@ -282,9 +282,7 @@
     .item-right { font-weight: 700; font-size: 15px; text-align: right; }
     .item-right .sub-eur { font-size: 11px; color: var(--text-dim); font-weight: 500; margin-top: 2px; }
 
-    /* =========================================================
-       5 EŞİT ÖZELLİKLİ ALT MENÜ (DÜZ, HİZALI, TAŞMASIZ)
-       ========================================================= */
+    /* 5 EŞİT ÖZELLİKLİ ALT MENÜ */
     .bottom-nav {
       position: fixed;
       bottom: 0;
@@ -583,13 +581,13 @@
 
   <!-- EKLE BUTONUNA BASILI TUTUNCA ÇIKAN KAYITLARI AKTAR & SÜRÜM ROZETİ -->
   <div id="badgeVersionAction" class="fab-mini-action">
-    Sürüm 5.0.0
+    Sürüm 4.0.0 (Test)
   </div>
   <button id="btnLastMonthAction" class="fab-mini-action" onclick="openLastMonthTemplateModal()">
     📋 Kayıtları Aktar
   </button>
 
-  <!-- BAĞIMSIZ MODÜLLER (BORÇLAR, PROJELER, GRAFİKLER) ALT MENÜ ÜZERİNDE AÇILIR -->
+  <!-- BAĞIMSIZ MODÜLLER (4BORCLAR, 4PROJE, 4GRAFIK) ALT MENÜ ÜZERİNDE AÇILIR -->
   <div id="subFrameWrap">
     <iframe id="subFrame" title="Modül" style="width:100%; height:100%; border:0; background:#0f172a;"></iframe>
   </div>
@@ -883,10 +881,10 @@
     </div>
   </div>
 
-  <script src="core.js"></script>
+  <script src="4core.js"></script>
   <script>
     const _APP_CONFIG = (typeof APP_CONFIG !== 'undefined') ? APP_CONFIG : {
-      VERSION: "5.0.0",
+      VERSION: "4.0.0",
       API_URL: "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec",
       CURRENCY_SYMBOL: "€",
       LOCALE: "de-DE"
@@ -1144,7 +1142,7 @@
 
     function getFallbackModuleHTML(page) {
       const apiUrl = _APP_CONFIG.API_URL;
-      if (page === '4borclar.html' || page === 'borclar.html') {
+      if (page === '4borclar.html') {
         return `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>
           body{background:#0f172a;color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:16px;margin:0}
           .hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-top:6px}
@@ -1195,7 +1193,7 @@
             load(false);
           <\/script></body></html>`;
       }
-      if (page === '4proje.html' || page === 'proje.html') {
+      if (page === '4proje.html') {
         return `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>
           body{background:#0f172a;color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:16px;margin:0}
           .hdr{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-top:6px}
@@ -1255,7 +1253,6 @@
       wrap.style.display = 'block';
       document.body.style.overflow = 'hidden';
 
-      // Canvas önizleme ortamı (about: veya blob:) veya dosya bulunamaması durumu
       const isIsolatedPreview = (window.location.protocol === 'about:' || window.location.protocol === 'blob:' || window.location.href.startsWith('about:srcdoc'));
       if (isIsolatedPreview) {
         frame.removeAttribute('src');
