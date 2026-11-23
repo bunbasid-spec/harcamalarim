@@ -103,6 +103,7 @@
     .cbox p { font-size: 13px; color: var(--text-dim); margin-bottom: 18px; line-height: 1.4; }
     .copts { display: flex; flex-direction: column; gap: 8px; }
     .copt { background: rgba(255,255,255,.08); color: #fff; border: 1px solid var(--border); padding: 10px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; }
+    .copt.cur { background: var(--green); color: #000; border-color: var(--green); }
     .copt.danger { background: var(--red); border-color: var(--red); color: #fff; }
     .cclose { width: 100%; background: #334155; color: var(--text); border: 1px solid #475569; padding: 10px; border-radius: 8px; font-weight: 700; font-size: 13px; margin-top: 8px; cursor: pointer; }
   </style>
@@ -192,8 +193,12 @@
     let PROJECTS = _LS.getJSON("proje_cache", []);
     let backendOk = false, loading = true, lastError = "";
     let view = "list", pid = null, yf = "all", cf = null, op = null;
-    let cm = _LS.get("proje_chart_default", "L");
-    let catOpen = _LS.get("proje_cat_default", "open") === "open";
+    let chartDefault = _LS.get("proje_chart_default", "L");
+    if (["R", "M", "L"].indexOf(chartDefault) < 0) chartDefault = "L";
+    let catDefault = _LS.get("proje_cat_default", "open");
+    if (catDefault !== "open" && catDefault !== "closed") catDefault = "open";
+    let cm = chartDefault;
+    let catOpen = catDefault === "open";
 
     const body = document.getElementById("pbody");
 
@@ -222,7 +227,7 @@
     function legend(segs) { return '<div class="lgd">' + segs.map(s => '<span><i style="background:' + s.col + '"></i>' + esc(s.label) + "</span>").join("") + "</div>"; }
     function hero(segs, total, label, sub, pill) {
       const nx = cm === "L" ? ["min", "Küçült"] : (cm === "M" ? ["up", "Kapat"] : ["down", "Büyüt"]);
-      const btn = '<button class="hbt" data-act="cm">' + ic(nx[0]) + "</button>";
+      const btn = '<button class="hbt" data-act="cm" data-lp="chart">' + ic(nx[0]) + "</button>";
       let h = '<div class="hero">';
       if (cm === "R") return h + '<div class="hrow"><div><div class="lbl">' + label + ' • toplam harcama</div><div class="tv">€' + f(total) + "</div></div>" + btn + "</div></div>";
       h += '<div class="hr1"><div><div class="lbl">' + sub + '</div><div class="sub0">' + label + "</div></div>" + btn + "</div>";
@@ -277,7 +282,7 @@
       ys.forEach(y => { const on = String(yf) === String(y); h += '<button class="chip' + (on ? " on" : "") + '" data-act="yr:' + y + '">' + y + "</button>"; });
       h += "</div>";
 
-      h += '<div class="sh"><span>Kategoriler</span><span class="shr">' + (cf ? '<button class="lnk" data-act="cat:">Filtreyi temizle</button>' : "") + '<button class="hbt" data-act="cato">' + ic(catOpen ? "up" : "down") + "</button></span></div>";
+      h += '<div class="sh"><span>Kategoriler</span><span class="shr">' + (cf ? '<button class="lnk" data-act="cat:">Filtreyi temizle</button>' : "") + '<button class="hbt" data-act="cato" data-lp="cat">' + ic(catOpen ? "up" : "down") + "</button></span></div>";
       if (catOpen) {
         cs.forEach(c => {
           const lk = catLook(c.k);
@@ -435,12 +440,47 @@
       document.getElementById("cc-x").onclick = () => document.getElementById("cmodal").classList.remove("open");
     }
 
-    function askDeleteTx(rowIndex) {
-      const p = PROJECTS.find(x => x.id === pid); if (!p) return;
-      openConfirm({ title: "İşlem silinsin mi?", desc: "Bu kayıt kalıcı olarak silinecek.", onYes: async () => { await postApi({ action: "deleteProjectItem", payload: { projectId: p.id, rowIndex } }); loadData(true); } });
+    function openChoice(cfg) {
+      let h = '<h3>' + cfg.title + "</h3><p>" + cfg.desc + '</p><div class="copts">';
+      cfg.options.forEach((o, i) => { h += '<button class="copt' + (o.cur ? " cur" : "") + '" data-i="' + i + '">' + (o.cur ? "✓ " : "") + o.label + "</button>"; });
+      h += '</div><button class="cclose" id="cc-x">Vazgeç</button>';
+      const box = document.getElementById("cbox");
+      box.innerHTML = h;
+      document.getElementById("cmodal").classList.add("open");
+      box.querySelectorAll(".copt").forEach(b => { b.onclick = () => { cfg.options[+b.getAttribute("data-i")].pick(); document.getElementById("cmodal").classList.remove("open"); }; });
+      document.getElementById("cc-x").onclick = () => document.getElementById("cmodal").classList.remove("open");
+    }
+
+    function openLP(kind) {
+      if (kind === "chart") {
+        const set = v => () => { chartDefault = v; _LS.set("proje_chart_default", v); cm = v; render(true); };
+        openChoice({
+          title: "Grafik varsayılanı",
+          desc: "Projeler sayfaları bu görünümle açılsın.",
+          options: [
+            { label: "Tek satır", cur: chartDefault === "R", pick: set("R") },
+            { label: "Orta", cur: chartDefault === "M", pick: set("M") },
+            { label: "Büyük", cur: chartDefault === "L", pick: set("L") }
+          ]
+        });
+      } else if (kind === "cat") {
+        const set = v => () => { catDefault = v; _LS.set("proje_cat_default", v); catOpen = v === "open"; render(true); };
+        openChoice({
+          title: "Kategoriler varsayılanı",
+          desc: "Proje detayı kategoriler nasıl başlasın?",
+          options: [
+            { label: "Açık başlasın", cur: catDefault === "open", pick: set("open") },
+            { label: "Kapalı başlasın", cur: catDefault === "closed", pick: set("closed") }
+          ]
+        });
+      }
     }
     function askDeleteProject(id) {
       openConfirm({ title: "Proje silinsin mi?", desc: "Proje ve tüm işlemleri kalıcı olarak silinecek.", onYes: async () => { await postApi({ action: "deleteProject", payload: { projectId: id } }); loadData(true); } });
+    }
+    function askDeleteTx(rowIndex) {
+      const p = PROJECTS.find(x => x.id === pid); if (!p) return;
+      openConfirm({ title: "İşlem silinsin mi?", desc: "Bu kayıt kalıcı olarak silinecek.", onYes: async () => { await postApi({ action: "deleteProjectItem", payload: { projectId: p.id, rowIndex } }); loadData(true); } });
     }
 
     const SW_W = 150;
@@ -451,20 +491,29 @@
       card.style.transform = open ? "translateX(-" + SW_W + "px)" : "translateX(0px)";
       swc.classList.toggle("swiped", open);
       swc.classList.remove("swiping");
-      if (open) { if (openSw && openSw !== swc) setSwipe(openSw, false); openSw = swc; }
-      else if (openSw === swc) openSw = null;
+      if (open) {
+        if (openSw && openSw !== swc) setSwipe(openSw, false);
+        openSw = swc;
+      } else if (openSw === swc) openSw = null;
     }
     function closeSwipe() { if (openSw) setSwipe(openSw, false); }
 
+    let lpTimer = null, lpFired = false, lpX = 0, lpY = 0;
     const app = document.getElementById("app");
     app.addEventListener("pointerdown", e => {
-      swMoved = false;
+      lpFired = false; swMoved = false;
       const sbtn = e.target.closest(".swb"), card = e.target.closest(".swcard");
       if (openSw && !sbtn && (!card || card.closest(".swc") !== openSw)) closeSwipe();
       if (card && !sbtn) swState = { card, swc: card.closest(".swc"), x: e.clientX, y: e.clientY, id: e.pointerId, base: card.closest(".swc") === openSw ? -SW_W : 0, dx: 0, lock: null };
       else swState = null;
+      const t = e.target.closest("[data-lp]");
+      if (!t) return;
+      lpX = e.clientX; lpY = e.clientY;
+      clearTimeout(lpTimer);
+      lpTimer = setTimeout(() => { lpFired = true; if (navigator.vibrate) navigator.vibrate(40); openLP(t.getAttribute("data-lp")); }, 500);
     });
     app.addEventListener("pointermove", e => {
+      if (lpTimer && Math.hypot(e.clientX - lpX, e.clientY - lpY) > 10) { clearTimeout(lpTimer); lpTimer = null; }
       const s = swState; if (!s || e.pointerId !== s.id) return;
       const dx = e.clientX - s.x, dy = e.clientY - s.y;
       if (s.lock === null) {
@@ -474,11 +523,15 @@
       if (s.lock === "h") { s.card.style.transform = "translateX(" + Math.max(-(SW_W + 25), Math.min(0, s.base + dx)) + "px)"; s.dx = dx; }
     });
     app.addEventListener("pointerup", () => {
+      clearTimeout(lpTimer); lpTimer = null;
       const s = swState; swState = null; if (!s || s.lock !== "h") return;
       swMoved = true; setSwipe(s.swc, s.base === 0 ? s.dx < -35 : s.dx < 35);
     });
+    app.addEventListener("pointercancel", () => { clearTimeout(lpTimer); lpTimer = null; });
+    app.addEventListener("contextmenu", e => { const t = e.target.closest("[data-lp]"); if (t) { e.preventDefault(); openLP(t.getAttribute("data-lp")); } });
 
     app.addEventListener("click", e => {
+      if (lpFired) { lpFired = false; return; }
       if (swMoved) { swMoved = false; return; }
       const t = e.target.closest("[data-act]"); if (!t) return;
       const a = t.getAttribute("data-act"), i = a.indexOf(":");
