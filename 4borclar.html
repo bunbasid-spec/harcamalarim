@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="theme-color" content="#0f172a">
   <title>Borçlar & Alacaklar</title>
-  <link rel="stylesheet" href="shared.css">
+  <link rel="stylesheet" href="4shared.css">
   <style>
     :root { --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px); --bg: #0f172a; --card-bg: #1e293b; --accent: #38bdf8; --primary-blue: #2563eb; --text: #f8fafc; --text-dim: #94a3b8; --border: #334155; --green: #10b981; --red: #f43f5e; --orange: #f59e0b; --purple: #a855f7; }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
@@ -59,13 +59,6 @@
     .item-left .sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
     .item-right { font-weight: 700; font-size: 15px; text-align: right; }
     .item-right .sub-eur { font-size: 11px; color: var(--text-dim); font-weight: 500; margin-top: 2px; }
-
-    .accordion-body { display: none; background: #131d31; border: 1px solid var(--border); border-top: none; border-radius: 0 0 10px 10px; padding: 12px 14px; z-index: 2; }
-    .accordion-body.open { display: block; }
-    .acc-row { display: grid; grid-template-columns: 105px 1fr auto; align-items: center; gap: 6px; font-size: 12px; padding: 5px 0; border-bottom: 1px dashed rgba(255, 255, 255, 0.08); }
-    .acc-row:last-child { border-bottom: none; }
-    .acc-date { color: var(--text-dim); white-space: nowrap; }
-    .acc-amount { font-weight: 600; text-align: right; white-space: nowrap; }
 
     .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); align-items: flex-end; z-index: 999; }
     .modal-content { background: var(--card-bg); width: 100%; border-radius: 20px 20px 0 0; padding: 20px; padding-bottom: max(25px, var(--sab)); border-top: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
@@ -157,14 +150,13 @@
     </div>
   </div>
 
-  <!-- ÖDEME / TAHSİLAT & GEÇMİŞ DÜZENLEME MODALI -->
+  <!-- ÖDEME / TAHSİLAT MODALI -->
   <div class="modal" id="modalPayment">
     <div class="modal-content">
       <h3 style="margin-bottom: 14px; font-size: 16px;" id="lblPaymentTitle">Ödeme Ekle</h3>
       <input type="hidden" id="payDebtType">
       <input type="hidden" id="payRowIndex">
       <input type="hidden" id="payPersonName">
-      <input type="hidden" id="payIsHistoryEdit" value="false">
       <div class="form-group">
         <label id="lblPaymentDate">Ödeme Tarihi</label>
         <input type="date" id="payDate">
@@ -180,7 +172,7 @@
     </div>
   </div>
 
-  <script src="core.js"></script>
+  <script src="4core.js"></script>
   <script>
     const _API_URL = (typeof APP_CONFIG !== 'undefined') ? APP_CONFIG.API_URL : "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
     const _LS = (typeof AppStorage !== 'undefined') ? AppStorage : {
@@ -207,7 +199,6 @@
 
     function todayISO() { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().split("T")[0]; }
     function isoToDMY(iso) { const p = String(iso || "").split("-"); return p.length === 3 ? `${p[2]}.${p[1]}.${p[0]}` : iso; }
-    function dmyToISO(dmy) { const p = String(dmy || "").split("."); return p.length === 3 ? `${p[2]}-${p[1].padStart(2, "0")}-${p[0].padStart(2, "0")}` : todayISO(); }
     function toTs(dmy) { const p = String(dmy || "").split("."); return p.length === 3 ? new Date(+p[2], +p[1] - 1, +p[0]).getTime() : 0; }
     function parseAmt(amt) {
       if (typeof amt === "number") return amt;
