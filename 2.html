@@ -1111,51 +1111,6 @@
       flex-direction: column;
       gap: 2px;
     }
-  
-    /* ===== v3.10: ay çubuğu, alt menü, Raporlar ===== */
-    :root { --nav-h: calc(58px + env(safe-area-inset-bottom, 0px)); }
-    body { padding-bottom: calc(var(--nav-h) + 24px); }
-    .topbar { grid-template-columns: 38px 1fr 38px !important; }
-    .mnav { height: 38px; display: flex; align-items: stretch; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: all 0.25s ease; min-width: 0; }
-    .mn-ar { width: 38px; border: none; background: transparent; color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; flex-shrink: 0; }
-    .mn-ar svg { width: 18px; height: 18px; }
-    .mn-ar:disabled { opacity: 0.3; cursor: default; }
-    .mn-name { flex: 1; border: none; background: transparent; color: var(--text); padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; line-height: 1.15; min-width: 0; }
-    .mn-1 { font-size: 14px; font-weight: 700; white-space: nowrap; }
-    .mn-2 { font-size: 11px; font-weight: 600; color: var(--text-dim); }
-    .mnav.past { border: 2px solid var(--orange); background: rgba(245, 158, 11, 0.12); box-shadow: 0 0 10px rgba(245, 158, 11, 0.25); }
-    .mnav.past .mn-ar, .mnav.past .mn-name, .mnav.past .mn-2 { color: var(--orange); }
-    .mnav.next { border: 2px solid var(--purple); background: rgba(168, 85, 247, 0.12); box-shadow: 0 0 10px rgba(168, 85, 247, 0.25); }
-    .mnav.next .mn-ar, .mnav.next .mn-name, .mnav.next .mn-2 { color: var(--purple); }
-    .dseg { display: flex; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 3px; gap: 3px; height: 38px; }
-    .dseg button { flex: 1; border: none; background: transparent; color: var(--text-dim); font-size: 13px; font-weight: 600; border-radius: 6px; cursor: pointer; padding: 0; }
-    .dseg button.active { background: var(--orange); color: #0f172a; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3); }
-    .top-title { font-size: 16px; font-weight: 700; text-align: center; line-height: 38px; }
-
-    .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; height: var(--nav-h); padding-bottom: env(safe-area-inset-bottom, 0px); background: rgba(21, 31, 50, 0.98); border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(5, 1fr); z-index: 120; }
-    .bn-item { border: none; background: transparent; color: var(--text-dim); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 600; cursor: pointer; padding: 0; }
-    .bn-item svg { width: 25px; height: 25px; }
-    .bn-item.active { color: var(--c); }
-    .bn-center { display: flex; justify-content: center; align-items: flex-start; }
-    .bottom-nav .fab { position: relative; right: auto; bottom: auto; width: 58px; height: 58px; margin-top: -22px; border: 5px solid var(--bg); z-index: 2; }
-    .bottom-nav .fab span { font-size: 34px; margin-top: -2px; }
-    .fab-menu { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--nav-h) + 26px); display: none; flex-direction: column; align-items: center; gap: 8px; z-index: 130; }
-    .fab-menu.open { display: flex; }
-    .fab-menu .fab-mini-action { position: static; display: flex; }
-
-    .rep-head { display: flex; align-items: center; gap: 10px; padding-top: 6px; }
-    .rep-title { flex: 1; font-size: 20px; font-weight: 700; }
-    .rep-send { height: 38px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--green); background: rgba(16, 185, 129, 0.14); color: var(--green); font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; }
-    .rep-send svg { width: 16px; height: 16px; }
-    #repTabs .tab-btn.active { background: var(--green); color: #0f172a; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); }
-    .rep-panel { position: static !important; inset: auto !important; background: transparent !important; z-index: auto !important; align-items: stretch !important; }
-    .rep-panel .modal-content { max-height: none !important; border: none !important; background: transparent !important; padding: 0 !important; border-radius: 0 !important; overflow: visible !important; }
-    .rep-panel .modal-actions { display: none !important; }
-    .rep-panel [id$="ReportContent"] { max-height: none !important; overflow: visible !important; }
-    .mp-row { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 13px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); margin-bottom: 8px; cursor: pointer; text-align: left; }
-    .mp-row.on { border-color: var(--accent); background: rgba(56, 189, 248, 0.1); }
-    .mp-a { font-size: 14px; font-weight: 700; }
-    .mp-b { font-size: 11px; color: var(--text-dim); font-weight: 600; }
   </style>
 </head>
 <body>
@@ -1166,37 +1121,18 @@
   <div id="pullIndicator">↓</div>
 
   <div id="appContent">
-    <div class="header topbar" id="topBar">
-      <!-- SOL: TARİH BUTONU (Ajanda) -->
+    <div class="header" style="grid-template-columns: 1fr 38px 1fr; gap: 8px;">
+      <div class="module-switcher">
+        <button class="mod-btn active" id="modBudget" onclick="switchModule('budget')">Bütçe</button>
+        <button class="mod-btn" id="modDebts" onclick="switchModule('debts')">Borçlar</button>
+      </div>
+      
+      <!-- ORTADAKİ DİNAMİK GÜN BUTONU -->
       <button type="button" id="btnTimelineView" style="height:38px; width:38px; background:var(--card-bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:14px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;" onclick="switchModule('timeline')">
         <span id="btnTimelineDayNum">--</span>
       </button>
 
-      <!-- ORTA: ay çubuğu (Bütçe) / Aktif-Arşiv (Borçlar) / başlık (Ajanda) -->
-      <div id="topCenter" style="min-width:0;">
-        <div class="mnav" id="monthNav">
-          <button type="button" class="mn-ar" id="mnPrev" aria-label="Önceki ay" onclick="stepMonth(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6l6 6"/></svg></button>
-          <button type="button" class="mn-name" id="mnName" aria-label="Ay seç" onclick="openMonthPicker()"><span class="mn-1" id="mn1">...</span><span class="mn-2" id="mn2"></span></button>
-          <button type="button" class="mn-ar" id="mnNext" aria-label="Sonraki ay" onclick="stepMonth(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6l-6 6"/></svg></button>
-        </div>
-        <div class="dseg" id="debtSeg" style="display:none;">
-          <button type="button" id="dsActive" class="active" onclick="setDebtArchive(false)">Aktif borçlar</button>
-          <button type="button" id="dsArch" onclick="setDebtArchive(true)">Arşiv</button>
-        </div>
-        <div class="top-title" id="topTitle" style="display:none;">Ajanda</div>
-      </div>
-
-      <!-- SAĞ: GRAFİKLER -->
-      <button type="button" id="btnChartsTop" aria-label="Grafikler" onclick="openCharts()" style="height:38px; width:38px; background:var(--card-bg); border:1px solid var(--border); border-radius:8px; color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"/><path d="M9 8m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"/><path d="M15 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"/><path d="M4 20l14 0"/></svg></button>
-
-      <!-- Eski modül anahtarı ve ay listesi: kod bunlara başvurduğu için DOM'da kalıyor, görünmüyor -->
-      <div style="display:none;">
-        <div class="module-switcher">
-        <button class="mod-btn active" id="modBudget" onclick="switchModule('budget')">Bütçe</button>
-        <button class="mod-btn" id="modDebts" onclick="switchModule('debts')">Borçlar</button>
-      </div>
-      </div>
-      <select id="sheetSelect" style="display:none;" class="sheet-select" onchange="onFilterChange()"></select>
+      <select id="sheetSelect" class="sheet-select" onchange="onFilterChange()"></select>
     </div>
 
     <!-- 1. BÜTÇE MODÜLÜ GÖRÜNÜMÜ -->
@@ -1315,56 +1251,40 @@
       <div id="timelineListContainer" style="overflow-y: auto; max-height: calc(100vh - 200px); padding-top: 6px; padding-bottom: 85px; -webkit-overflow-scrolling: touch;"></div>
     </div>
     
-    <!-- 4. RAPORLAR GÖRÜNÜMÜ (Ay İçi Kontrol, Geçmiş Ay, Likidite) -->
-    <div id="viewReports" style="display: none;">
-      <div class="rep-head">
-        <div class="rep-title">Raporlar</div>
-        <button type="button" class="rep-send" id="btnRepSend" onclick="openTelegramReportChooser()" aria-label="Listeyi Telegram'a gönder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14l11 -11"/><path d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a.55 .55 0 0 1 0 -1l18 -6.5"/></svg>Gönder</button>
-      </div>
-      <div class="tabs" id="repTabs" style="margin: 14px 0 12px;">
-        <button class="tab-btn active" id="rtab-ctrl" onclick="showReportPanel('ctrl')">Ay İçi Kontrol</button>
-        <button class="tab-btn" id="rtab-past" onclick="showReportPanel('past')">Geçmiş Ay</button>
-        <button class="tab-btn" id="rtab-liq" onclick="showReportPanel('liq')">Likidite</button>
-      </div>
-      <div id="repPanels"></div>
-    </div>
-
     <div id="listContainer"></div>
   </div>
 
   <!-- BASILI TUTUNCA ÇIKAN SÜRÜM ROZETİ VE 5 AKSİYON BUTONU -->
-<div class="fab-menu" id="fabMenu">
   <div id="badgeVersionAction" class="fab-mini-action">
-      Sürüm 3.10.0
-    </div>
-    <button id="btnToggleSearchAction" class="fab-mini-action" onclick="toggleSearchFromFab()">
-      🔍 Harcamalarda Ara
-    </button>
-    <button id="btnLastMonthAction" class="fab-mini-action" onclick="openLastMonthTemplateModal()">
-      📋 Kayıtları Aktar
-    </button>
+    Sürüm 3.9.0
   </div>
+  <button id="btnProjectsAction" class="fab-mini-action" onclick="openProjects()">
+    📁 Projeler
+  </button>
+  <button id="btnChartsAction" class="fab-mini-action" onclick="openCharts()">
+    📈 Grafikler
+  </button>
+  <button id="btnPastMonthReportAction" class="fab-mini-action" onclick="openPastMonthReportModal()">
+    📊 Geçmiş Ay Raporu
+  </button>
+  <button id="btnControlAction" class="fab-mini-action" onclick="openControlModal()">
+    📋 Ay İçi Kontrol
+  </button>
+  <button id="btnToggleSearchAction" class="fab-mini-action" onclick="toggleSearchFromFab()">
+    🔍 Harcamalarda Ara
+  </button>
+  <button id="btnLiquidityAction" class="fab-mini-action" onclick="openLiquidityModal()">
+    🔮 Likidite Planlaması
+  </button>
+  <button id="btnLastMonthAction" class="fab-mini-action" onclick="openLastMonthTemplateModal()">
+    📋 Kayıtları Aktar
+  </button>
 
-    <div id="projeFrameWrap" style="display:none; position:fixed; inset:0; z-index:100000; background:#0f172a;">
+  <div id="projeFrameWrap" style="display:none; position:fixed; inset:0; z-index:100000; background:#0f172a;">
     <iframe id="projeFrame" title="Projeler" style="width:100%; height:100%; border:0; background:#0f172a;"></iframe>
   </div>
 
-  <div id="projeTabWrap" style="display:none; position:fixed; left:0; right:0; top:0; bottom:var(--nav-h); z-index:110; background:#0f172a;">
-    <iframe id="projeTabFrame" title="Projeler" style="width:100%; height:100%; border:0; background:#0f172a;"></iframe>
-  </div>
-
-  <nav class="bottom-nav" id="bottomNav" aria-label="Ana menü">
-    <button type="button" class="bn-item active" id="bn-budget" onclick="navTo('budget')" style="--c:var(--accent);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12"/><path d="M20 12v4h-4a2 2 0 0 1 0 -4h4"/></svg><span>Bütçe</span></button>
-    <button type="button" class="bn-item" id="bn-debts" onclick="navTo('debts')" style="--c:var(--orange);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10h14l-4 -4"/><path d="M17 14h-14l4 4"/></svg><span>Borçlar</span></button>
-    <div class="bn-center"><button class="fab" id="mainFab" aria-label="Kayıt ekle. Basılı tutunca menü"><span>+</span></button></div>
-    <button type="button" class="bn-item" id="bn-reports" onclick="navTo('reports')" style="--c:var(--green);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/><path d="M9 14l2 2l4 -4"/></svg><span>Raporlar</span></button>
-    <button type="button" class="bn-item" id="bn-projects" onclick="navTo('projects')" style="--c:var(--purple);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h3l2 2h5a2 2 0 0 1 2 2v7a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2"/><path d="M17 17v2a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2h2"/></svg><span>Projeler</span></button>
-  </nav>
-
-  <!-- AY SEÇİCİ -->
-  <div class="modal" id="modalMonthPicker">
-    <div class="modal-content" id="monthPickerContent"></div>
-  </div>
+  <button class="fab" id="mainFab"><span>+</span></button>
 
   <!-- GEÇMİŞ AY RAPORU MODALI -->
   <div class="modal" id="modalPastMonthReport">
@@ -1637,7 +1557,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = "3.10.0";
+    const CURRENT_VERSION = "3.9.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
 
     let currentModule = 'budget';
@@ -1933,17 +1853,32 @@
     }
 
     function showFabAction() {
-      document.getElementById('fabMenu').classList.add('open');
+      document.getElementById('badgeVersionAction').style.display = 'flex';
+      document.getElementById('btnProjectsAction').style.display = 'flex';
+      document.getElementById('btnChartsAction').style.display = 'flex';
+      document.getElementById('btnPastMonthReportAction').style.display = 'flex';
+      document.getElementById('btnControlAction').style.display = 'flex';
+      document.getElementById('btnToggleSearchAction').style.display = 'flex';
+      document.getElementById('btnLiquidityAction').style.display = 'flex';
+      document.getElementById('btnLastMonthAction').style.display = 'flex';
+
       const isSearchNow = (currentModule === 'budget' ? isSearchActiveBudget : isSearchActiveDebts);
       document.getElementById('btnToggleSearchAction').innerHTML = isSearchNow ? '✕ Aramayı Kapat' : '🔍 Harcamalarda Ara';
+
       if (navigator.vibrate) {
         navigator.vibrate(50);
       }
     }
 
     function hideFabAction() {
-      const m = document.getElementById('fabMenu');
-      if (m) m.classList.remove('open');
+      document.getElementById('badgeVersionAction').style.display = 'none';
+      document.getElementById('btnProjectsAction').style.display = 'none';
+      document.getElementById('btnChartsAction').style.display = 'none';
+      document.getElementById('btnPastMonthReportAction').style.display = 'none';
+      document.getElementById('btnControlAction').style.display = 'none';
+      document.getElementById('btnToggleSearchAction').style.display = 'none';
+      document.getElementById('btnLiquidityAction').style.display = 'none';
+      document.getElementById('btnLastMonthAction').style.display = 'none';
     }
 
     // Projeler sayfası, uygulamadan çıkmadan tam ekran katmanda açılır (iOS uygulama içi tarayıcıya atmasın diye)
@@ -1961,7 +1896,7 @@
       const sab = parseFloat(cs.paddingBottom) || 0;
       probe.remove();
       // Başlık satırının ekrandaki yeri: Projeler sayfası üst boşluğunu buna hizalar
-      const hdr = document.querySelector('#appContent .header') || document.getElementById('topBar');
+      const hdr = document.querySelector('#appContent .header');
       const hy = hdr ? Math.round((hdr.getBoundingClientRect().top + window.pageYOffset) * 100) / 100 : sat;
       document.getElementById('projeFrame').src = page + '?embed=1&sat=' + sat + '&sab=' + sab + '&hy=' + hy + '&t=' + Date.now();
       document.getElementById('projeFrameWrap').style.display = 'block';
@@ -2066,7 +2001,7 @@
       if (pastMonths.length === 0) {
         pastSelect.innerHTML = '<option value="">Geçmiş ay yok</option>';
         document.getElementById('pastReportContent').innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-dim);">Kayıtlı geçmiş ay bulunamadı.</div>';
-        activateReportPanel('past');
+        openModalWithScrollLock('modalPastMonthReport');
         return;
       }
 
@@ -2078,7 +2013,7 @@
         pastSelect.appendChild(opt);
       });
 
-      activateReportPanel('past');
+      openModalWithScrollLock('modalPastMonthReport');
       loadPastReportData(pastSelect.value);
     }
 
@@ -2137,8 +2072,9 @@
       const targetMonth = pastSelect ? pastSelect.value : null;
       if (!targetMonth) return;
 
+      closeModal('modalPastMonthReport');
+
       if (currentModule !== 'budget') {
-        pendingMonthTarget = targetMonth;
         switchModule('budget');
       }
 
@@ -2394,7 +2330,7 @@
       isLiqSummaryTRYView = false;
       updateLiquidityViewSwitcher();
       renderLiquidityContent();
-      activateReportPanel('liq');
+      openModalWithScrollLock('modalLiquidity');
     }
 
     function switchLiquidityView(view) {
@@ -2424,7 +2360,7 @@
       selectedFiltersCtrl.clear();
       updateControlViewSwitcher();
       renderControlContent();
-      activateReportPanel('ctrl');
+      openModalWithScrollLock('modalControl');
     }
 
     function switchControlView(view) {
@@ -4217,13 +4153,9 @@
         }
 
         openBudgetAddModal();
-      } else if (currentModule === 'debts') {
+      } else {
         document.getElementById('mDebtDate').value = getLocalTodayISO();
         openModalWithScrollLock('modalDebt');
-      } else {
-        // Ajanda / Raporlar / Projeler sekmesinden: önce Bütçe'ye dön, sonra kayıt ekle
-        switchModule('budget');
-        setTimeout(() => { openBudgetAddModal(); }, 500);
       }
     }
 
@@ -4533,12 +4465,10 @@
     // switchModule Fonksiyonunu Güncelle
     function switchModule(mod) {
       currentModule = mod;
-
+      
       const isBudget = (mod === 'budget');
       const isDebts = (mod === 'debts');
       const isTimeline = (mod === 'timeline');
-      const isReports = (mod === 'reports');
-      const isProjects = (mod === 'projects');
 
       document.getElementById('modBudget').classList.toggle('active', isBudget);
       document.getElementById('modDebts').classList.toggle('active', isDebts);
@@ -4551,25 +4481,17 @@
       document.getElementById('viewBudget').style.display = isBudget ? 'block' : 'none';
       document.getElementById('viewDebts').style.display = isDebts ? 'block' : 'none';
       document.getElementById('viewTimeline').style.display = isTimeline ? 'block' : 'none';
-      document.getElementById('viewReports').style.display = isReports ? 'block' : 'none';
-      document.getElementById('projeTabWrap').style.display = isProjects ? 'block' : 'none';
-      document.getElementById('listContainer').style.display = (isTimeline || isReports || isProjects) ? 'none' : 'block';
+      document.getElementById('listContainer').style.display = isTimeline ? 'none' : 'block';
 
       const edge = document.getElementById('edgeIndicator');
       if (edge && !isBudget) edge.className = '';
-
+      
       const select = document.getElementById('sheetSelect');
 
       if (isTimeline) {
         select.style.visibility = 'hidden';
         document.body.style.overflow = 'hidden'; // Sayfa gövdesinin yukarı kaçmasını engeller
         loadAndRenderMainTimeline();
-      } else if (isReports) {
-        document.body.style.overflow = '';
-        showReportPanel(reportPanel);
-      } else if (isProjects) {
-        document.body.style.overflow = 'hidden';
-        showProjeTab();
       } else {
         select.style.visibility = 'visible';
         document.body.style.overflow = ''; // Diğer modlarda normal kaydırmaya döner
@@ -4586,9 +4508,6 @@
           loadDebtsData();
         }
       }
-
-      updateBottomNav(mod);
-      syncTopBar();
     }
 
     async function loadAndRenderMainTimeline() {
@@ -5147,11 +5066,6 @@
         if (name === activeSheet || name === "Mevcut Ay") opt.selected = true;
         select.appendChild(opt);
       });
-
-      if (pendingMonthTarget && sheets.includes(pendingMonthTarget)) {
-        select.value = pendingMonthTarget;
-      }
-      pendingMonthTarget = null;
 
       onFilterChange();
     }
@@ -6682,196 +6596,6 @@
       }
     }
     
-  
-    // =========================================================
-    // v3.10: AY ÇUBUĞU, ALT MENÜ, RAPORLAR SEKMESİ
-    // =========================================================
-    let pendingMonthTarget = null;
-    let reportPanel = 'ctrl';
-    let projeTabLoaded = false;
-    let topBarY = 0;
-
-    function parseSheetYM(name) {
-      const m = /^(\d{4}) (\S+)$/.exec(String(name).trim());
-      if (!m) return null;
-      const mi = TR_MONTH_NAMES.indexOf(m[2]);
-      return mi < 0 ? null : { y: parseInt(m[1], 10), m: mi };
-    }
-    function currentMonthYM() {
-      let best = null;
-      (availableSheets || []).forEach(n => {
-        const p = parseSheetYM(n);
-        if (p && (!best || p.y > best.y || (p.y === best.y && p.m > best.m))) best = p;
-      });
-      if (best) { let y = best.y, m = best.m + 1; if (m > 11) { m = 0; y++; } return { y, m }; }
-      const d = new Date();
-      return { y: d.getFullYear(), m: d.getMonth() };
-    }
-    function monthInfo(sheet) {
-      const cur = currentMonthYM();
-      if (sheet === 'Mevcut Ay') return { label: TR_MONTH_NAMES[cur.m] + ' ' + cur.y, cap: 'Mevcut ay', kind: 'cur' };
-      if (sheet === 'Gelecek Ay') {
-        let y = cur.y, m = cur.m + 1; if (m > 11) { m = 0; y++; }
-        return { label: TR_MONTH_NAMES[m] + ' ' + y, cap: 'Gelecek ay', kind: 'next' };
-      }
-      const p = parseSheetYM(sheet);
-      return { label: p ? TR_MONTH_NAMES[p.m] + ' ' + p.y : sheet, cap: 'Geçmiş ay', kind: 'past' };
-    }
-    // Ay listesi: en yeni önce (Gelecek Ay, Mevcut Ay, sonra arşivler yeniden eskiye)
-    function monthOptionsOrdered() {
-      const select = document.getElementById('sheetSelect');
-      const vals = Array.from(select.options).map(o => o.value);
-      const rank = v => {
-        if (v === 'Gelecek Ay') return [3, 0, 0];
-        if (v === 'Mevcut Ay') return [2, 0, 0];
-        const p = parseSheetYM(v);
-        return p ? [1, p.y, p.m] : [0, 0, 0];
-      };
-      return vals.map((v, i) => ({ v, i, r: rank(v) })).sort((a, b) => (b.r[0] - a.r[0]) || (b.r[1] - a.r[1]) || (b.r[2] - a.r[2]) || (a.i - b.i)).map(x => x.v);
-    }
-    function stepMonth(dir) { // +1: bir önceki (eski) ay, -1: bir sonraki (yeni) ay
-      if (currentModule !== 'budget') return;
-      const select = document.getElementById('sheetSelect');
-      const list = monthOptionsOrdered();
-      const idx = list.indexOf(select.value);
-      const ni = idx + dir;
-      if (idx < 0 || ni < 0 || ni >= list.length) return;
-      select.value = list[ni];
-      onFilterChange();
-    }
-    function openMonthPicker() {
-      if (currentModule !== 'budget') return;
-      const select = document.getElementById('sheetSelect');
-      const list = monthOptionsOrdered();
-      let h = '<h3 style="font-size: 16px; margin-bottom: 12px;">Ay seç</h3>';
-      list.forEach(v => {
-        const info = monthInfo(v), on = (v === select.value);
-        h += '<button type="button" class="mp-row' + (on ? ' on' : '') + '" data-v="' + v.replace(/"/g, '&quot;') + '" onclick="pickMonth(this.dataset.v)"><span class="mp-a">' + info.label + '</span><span class="mp-b">' + (on ? '✓ ' : '') + info.cap + '</span></button>';
-      });
-      h += '<div class="modal-actions"><button type="button" class="btn-cancel" onclick="closeModal(\'modalMonthPicker\')">Kapat</button></div>';
-      document.getElementById('monthPickerContent').innerHTML = h;
-      openModalWithScrollLock('modalMonthPicker');
-    }
-    function pickMonth(v) {
-      closeModal('modalMonthPicker');
-      document.getElementById('sheetSelect').value = v;
-      onFilterChange();
-    }
-    function setDebtArchive(flag) {
-      if (currentModule !== 'debts') return;
-      document.getElementById('sheetSelect').value = flag ? 'archive' : 'active';
-      onFilterChange();
-    }
-
-    function syncTopBar() {
-      const bar = document.getElementById('topBar');
-      if (!bar) return;
-      const mod = currentModule;
-      bar.style.display = (mod === 'reports' || mod === 'projects') ? 'none' : 'grid';
-      const select = document.getElementById('sheetSelect');
-      const nav = document.getElementById('monthNav');
-      nav.style.display = (mod === 'budget') ? 'flex' : 'none';
-      document.getElementById('debtSeg').style.display = (mod === 'debts') ? 'flex' : 'none';
-      document.getElementById('topTitle').style.display = (mod === 'timeline') ? 'block' : 'none';
-      document.getElementById('btnChartsTop').style.visibility = (mod === 'budget') ? 'visible' : 'hidden';
-      if (mod === 'budget') {
-        const val = select.value || 'Mevcut Ay';
-        const info = monthInfo(val);
-        document.getElementById('mn1').textContent = info.label;
-        document.getElementById('mn2').textContent = info.cap;
-        nav.classList.toggle('past', info.kind === 'past');
-        nav.classList.toggle('next', info.kind === 'next');
-        const list = monthOptionsOrdered();
-        const idx = list.indexOf(select.value);
-        document.getElementById('mnPrev').disabled = !(idx >= 0 && idx < list.length - 1);
-        document.getElementById('mnNext').disabled = !(idx > 0);
-      }
-      if (mod === 'debts') {
-        const arch = select.value === 'archive';
-        document.getElementById('dsActive').classList.toggle('active', !arch);
-        document.getElementById('dsArch').classList.toggle('active', arch);
-      }
-      if (bar.style.display !== 'none') {
-        const y = bar.getBoundingClientRect().top + (window.pageYOffset || 0);
-        if (y > 0 || topBarY === 0) topBarY = Math.round(y * 100) / 100;
-      }
-    }
-
-    function updateBottomNav(mod) {
-      const map = { budget: 'bn-budget', debts: 'bn-debts', reports: 'bn-reports', projects: 'bn-projects' };
-      Object.keys(map).forEach(k => {
-        const el = document.getElementById(map[k]);
-        if (el) el.classList.toggle('active', k === mod);
-      });
-    }
-    function navTo(mod) {
-      hideFabAction();
-      switchModule(mod);
-      window.scrollTo(0, 0);
-    }
-
-    // ---- Raporlar: mevcut pencereler sayfa içine taşınır, içlerindeki kod aynı kalır ----
-    (function initReportPanels() {
-      const host = document.getElementById('repPanels');
-      ['modalControl', 'modalPastMonthReport', 'modalLiquidity'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el && host) {
-          el.classList.add('rep-panel');
-          el.style.display = 'none';
-          host.appendChild(el);
-        }
-      });
-    })();
-    function activateReportPanel(p) {
-      reportPanel = p;
-      const map = { ctrl: 'modalControl', past: 'modalPastMonthReport', liq: 'modalLiquidity' };
-      Object.keys(map).forEach(k => {
-        const el = document.getElementById(map[k]);
-        if (el) el.style.display = (k === p) ? 'block' : 'none';
-        const tb = document.getElementById('rtab-' + k);
-        if (tb) tb.classList.toggle('active', k === p);
-      });
-      const send = document.getElementById('btnRepSend');
-      if (send) send.style.display = (p === 'ctrl') ? 'flex' : 'none';
-      if (currentModule !== 'reports') switchModule('reports');
-    }
-    function showReportPanel(p) {
-      // Ay İçi Kontrol ve Likidite her zaman Mevcut Ay verisiyle çalışır
-      if (p !== 'past' && memoryCache['Mevcut Ay']) currentData = memoryCache['Mevcut Ay'];
-      if (p === 'ctrl') openControlModal();
-      else if (p === 'liq') openLiquidityModal();
-      else openPastMonthReportModal();
-    }
-
-    // ---- Projeler sekmesi (proje.html, alt menü açık kalır) ----
-    function measureInsets() {
-      const probe = document.createElement('div');
-      probe.style.cssText = 'position:fixed;top:0;left:0;visibility:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
-      document.body.appendChild(probe);
-      const cs = getComputedStyle(probe);
-      const r = { sat: parseFloat(cs.paddingTop) || 0, sab: parseFloat(cs.paddingBottom) || 0 };
-      probe.remove();
-      return r;
-    }
-    function showProjeTab() {
-      const frame = document.getElementById('projeTabFrame');
-      if (!projeTabLoaded) {
-        const ins = measureInsets();
-        const hy = topBarY > 0 ? topBarY : ins.sat;
-        frame.src = 'proje.html?embed=1&tab=1&sat=' + ins.sat + '&sab=0&hy=' + hy + '&t=' + Date.now();
-        projeTabLoaded = true;
-      } else if (frame.contentWindow) {
-        frame.contentWindow.postMessage({ type: 'proje-show' }, window.location.origin);
-      }
-    }
-
-    // Ay değişince / sekme değişince üst çubuk güncellenir
-    const _origOnFilterChange = onFilterChange;
-    onFilterChange = function () {
-      _origOnFilterChange.apply(this, arguments);
-      syncTopBar();
-    };
-    syncTopBar();
   </script>
 </body>
 </html>

@@ -249,13 +249,15 @@
   <div class="toast" id="toast" role="status"></div>
 
   <script>
-    const PROJE_VERSION = "1.2.1";
+    const PROJE_VERSION = "1.3.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbxwsVf8deHomi5jaNLfU86AkVbRQdXPNHuK8z9qiL1EGJanlSo_1e9BhQX0Kup7BdTb/exec";
     const BACK_URL = "2.html";
 
     // 2.html bu sayfayı tam ekran bir katman (iframe) içinde açar; böylece iOS uygulamadan çıkmış saymaz.
     const QS = new URLSearchParams(window.location.search);
     const EMBED = QS.get("embed") === "1" && window.parent !== window;
+    // Alt menüdeki Projeler sekmesi olarak açıldıysa listede ← gösterilmez (geri dönüş alt menüden)
+    const TABMODE = EMBED && QS.get("tab") === "1";
     if (EMBED) {
       document.documentElement.classList.add("embed");
       // Üst boşluk: 2.html'deki başlık satırının ekrandaki yerine birebir hizalanır
@@ -474,6 +476,7 @@
       back.innerHTML = ic("back");
       add.innerHTML = ic("plus");
       back.setAttribute("aria-label", det ? "Projelere dön" : "Bütçeye dön");
+      back.style.display = (TABMODE && !det) ? "none" : "";
       add.setAttribute("aria-label", det ? "İşlem ekle" : "Proje ekle");
       add.disabled = !backendOk;
       openSw = null;
@@ -836,6 +839,10 @@
     });
     document.getElementById("modal").addEventListener("click", e => { if (e.target.id === "modal") closeForm(); });
     document.addEventListener("visibilitychange", () => { if (!document.hidden && !FORM) loadData(true); });
+    // Sekme yeniden görünür olunca ana uygulama haber verir; veriler tazelenir
+    window.addEventListener("message", e => {
+      if (e.origin === window.location.origin && e.data && e.data.type === "proje-show" && !FORM) loadData(true);
+    });
 
     // ---------- Sürüm kontrolü (2.html'deki gibi; kullanıcı ayarlarını silmez) ----------
     async function checkForUpdates() {
